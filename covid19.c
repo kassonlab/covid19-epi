@@ -687,7 +687,7 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 
 }
 
-float calc_household_infect(float kappa, float omega, float HH_size, float alpha, int severe) {
+float calc_household_infect(float kappa, float omega, int HH_size, float alpha, int severe) {
 
 	float betah=0.627; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.4 (Ferguson 2020)
 
