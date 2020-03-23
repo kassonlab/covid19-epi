@@ -198,11 +198,12 @@ void HH_dist(int * HH, float * age, float HH_size, int * per_HH_size, int num_ho
 void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual) {
 
 	/* Get longitude and latitude with population density from CSV */
-	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
+	FILE* lat_long = fopen("land_pop_test.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 
 	/* Initialize helpers for population density */
-	int num_km=206959;
-	// FOR TEST TEXT int num_km=63;
+	// int num_km=206959;
+	// FOR TEST TEXT 
+	int num_km=63;
 	int counter[num_km];
 	double pop_density_init[num_km];
 	float pop_density_init_num[num_km];
@@ -426,12 +427,11 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 
 	/* All currently randomly placed based on county.  Would like to do per town but each town needs inhabitants. See commented section below for per city distribution of schools */ 
 	for (i=0; i < population; i++) {
-		printf("pop %i %i %f \n", i, county[i], age[i]);
 		if (age[i]<1 || age[i]>75) {
 			job_status[i]=0;
 			job_status_city[0][county[i]]++;
 		} else if (age[i]>=1 && age[i]<6) {
-			if ((rand()/(float)RAND_MAX)<0.9000) {
+			if ((drand48())<0.9000) {
 				job_status[i]=1;
 				job_status_city[1][county[i]]++;
 			} else {
@@ -611,18 +611,20 @@ void workplace_dist_city(int * workplace, int * job_status, int ** job_status_co
 float calc_kappa(float t, float tau, float symptomatic) {
 
 	float kappa;
+	float t1;
 	//###Determine kappa for infected person.  This is the infectiousness of the person based on time since infection started.  Latency period is 4.6 days.  Infection starts at 5.1 days and lasts for 6 days.  Sympotmatic people are twice as likely to infect others as asymptomatic.
-//### NOTE: In original study, this a function based on time.  This can be added later. 
+	// Kappa is a log normal function with mean of -0.72 and standard deviation of 1.8.  From Ferguson Nature 2005
 	if (t-tau<4.6) {
 		kappa=0.;
 	} else if (t-tau>11.1) {
 		kappa=0.; //# Recovered or dead
-	} else if (symptomatic==1) {
-		kappa=1.;
 	} else {
-		kappa=0.5;
+		t1=(log(t-tau-4.6)+0.72)/1.8;
+		kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
 	}
-
+	if (symptomatic==0) {
+		kappa=kappa*0.5;
+	}
 	return(kappa);
 }
 
@@ -876,7 +878,7 @@ int main (int argc, char *argv[]) {
 
 	/* Parameters for infections */
 	int num_infections=(int)population*percent_infect; // Default is 10% of population has illness.
-	float symptomatic_per=0.33; // percent of people who are symptomatic.
+	float symptomatic_per=0.67; // percent of people who are symptomatic.
 	int * infected; // 1 if person i has been infected, 0 otherwise
 	infected = (int*)calloc(population,sizeof(int));
 	int * severe; // 1 if person i has severe infection, 0 otherwise
@@ -1009,7 +1011,7 @@ int main (int argc, char *argv[]) {
 
 
 	/* Initialize constants */
-	float kappa=1 ; // #Infectiousness
+	float kappa=4 ; // #Infectiousness
 	float alpha=0.8 ; // From Ferguson Nature 2006
 	float omega=2 ; // From Ferguson Nature 2006
 	// #Leaving out rho from Ferguson 2006.  This is a measure of how infectious person is.  For now, we will assume all people are the same.
@@ -1036,21 +1038,20 @@ int main (int argc, char *argv[]) {
 			
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
 				d=distance(lat[sus_person], lon[sus_person], lat[infec_person], lon[infec_person], 'K');
-				if (county[sus_person]==county[infec_person]) {
+				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person]);
+			//	if (county[sus_person]==county[infec_person]) {
 
-					// NOTE: Infectiousness is considered to be equal for all persons with a value of 1.\
-					kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person]);
 
-					// Household transmission //
-					if (HH[sus_person]==HH[infec_person]) {
-						infect+=calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
-					}
+				// Household transmission //
+				if (HH[sus_person]==HH[infec_person]) {
+					infect+=calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
+				}
 
 					// Workplace/School transmission: People must be in same workplace and job type. // 
-					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person])) {
-						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person]) ;
-					}
+				if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person])) {
+					infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person]) ;
 				}
+			//	}
 
 				// Community transmission // 
 				if (d<40) {
@@ -1065,11 +1066,11 @@ int main (int argc, char *argv[]) {
 			//### Probability of being infected ####
 			infect_prob=(1-exp(-infect*dt));
 			//### Monte carlo type prediction ###
-			if ((rand()/(float)RAND_MAX)<infect_prob) {
+			if (drand48()<infect_prob) {
 				infected[sus_person]=1;
 				tau[sus_person]=t;
-				severe[sus_person]=round(rand()/(float)RAND_MAX);
-				if ((rand()/(float)RAND_MAX)<symptomatic_per) {
+				severe[sus_person]=round(drand48());
+				if (drand48()<symptomatic_per) {
 					symptomatic[sus_person]=1;
 				}
 				num_infect++;
