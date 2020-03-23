@@ -608,7 +608,7 @@ void workplace_dist_city(int * workplace, int * job_status, int ** job_status_co
 
 }
 
-float calc_kappa(float t, float tau, float symptomatic) {
+float calc_kappa(float t, float tau, int symptomatic) {
 
 	float kappa;
 	//###Determine kappa for infected person.  This is the infectiousness of the person based on time since infection started.  Latency period is 4.6 days.  Infection starts at 5.1 days and lasts for 6 days.  Sympotmatic people are twice as likely to infect others as asymptomatic.
