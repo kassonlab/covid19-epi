@@ -687,7 +687,7 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 
 }
 
-float calc_household_infect(float kappa, float omega, float HH_size, float alpha, float severe) {
+float calc_household_infect(float kappa, float omega, float HH_size, float alpha, int severe) {
 
 	float betah=0.627; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.4 (Ferguson 2020)
 
@@ -695,7 +695,7 @@ float calc_household_infect(float kappa, float omega, float HH_size, float alpha
 
 }
 
-float calc_workplace_infect(int job_status, float kappa, float omega, float workplace_size, float severe) {
+float calc_workplace_infect(int job_status, float kappa, float omega, float workplace_size, int severe) {
 
 	float betap[]={0.0, 1.254, 1.254, 1.254, 0.627} ; // Spread in all types of schools (preschool to college) is twice that of workplace 
 	float psi[]={0.0, 0.1, 0.2, 0.25, 0.5} ; // Accounts for absenteeism based on severe illness. Ferguson Nature 2006
