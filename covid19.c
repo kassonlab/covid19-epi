@@ -201,7 +201,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	FILE* lat_long = fopen("land_pop_test.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 
 	/* Initialize helpers for population density */
-	// int num_km=206959;
+	//int num_km=206959;
 	// FOR TEST TEXT 
 	int num_km=63;
 	int counter[num_km];
@@ -431,7 +431,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			job_status[i]=0;
 			job_status_city[0][county[i]]++;
 		} else if (age[i]>=1 && age[i]<6) {
-			if ((drand48())<0.9000) {
+			if ((rand()/(float)RAND_MAX)<0.9000) {
 				job_status[i]=1;
 				job_status_city[1][county[i]]++;
 			} else {
@@ -1066,11 +1066,11 @@ int main (int argc, char *argv[]) {
 			//### Probability of being infected ####
 			infect_prob=(1-exp(-infect*dt));
 			//### Monte carlo type prediction ###
-			if (drand48()<infect_prob) {
+			if ((rand()/(float)RAND_MAX)<infect_prob) {
 				infected[sus_person]=1;
 				tau[sus_person]=t;
-				severe[sus_person]=round(drand48());
-				if (drand48()<symptomatic_per) {
+				severe[sus_person]=round(rand()/(float)RAND_MAX);
+				if ((rand()/(float)RAND_MAX)<symptomatic_per) {
 					symptomatic[sus_person]=1;
 				}
 				num_infect++;
