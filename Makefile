@@ -1,4 +1,4 @@
-SOURCES := covid19.c
+SOURCES := covid19.c COV_rand.c
 
 OBJECTS := $(SOURCES:%.c=%.o)
 
@@ -18,6 +18,8 @@ all: $(PROGRAM)
 
 $(PROGRAM): $(OBJECTS)
 	$(LD) -o $@ $(LDFLAGS) $(OBJECTS) $(LIBS)
+
+$(OBJECTS): common.h
 
 clean:
 	$(RM) $(PROGRAM) $(OBJECTS)
