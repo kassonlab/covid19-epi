@@ -1,4 +1,4 @@
-SOURCES := covid19.c COV_rand.c
+SOURCES := covid19.c COV_rand.c prop_distribution.c
 
 OBJECTS := $(SOURCES:%.c=%.o)
 
