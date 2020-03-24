@@ -348,7 +348,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	}	
 
 	for (i=0; i<max_HH_size; i++) {
-		printf("%i %f \n", i, HH_dist_test[i]/(float)num_households) ; 
+		printf("%i %f %i \n", i, HH_dist_test[i]/(float)num_households, num_households) ; 
 		fflush(stdout);
 	}
 	
@@ -495,7 +495,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 	j=0;
 	for (i=0; i<5; i++) {
 		for (j=0; j<num_counties; j++) {
-			printf("jobs job_status %i county %i per_job_total %f num_jobs_in_county %i \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j]) ; 
+	//		printf("jobs job_status %i county %i per_job_total %f num_jobs_in_county %i \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j]) ; 
 		}
 	}
 
@@ -534,6 +534,7 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 		if (job_status_county[4][i]>0) {
 			num_workplaces[4][i]=ceil(job_status_county[4][i]/(float)pp_work);
 			num_workplaces2[4]+=ceil(job_status_county[4][i]/(float)pp_work);
+//			printf("work %i %i %i %i \n", i, job_status_county[4][i], num_workplaces2[4], num_workplaces[4][i]);
 			if (num_workplaces2[4]>*max_num_WP) {
 				*max_num_WP=num_workplaces2[4];
 			}
@@ -655,7 +656,7 @@ float calc_household_infect(float kappa, float omega, int HH_size, float alpha, 
 
 	float betah=0.627; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.4 (Ferguson 2020)
 
-	return(betah*kappa*(1+(float)severe*(omega-1))/(pow((float)HH_size,alpha))); //Why does this not take HH_num at max?  is HH_num from 0 to size(HH_num) or 1 to size(HH_num)
+	return(betah*kappa*(1+(float)severe*(omega-1))/(pow((float)HH_size,alpha))); 
 
 }
 
@@ -909,7 +910,7 @@ int main (int argc, char *argv[]) {
 	float ran_num;
 
 	int num_I=7;
-	float Ic=1; //Intervention constant for community transmission.
+	float Ic=1.0; //Intervention constant for community transmission.
 	float (*Iw); //Intervention constant for workplace transmission.
 	float Ih=1; //Intervention constant for household transmission.
 	float complyI[num_I]; // percent of people who comply with intervention
@@ -917,14 +918,14 @@ int main (int argc, char *argv[]) {
 	float interIc[num_I]; //Intervention constants for Ic
 	float interIh[num_I]; //Intervention constants for Ih
 	int personinter=0; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
-	float Ihosp=0.25;  // Accounts for increase cleanliness at hospital.  
+	float Ihosp=0.25;  // Accounts for increased cleanliness and infection control at hospital.  
 	int * intervene; // 1 if person is currently undergoing interventions, 0 otherwise. 
 	intervene = (int*)calloc(population,sizeof(int));
 	
 
 	/**** Introduce Interventions: must include documentation for values *****/
 	/* No interventions. */
-	interIc[0]=1;
+	interIc[0]=1.0;
 	float interIw0[6]={0, 1, 1, 1, 1, Ihosp};
 	Iw=interIw0;
 	interIh[0]=1.00;
@@ -990,26 +991,19 @@ school or workplace. */
 	tauI[7]=0;
 	personinter=1;
 
-	/* Intervention 8: school closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. */
+	/* Intervention 8: School closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. */
 
 	interIc[8]=0.25;
 	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
 	interIh[8]=1.25;
-	complyI[8]=1.0;
+	complyI[8]=0.7;
 	tauI[8]=0;
 	personinter=1;
 
-	/* Intervention 8: school closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. */
-
-	interIc[8]=0.25;
-	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
-	interIh[8]=1.25;
-	complyI[8]=1.0;
-	tauI[8]=0;
-	personinter=1;
+//	printf("interIc0 %f ", interIc[0]);
 
 	/* Make interIw array.*/
-	float *interIw[7]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6};
+	float *interIw[9]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8};
 
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
@@ -1085,7 +1079,6 @@ school or workplace. */
 	}
 
 
-
 	/* Initialization complete... start simulation */
 
 	/* Seed infections */
@@ -1111,27 +1104,34 @@ school or workplace. */
 	float infect_house=0;
 	float infect_work=0;
 
+	Ic=1;
 	float t=0;
 	float time_step=0;
 	/* Start simulation */			
 	for (time_step=0; time_step<(tot_time/dt); time_step++) {
 		start=time(NULL);
 		t=t+dt;
-	
-	 num_contact_commun=0;
-	 num_contact_work=0;
-	 num_contact_school=0;	
-	 num_contact_house=0;
-		/* Introduce overall community interventions; how do I make this stay for hte rest of the simulation?  Should I essentially start a new simulation when t>tauI_onset wtih the new parameters?  This way seems computationally expensive. */
-		if (personinter>0 && t>tauI_onset) {
-			Ic=interIc[interventions];
-			Ih=interIh[interventions];
-			Iw=interIw[interventions];
-			printf("here %f %f %f %f %f %f %f %f %f \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih);
-		} else  {
+
+		/* count origin of contacts */	
+		 num_contact_commun=0;
+		 num_contact_work=0;
+		 num_contact_school=0;	
+		 num_contact_house=0;
+
+		/* Introduce overall community interventions. */
+		if (interventions == 0)  {
 			Ic=interIc[0];
 			Ih=interIh[0];
 			Iw=interIw[0];
+	//		printf("here2 %f %f %f %f %f %f %f %f %f %i \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih, interventions);
+		} else if (personinter>0 && t >= tauI_onset && t <= tauI_onset+dt) {
+			Ic=interIc[interventions];
+			Ih=interIh[interventions];
+			Iw=interIw[interventions];
+			for (i=0; i<population; i++) {
+				intervene[i]=round(COV_rand()*complyI[interventions]);
+			}
+	//		printf("here1 %f %f %f %f %f %f %f %f %f %i \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih, interventions);
 		}
 
 		/* Segment population into infectious, susceptible, hospitalized, and icu */
@@ -1152,16 +1152,26 @@ school or workplace. */
 
 
 				infec_person=infectious[j];
-			
+				/* Determine if person is under individual interventions and set parameters */
+				if (intervene[infec_person] == 1) {
+					Ih=interIh[interventions];
+					Ic=interIc[interventions];
+					Iw=interIw[interventions];
+				} 
+				
+
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
 				d=distance(lat[sus_person], lon[sus_person], lat[infec_person], lon[infec_person], 'K');
 				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person]);
 
+				
 				if (hosp_pop[infec_person]==0) {
-					// Household transmission //
-					infect+=Ih*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
-					contact_house++;
-			//		printf("house %f \n", infect);
+					if (HH[sus_person]==HH[infec_person]) {
+						// Household transmission //
+						infect+=Ih*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
+						contact_house++;
+					//	printf("house %f \n", infect);
+					}
 
 					// Workplace/School transmission: People must be in same workplace and job type. // 
 					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person]) && (job_status[sus_person]>0) && Iw[job_status[sus_person]]>0) {
@@ -1183,6 +1193,7 @@ school or workplace. */
 						community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, &community_den);
 						contact_commun++;
 
+			//			printf("commm %f \n", infect);
 					}
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
@@ -1227,16 +1238,19 @@ school or workplace. */
 					num_contact_school++;
 				}
 				num_infect++;
-				/* Determine if following interventions */
-				intervene[sus_person]=round(COV_rand()*complyI[interventions];
-				if (interventions == 4 ) {
-					for (i=0; i<population; i==) {
-						if ( HH[sus_person] == HH[i]) {
-							intervene[i]=round(COV_rand()*complyI[interventions];
+				/* Determine if following interventions only for interventions that effect individuals.*/
+				if ( personinter == 0 ) {
+					intervene[sus_person]=round(COV_rand()*complyI[interventions]);
+					/* Intervention 4 is household quarantine. Applicable for whole household.  */
+					if (interventions == 4 ) {
+						for (i=0; i<population; i++) {
+							if ( HH[sus_person] == HH[i]) {
+								intervene[i]=round(COV_rand()*complyI[interventions]);
+							}
 						}
 					}
 				}
-			}
+			}	
 
 		}
 
@@ -1301,4 +1315,5 @@ school or workplace. */
 	free(recovered);
 	free(dead);
 	free(workplace_tmp);
+
 }
