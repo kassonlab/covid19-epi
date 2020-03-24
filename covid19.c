@@ -1235,8 +1235,8 @@ school or workplace. */
 				}
 			}
 	
+			//		printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den);
 			if (community_den > 0) {
-//					printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den);
 			infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
                         }
 
