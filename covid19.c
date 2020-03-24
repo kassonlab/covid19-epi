@@ -942,6 +942,9 @@ int main (int argc, char *argv[]) {
 	float interIh[num_I]; //Intervention constants for Ih
 	int personinter=0; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
 	float Ihosp=0.25;  // Accounts for increase cleanliness at hospital.  
+	int * intervene; // 1 if person is currently undergoing interventions, 0 otherwise. 
+	intervene = (int*)calloc(population,sizeof(int));
+	
 
 	/**** Introduce Interventions: must include documentation for values *****/
 	/* No interventions. */
@@ -953,8 +956,8 @@ int main (int argc, char *argv[]) {
 	tauI[0]=0;
 	personinter=0;
 
-	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3 but 25% increase in community transmission. */
-	interIc[1]=1.25;
+	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3. Assuming no increase in community transmission as students would be working online at the times they would be in college class.*/
+	interIc[1]=1.00;
 	float interIw1[6]={0, 1, 1, 0, 1, Ihosp};
 	interIh[1]=1.00;
 	complyI[1]=1.0;
@@ -969,17 +972,17 @@ int main (int argc, char *argv[]) {
 	tauI[2]=0;
 	personinter=1;
 
-	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 70% comply, twice as much contact in household, 25% reduction in contact with community, no contact with 
+	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 70% comply, householdi contacts remain the same, 25% contact with community, no contact with 
 school or workplace. */
-	interIc[3]=0.75;
+	interIc[3]=0.25;
 	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
-	interIh[3]=2.0;
+	interIh[3]=1.0;
 	complyI[3]=0.5;
 	tauI[3]=1;
 	personinter=0;
 
-	/* Intervention 4: Case isolation of entire household is one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
-	interIc[4]=0.75;
+	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
+	interIc[4]=0.25;
 	float interIw4[6]={0,0,0,0,0, Ihosp};
 	interIh[4]=2.0;
 	complyI[4]=0.5;
@@ -994,12 +997,39 @@ school or workplace. */
 	tauI[5]=0;
 	personinter=1;
 
-	/* Intervention 6: social isolation of everyone.  Same as case isoloation of single person but now includes all in household but now only 50% comply. */
-	interIc[6]=0.00;
-	float interIw6[6]={0,0,0,0,0, Ihosp};
+	/* Intervention 6: social isolation of everyone.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. */
+	interIc[6]=0.75;
+	float interIw6[6]={0,0,0,0,0.25, Ihosp};
 	interIh[6]=2.0;
-	complyI[6]=0.5;
-	tauI[6]=1;
+	complyI[6]=0.7;
+	tauI[6]=0;
+	personinter=1;
+
+	/* Intervention 7: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions.  50% increase in household transmission and 25% increase in community transmission .*/
+
+	interIc[7]=1.25;
+	float interIw7[6]={0, 0, 0, 0, 0.25, Ihosp};
+	interIh[7]=1.50;
+	complyI[7]=1.0;
+	tauI[7]=0;
+	personinter=1;
+
+	/* Intervention 8: school closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. */
+
+	interIc[8]=0.25;
+	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
+	interIh[8]=1.25;
+	complyI[8]=1.0;
+	tauI[8]=0;
+	personinter=1;
+
+	/* Intervention 8: school closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. */
+
+	interIc[8]=0.25;
+	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
+	interIh[8]=1.25;
+	complyI[8]=1.0;
+	tauI[8]=0;
 	personinter=1;
 
 	/* Make interIw array.*/
@@ -1143,6 +1173,8 @@ school or workplace. */
 			contact_school=0;
 
 			for (j=0; j<num_infectious; j++) {
+
+
 				infec_person=infectious[j];
 			
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
@@ -1219,6 +1251,15 @@ school or workplace. */
 					num_contact_school++;
 				}
 				num_infect++;
+				/* Determine if following interventions */
+				intervene[sus_person]=round(COV_rand()*complyI[interventions];
+				if (interventions == 4 ) {
+					for (i=0; i<population; i==) {
+						if ( HH[sus_person] == HH[i]) {
+							intervene[i]=round(COV_rand()*complyI[interventions];
+						}
+					}
+				}
 			}
 
 		}
