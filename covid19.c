@@ -257,7 +257,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		min_dist=1000000;
 		int got = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_density_init_num[HH_count]);
 		tot_pop_density+=pop_density_init_num[HH_count];
-//		locale[HH_count]=i;
+
 		// Determine city of each population square.  Use city data to determine which schools students attend.  Workplaces are placed by county. //
 		for (j=0; j<num_cities; j++) {
 			dist1=distance(tmp_lat, tmp_lon, lat_city[j], long_city[j], 'K');	
@@ -266,6 +266,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 				tmp_city=j;
 			} 
 		}
+
 		city_num=tmp_city;
 		county_num=city_county[tmp_city];
 		tmp_county_count[county_num]++; 
@@ -459,8 +460,8 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			job_status_city[3][county[i]]++;
 		} else if (age[i]>=22 && age[i]<=75) {
 			if ((rand()/(float)RAND_MAX)<0.734) {
-				// 17.25% of workforce is in healthcare from OECD 2017 statstics.  Assume 1/3 of these are in hospitals. 
-				if (rand()/(float)RAND_MAX<0.0575) {
+				// 17.25% of workforce is in healthcare from OECD 2017 statstics.  Assume 1/4 of these are in hospitals. 
+				if (rand()/(float)RAND_MAX<0.04325) {
 					job_status[i]=5;
 					job_status_city[5][county[i]]++; // Workplace is based on county, not city.
 				} else {
@@ -812,6 +813,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-dt")) dt=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-inter")) interventions=atoi(argv[++i]);
     		else if (!strcmp(argv[i],"-tauI")) tauI_onset=atof(argv[++i]);
+    		else if (!strcmp(argv[i],"-initial")) for (j=0; j<21; j++) initial_infections[j]=atof(argv[++i]);
   	}
 
 	float HH_size = 2.2 ; // Average household size from OCED 
@@ -949,10 +951,10 @@ int main (int argc, char *argv[]) {
 	tauI[0]=0;
 	personinter=0;
 
-	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3 but 50% increase in household transmission and 25% increase in community transmission. */
+	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3 but 25% increase in community transmission. */
 	interIc[1]=1.25;
 	float interIw1[6]={0, 1, 1, 0, 1, Ihosp};
-	interIh[1]=1.50;
+	interIh[1]=1.00;
 	complyI[1]=1.0;
 	tauI[1]=0;
 	personinter=1;
@@ -974,7 +976,7 @@ school or workplace. */
 	tauI[3]=1;
 	personinter=0;
 
-	/* Intervention 4: Case isolation of entire household is one member becomes sick.  Same as case isoloation of single person but now includes all in household but now only 50% comply. */
+	/* Intervention 4: Case isolation of entire household is one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
 	interIc[4]=0.75;
 	float interIw4[6]={0,0,0,0,0, Ihosp};
 	interIh[4]=2.0;
@@ -1044,9 +1046,11 @@ school or workplace. */
 		county_int[i]=i;
 	}
 
-	for (i=0; i < num_infections; i++) {
-		j=prob_dist(county_int, pop_percent, num_counties);
-		initial_infections[j]++;
+	if (initial_infections[0]==0) {
+		for (i=0; i < num_infections; i++) {
+			j=prob_dist(county_int, pop_percent, num_counties);
+			initial_infections[j]++;
+		}
 	}
 
 	// Uncomment to see initial distribution of infections by county.
@@ -1115,7 +1119,7 @@ school or workplace. */
 			Ic=interIc[interventions];
 			Ih=interIh[interventions];
 			Iw=interIw[interventions];
-		//	printf("here %f %f %f %f %f %f %f %f %f \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih);
+			printf("here %f %f %f %f %f %f %f %f %f \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih);
 		} else  {
 			Ic=interIc[0];
 			Ih=interIh[0];
