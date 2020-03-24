@@ -106,7 +106,7 @@ int prob_dist (int * val, double * prob, int arr_size) {
 
 	i = 0;
 	while( return_num < -999999 ) {
-		if (i==0 & ran_num<prob_dist[0]) {
+		if (i==0 && ran_num<prob_dist[0]) {
 			return_num=val[i];
 		} else if ( ( ran_num < prob_dist[i] ) && ( ran_num > prob_dist[i-1] ) ) {
 			return_num=val[i];
@@ -1185,7 +1185,9 @@ school or workplace. */
 				}
 			}
 	
+			if (community_den > 0) {
 			infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
+                        }
 
 
 			//### Probability of being infected ####
