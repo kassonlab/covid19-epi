@@ -222,8 +222,8 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	float min_dist=1000000;
 	int placement;
 
-	int tmp_county_count[20]={0};	
-	int tmp_county_density[20]={0};	
+	int tmp_county_count[21]={0};	
+	int tmp_county_density[21]={0};	
 
 	/* find how many locales will have households */
 	int num_locale=0;
@@ -289,7 +289,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 
 /* Uncomment to test population denity WRT county. 
 	// Test population based on method vs actual population density on county level.  Lines up fairly well. //
-	for (i=0;i<20; i++) {
+	for (i=0;i<21; i++) {
 		printf("counties %i %s number of locales %i calculated density %f actual density %f\n", i, county_names[i], tmp_county_count[i], tmp_county_density[i]/(float)tot_pop_density, county_pop[i]/tot_pop_actual);
 		fflush(stdout);	
 	}
@@ -363,7 +363,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 
 
 /* Uncomment to test household distribution.  Tested JMG 2020-03-22.
-	int HH_dist_test[20]={0};
+	int HH_dist_test[21]={0};
 	for (i=0; i<num_households; i++) {
 		HH_dist_test[per_HH_size[i]]++;
 	}	
@@ -384,7 +384,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		fflush(stdout);
 	} 
 
-	for (i=0; i<20; i++) {
+	for (i=0; i<21; i++) {
 		printf("county_dist %i num %i percent %f actual %f \n", i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
 		fflush(stdout);
 	} 
@@ -676,16 +676,16 @@ float calc_household_infect(float kappa, float omega, int HH_size, float alpha, 
 
 	float betah=0.627; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.4 (Ferguson 2020)
 
-	return(betah*kappa*(1+severe*(omega-1))/(pow(HH_size,alpha))); //Why does this not take HH_num at max?  is HH_num from 0 to size(HH_num) or 1 to size(HH_num)
+	return(betah*kappa*(1+(float)severe*(omega-1))/(pow((float)HH_size,alpha))); //Why does this not take HH_num at max?  is HH_num from 0 to size(HH_num) or 1 to size(HH_num)
 
 }
 
-float calc_workplace_infect(int job_status, float kappa, float omega, float workplace_size, int severe, float * Iw) {
+float calc_workplace_infect(int job_status, float kappa, float omega, int workplace_size, int severe, float * Iw) {
 
 	float betap[]={0.0, 1.254, 1.254, 1.254, 0.627} ; // Spread in all types of schools (preschool to college) is twice that of workplace 
 	float psi[]={0.0, 0.1, 0.2, 0.25, 0.5} ; // Accounts for absenteeism based on severe illness. Ferguson Nature 2006
 
-	return(Iw[job_status]*betap[job_status]*kappa*(1+severe*(omega*psi[job_status]-1))/(workplace_size));
+	return(Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
 float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, float *community_den) {
@@ -800,7 +800,7 @@ int main (int argc, char *argv[]) {
 	int tot_time=500; // Simulation time. 
 	int initial_infections[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //Initial infections per county.
 	float percent_infect=0.001 ; // Default 1% of population initially infected.
-	float dt=0.25; // Time step.
+	float dt=1.00; // Time step.
 	int interventions=0; // Value of interventions.
 	float tauI_onset=0; //time after start of simulation that interventions for whole community take place.
 	
@@ -824,10 +824,10 @@ int main (int argc, char *argv[]) {
 	/* Population information */
 	/* Specific to Sweden.  Averaging population based on total population of Sweden regardless of population size. */
 	float tot_pop=10327589.; //For use of averaging counties only.  NOTE: land scan tot is 10,098,554, cannot use more inhabitants than that. 
-//	char * county_name[]={"Stockholm", "Uppsala", "Sodermanland", "Ostergotland", "Jonkoping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Skane", "Halland", "Vastra Gotaland", "Varmland", "Orebro", "Vastmanland", "Dalarna", "Gavleborg", "Vasternorrland", "Jamtland", "Vasterbotten", "Norrbotten"}; 
-//	float pop_county[]={2377081, 383713, 297540, 465495, 363599, 201469, 245446, 59686, 159606, 1377827, 333848, 1725881, 282414, 304805, 275845, 287966, 287382, 245347, 130810, 271736, 250093};
-	char * county_name[]={"Stockholm/Uppsala", "Sodermanland", "Ostergotland", "Jonkoping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Skane", "Halland", "Vastra Gotaland", "Varmland", "Orebro", "Vastmanland", "Dalarna", "Gavleborg", "Vasternorrland", "Jamtland", "Vasterbotten", "Norrbotten"}; 
-	float pop_county[]={2760794, 297540, 465495, 363599, 201469, 245446, 59686, 159606, 1377827, 333848, 1725881, 282414, 304805, 275845, 287966, 287382, 245347, 130810, 271736, 250093};
+	char * county_name[]={"Stockholm", "Uppsala", "Sodermanland", "Ostergotland", "Jonkoping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Skane", "Halland", "Vastra Gotaland", "Varmland", "Orebro", "Vastmanland", "Dalarna", "Gavleborg", "Vasternorrland", "Jamtland", "Vasterbotten", "Norrbotten"}; 
+	float pop_county[]={2377081, 383713, 297540, 465495, 363599, 201469, 245446, 59686, 159606, 1377827, 333848, 1725881, 282414, 304805, 275845, 287966, 287382, 245347, 130810, 271736, 250093};
+//	char * county_name[]={"Stockholm/Uppsala", "Sodermanland", "Ostergotland", "Jonkoping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Skane", "Halland", "Vastra Gotaland", "Varmland", "Orebro", "Vastmanland", "Dalarna", "Gavleborg", "Vasternorrland", "Jamtland", "Vasterbotten", "Norrbotten"}; 
+//	float pop_county[]={2760794, 297540, 465495, 363599, 201469, 245446, 59686, 159606, 1377827, 333848, 1725881, 282414, 304805, 275845, 287966, 287382, 245347, 130810, 271736, 250093};
 	//Combine Stockholm/Uppsala for purposes of job allocating.
 	int num_counties=(sizeof(pop_county)/sizeof(pop_county[0]));
 	int county_int[num_counties]; // Integer values for random probability distribution. 
@@ -937,11 +937,12 @@ int main (int argc, char *argv[]) {
 	float interIc[num_I]; //Intervention constants for Ic
 	float interIh[num_I]; //Intervention constants for Ih
 	int personinter=0; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
+	float Ihosp=0.25;  // Accounts for increase cleanliness at hospital.  
 
 	/**** Introduce Interventions: must include documentation for values *****/
 	/* No interventions. */
 	interIc[0]=1;
-	float interIw0[6]={0, 1, 1, 1, 1, 1};
+	float interIw0[6]={0, 1, 1, 1, 1, Ihosp};
 	Iw=interIw0;
 	interIh[0]=1.00;
 	complyI[0]=1.0;
@@ -950,7 +951,7 @@ int main (int argc, char *argv[]) {
 
 	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3 but 50% increase in household transmission and 25% increase in community transmission. */
 	interIc[1]=1.25;
-	float interIw1[6]={0, 1, 1, 0, 1, 1};
+	float interIw1[6]={0, 1, 1, 0, 1, Ihosp};
 	interIh[1]=1.50;
 	complyI[1]=1.0;
 	tauI[1]=0;
@@ -958,7 +959,7 @@ int main (int argc, char *argv[]) {
 	
 	/* Intervention 2: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 30% ** Check number ** in workplace interactions to account for parents becoming childcare.  Children have 50% increase in household transmission and 25% increase in community transmission .*/
 	interIc[2]=1.25;
-	float interIw2[6]={0, 0, 0, 0, 0.7, 1};
+	float interIw2[6]={0, 0, 0, 0, 0.7, Ihosp};
 	interIh[2]=1.50;
 	complyI[2]=1.0;
 	tauI[2]=0;
@@ -967,7 +968,7 @@ int main (int argc, char *argv[]) {
 	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 70% comply, twice as much contact in household, 25% reduction in contact with community, no contact with 
 school or workplace. */
 	interIc[3]=0.75;
-	float interIw3[6]={0, 0, 0, 0, 0, 1};
+	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
 	interIh[3]=2.0;
 	complyI[3]=0.5;
 	tauI[3]=1;
@@ -975,7 +976,7 @@ school or workplace. */
 
 	/* Intervention 4: Case isolation of entire household is one member becomes sick.  Same as case isoloation of single person but now includes all in household but now only 50% comply. */
 	interIc[4]=0.75;
-	float interIw4[6]={0,0,0,0,0, 1};
+	float interIw4[6]={0,0,0,0,0, Ihosp};
 	interIh[4]=2.0;
 	complyI[4]=0.5;
 	tauI[4]=1;
@@ -983,7 +984,7 @@ school or workplace. */
 
 	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 70% comply*/
 	interIc[5]=0.25;
-	float interIw5[6]={0, 0.75, 0.75, 0.75, 0.75, 1};
+	float interIw5[6]={0, 0.75, 0.75, 0.75, 0.75, Ihosp};
 	interIh[5]=1.25;
 	complyI[5]=0.70;
 	tauI[5]=0;
@@ -991,7 +992,7 @@ school or workplace. */
 
 	/* Intervention 6: social isolation of everyone.  Same as case isoloation of single person but now includes all in household but now only 50% comply. */
 	interIc[6]=0.00;
-	float interIw6[6]={0,0,0,0,0, 1};
+	float interIw6[6]={0,0,0,0,0, Ihosp};
 	interIh[6]=2.0;
 	complyI[6]=0.5;
 	tauI[6]=1;
@@ -1116,7 +1117,6 @@ school or workplace. */
 			Iw=interIw[interventions];
 		//	printf("here %f %f %f %f %f %f %f %f %f \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih);
 		} else  {
-			printf("here1");
 			Ic=interIc[0];
 			Ih=interIh[0];
 			Iw=interIw[0];
@@ -1145,11 +1145,10 @@ school or workplace. */
 
 				if (hosp_pop[infec_person]==0) {
 					// Household transmission //
-					if (HH[sus_person]==HH[infec_person]) {
-						infect+=Ih*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
-						contact_house++;
-					printf("house %f \n", infect);
-					}
+					infect+=Ih*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
+					contact_house++;
+			//		printf("house %f \n", infect);
+
 					// Workplace/School transmission: People must be in same workplace and job type. // 
 					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person]) && (job_status[sus_person]>0) && Iw[job_status[sus_person]]>0) {
 						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], Iw) ;
@@ -1161,7 +1160,7 @@ school or workplace. */
 						} else {
 							contact_work++;
 						}
-					printf("work  %f %f %i %f \n", infect, Iw[job_status[sus_person]], job_status[sus_person], calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], Iw));
+			//		printf("work  %f %f %i %f \n", infect, Iw[job_status[sus_person]], job_status[sus_person], calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], Iw));
 					}
 
 					// Community transmission // 
@@ -1187,7 +1186,7 @@ school or workplace. */
 				}
 			}
 	
-					printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den);
+			//		printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den);
 			infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
 
 
@@ -1244,7 +1243,7 @@ school or workplace. */
 
 	end=time(NULL);
 	time_t step_time=end-start;			
-	printf("%ld Time %2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i %i %i %i %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
+	printf("%ld Time %2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
 	fflush(stdout);
 	}
 	
