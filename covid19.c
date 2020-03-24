@@ -4,6 +4,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "common.h"
+
 int i; // Counter
 int j; // Counter
 
@@ -92,7 +94,7 @@ int prob_dist (int * val, double * prob, int arr_size) {
 		printf("Arrays do not match!  Cannot complete prob_dist");
 	}
 
-	double ran_num = rand()/(double)RAND_MAX;
+	double ran_num = COV_rand();
 	int return_num = -1000000;
 	double prob_dist[arr_size];
 
@@ -130,7 +132,7 @@ void age_dist (float * age, int population) {
 	double age_dist[] = {0.10721, 0.11553, 0.12439, 0.13475, 0.12578, 0.12704, 0.10782, 0.09952, 0.05796};
 
 	for (i=0; i<population; i++) {
-		age[i] = prob_dist(age_start, age_dist, sizeof(age_start)/sizeof(age_start[0]))+((rand()%10));
+		age[i] = prob_dist(age_start, age_dist, sizeof(age_start)/sizeof(age_start[0]))+((COV_rand() * 10));
 	}
 
 
@@ -172,7 +174,7 @@ void HH_dist(int * HH, float * age, float HH_size, int * per_HH_size, int num_ho
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
 		if (HH[HH_person]==-1) {
-			HH[HH_person]=rand()%num_households;
+			HH[HH_person]=(int)(COV_rand() * num_households);
 		}
 	}
 
@@ -340,7 +342,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 			}	
 
 			/* Pick a random household in the locale. */
-			HH[HH_person]=county_list[placement][rand()%locale_HH_count[placement]];
+			HH[HH_person]=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
 			lat[HH_person]=lat_HH[HH[HH_person]];	
 			lon[HH_person]=lon_HH[HH[HH_person]];	
 			city[HH_person]=city_HH[HH[HH_person]];	
@@ -444,7 +446,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			job_status[i]=0;
 			job_status_city[0][county[i]]++;
 		} else if (age[i]>=1 && age[i]<6) {
-			if ((rand()/(float)RAND_MAX)<0.9000) {
+			if (COV_rand() < 0.9000) {
 				job_status[i]=1;
 				job_status_city[1][county[i]]++;
 			} else {
@@ -458,9 +460,9 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			job_status[i]=3;
 			job_status_city[3][county[i]]++;
 		} else if (age[i]>=22 && age[i]<=75) {
-			if ((rand()/(float)RAND_MAX)<0.734) {
+			if (COV_rand() < 0.734) {
 				// 17.25% of workforce is in healthcare from OECD 2017 statstics.  Assume 1/3 of these are in hospitals. 
-				if (rand()/(float)RAND_MAX<0.0575) {
+				if (COV_rand() < 0.0575) {
 					job_status[i]=5;
 					job_status_city[5][county[i]]++; // Workplace is based on county, not city.
 				} else {
@@ -480,7 +482,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			job_status[i]=0;
 			job_status_city[0][city[i]]++;
 		} else if (age[i]>=1 && age[i]<6) {
-			if ((rand()/(float)RAND_MAX)<0.9000) {
+			if (COV_rand() < 0.9000) {
 				job_status[i]=1;
 				job_status_city[1][city[i]]++;
 			} else {
@@ -494,7 +496,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			job_status[i]=3;
 			job_status_city[3][city[i]]++;
 		} else if (age[i]>=22 && age[i]<=75) {
-			if ((rand()/(float)RAND_MAX)<0.734) {
+			if (COV_rand() < 0.734) {
 				job_status[i]=4;
 				job_status_city[4][county[i]]++; // Workplace is based on county, not city.
 			} else {
@@ -575,10 +577,10 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 			prior_workplaces+=num_workplaces[job_status[i]][j];
 		}
 		if (((num_workplaces[job_status[i]][county[i]])>0) && (job_status[i]<4)) {
-			workplace[i]=(rand()%(int)(num_workplaces[job_status[i]][county[i]]))+prior_workplaces;
-			class[i]=(rand()%((int)ceil(num_workplaces[job_status[i]][county[i]]/(float)pp_class)));
+			workplace[i]=(int)(COV_rand() * (num_workplaces[job_status[i]][county[i]]))+prior_workplaces;
+			class[i]=(int)(COV_rand() * (ceil(num_workplaces[job_status[i]][county[i]]/(float)pp_class)));
 		} else if ((num_workplaces[job_status[i]][county[i]])>0) {
-			workplace[i]=(rand()%(int)(num_workplaces[job_status[i]][county[i]]))+prior_workplaces;
+			workplace[i]=(int)(COV_rand() * (num_workplaces[job_status[i]][county[i]]))+prior_workplaces;
 		} else {
 			workplace[i]=0;
 			printf("no workplaces %i %i %i \n", i, job_status[i], county[i]);
@@ -617,17 +619,17 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
 		while ((tmp_infect<initial_infections[i])) {
-			person_infected=rand()%population;
+			person_infected=(int)(COV_rand() * population);
 
 			if ((county[person_infected]==i) && (infected[person_infected]==0)) {
 	
 				infected[person_infected]=1;
-				severe[person_infected]=(int)(rand()%2);
+				severe[person_infected]=(int)(COV_rand() * 2);
 	
-				if ((rand()/(float)RAND_MAX) < symptomatic_per) {
+				if (COV_rand() < symptomatic_per) {
 					symptomatic[person_infected]=1;
 				}
-				tau[person_infected]=-1*(((float)(rand()%5))+((float)(rand()%(int)(1/dt))*dt));
+				tau[person_infected]=-COV_rand() * 5;
 				infected_list[*num_infect]=person_infected;
 				*num_infect=*num_infect+1;
 				tmp_infect++;
@@ -713,15 +715,15 @@ void hosp_entry(float t, int num_infectious, int * infectious, float * age, int 
 		infec_person=infectious[i];
 		if (tau[infec_person]>=t-10 && tau[infec_person]<t-10+dt && symptomatic[infec_person]==1) {
 			age_group=floor(age[infec_person]/10);
-			if ((rand()/(float)RAND_MAX)<hosp[age_group]) {
-				if ((rand()/(float)RAND_MAX)<icu[age_group]) {
+			if (COV_rand() < hosp[age_group]) {
+				if (COV_rand() < icu[age_group]) {
 					icu_pop[infec_person]=1;
 					hosp_pop[infec_person]=2;
 				} else {
 					hosp_pop[infec_person]=1;
 				}
 				/* put them in a hospital */
-				workplace_tmp[infec_person] = (rand())%workplace_num[county[infec_person]]; 
+				workplace_tmp[infec_person] = (int)(COV_rand() * workplace_num[county[infec_person]]); 
 			}
 		}
 	}
@@ -763,14 +765,14 @@ int death(float t, int num_infectious, int * infectious, float * tau, int * dead
 		if (tau[infec_person]>=t-15 && tau[infec_person]<t-15+dt) {
 			if (icu_pop[infec_person]==1) {
 				icu_pop[infec_person]=0;
-				if ((rand()/(float)RAND_MAX)<fatal_in_icu) {
+				if (COV_rand() < fatal_in_icu) {
 					dead[infec_person]=1;
 					num_dead++;
 					hosp_pop[infec_person]=0;
 				}
 			} else if (symptomatic[infec_person]==1) {	
 				age_group=floor(age[infec_person]/10);
-				if ((rand()/(float)RAND_MAX)<fatal_symptomatic[age_group]) {
+				if (COV_rand() < fatal_symptomatic[age_group]) {
 					dead[infec_person]=1;
 					icu_pop[infec_person]=0;
 					hosp_pop[infec_person]=0;
@@ -1001,8 +1003,8 @@ school or workplace. */
 	/* Make interIw array.*/
 	float *interIw[7]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6};
 
-	/**** Setting random number generator seed here. ****/
-	srand(1);
+	/**** Set random number generator seed. ****/
+	COV_init_rand();
 
 	/* Testing parameters */
 	time_t start;
@@ -1193,11 +1195,11 @@ school or workplace. */
 			//### Probability of being infected ####
 			infect_prob=(1-exp(-infect*dt));
 			//### Monte carlo type prediction ###
-			if ((rand()/(float)RAND_MAX)<infect_prob) {
+			if (COV_rand() < infect_prob) {
 				infected[sus_person]=1;
 				tau[sus_person]=t;
-				severe[sus_person]=round(rand()/(float)RAND_MAX);
-				if ((rand()/(float)RAND_MAX)<symptomatic_per) {
+				severe[sus_person]=round(COV_rand());
+				if (COV_rand() < symptomatic_per) {
 					symptomatic[sus_person]=1;
 				}
 				if (contact_work>0) {
