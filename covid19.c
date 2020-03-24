@@ -85,66 +85,42 @@ double rad2deg(double rad) {
 }
 /// End of code from GEODATASOURCE
 
-int prob_dist (int * val, double * prob, int arr_size) {
-
-/* This code takes a pointer to an array of values, a pointer to an array of probabilities (must be decimals that add to one), and size of these arrays and returns a random number which complies with the probability distribution. */
-
-
-	if (sizeof(val) != sizeof(prob)) {
-		printf("Arrays do not match!  Cannot complete prob_dist");
-	}
-
-	double ran_num = COV_rand();
-	int return_num = -1000000;
-	double prob_dist[arr_size];
-
-	int i = 0;
-
-	// Change probability distribution into values from zero to 1.
-	prob_dist[0]=prob[0];
-	for (i=1; i < (arr_size); i++) {
-		prob_dist[i]=prob[i]+prob_dist[i-1];
-	}
-
-	i = 0;
-	while( return_num < -999999 ) {
-		if (i==0 && ran_num<prob_dist[0]) {
-			return_num=val[i];
-		} else if ( ( ran_num < prob_dist[i] ) && ( ran_num > prob_dist[i-1] ) ) {
-			return_num=val[i];
-		} else if ( ran_num > prob_dist[(arr_size-1)] ) {
-			return_num=val[(arr_size-1)];
-		} else if (i==arr_size) {
-			printf("Error: Probability is not between zero and 1 inclusive! Returning largest number");
-			return_num=val[(arr_size-1)];
-		}
-		i++;
-	}
-	return(return_num);
-}
-
 
 void age_dist (float * age, int population) {
 
 	int i; // Counter
+        int ret, age_sz;
 
 	int age_start[] = {0, 10, 20, 30, 40, 50, 60, 70, 80};
 	double age_dist[] = {0.10721, 0.11553, 0.12439, 0.13475, 0.12578, 0.12704, 0.10782, 0.09952, 0.05796};
+        double *age_dst;
+
+        age_sz = (int)(sizeof(age_dist)/sizeof(age_dist[0]));
+        ret = generate_inc_distr_vec(&age_dst, age_dist, age_sz, "age");
+        if (ret) {
+            fprintf(stderr, "Bailing out on age initialization\n");
+            exit(1);
+        }
 
 	for (i=0; i<population; i++) {
-		age[i] = prob_dist(age_start, age_dist, sizeof(age_start)/sizeof(age_start[0]))+((COV_rand() * 10));
+                int indx;
+                indx = rand_distr_indx(age_dst, 0, age_sz-1);
+		age[i] = age_start[indx] + COV_rand()*10;
 	}
+        free(age_dst);
 
 
 /* Uncomment to test age distribution.  Tested JMG 2020-03-20.
+        printf("Testing age distribuition\n");
 	int age_dist_test[9]={0};
 	for (i=0; i<population; i++) {
 		age_dist_test[(int)floor(age[i]/10)]++;
 	}	
 
 	for (i=0; i<9; i++) {
-		printf("%i %f %f \n", i, age_dist_test[i]/(float)population, age_dist[i]) ; 
+		printf("%i %f %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
 	}
+        exit(0);
 */
 }
 
@@ -1044,13 +1020,13 @@ school or workplace. */
 	// Infections are randomly placed based on number of initial infections.  //
 	int county_count=0;
 	for (i=0; i<num_counties; i++) {
-		pop_percent[i]=county_size[i]/(double)population;
+		pop_percent[i]=(double)county_size[i]/population;
 		county_int[i]=i;
 	}
 
 	if (initial_infections[0]==0) {
 		for (i=0; i < num_infections; i++) {
-			j=prob_dist(county_int, pop_percent, num_counties);
+			j=rand_distr_indx(pop_percent, 0, num_counties-1);
 			initial_infections[j]++;
 		}
 	}

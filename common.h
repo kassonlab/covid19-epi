@@ -5,5 +5,6 @@
 
 /* Include files */
 #include "COV_rand.h"
+#include "prop_distribution.h"
 
 #endif /* __COMMON_H__ */
