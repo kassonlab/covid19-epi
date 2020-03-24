@@ -106,7 +106,7 @@ int prob_dist (int * val, double * prob, int arr_size) {
 
 	i = 0;
 	while( return_num < -999999 ) {
-		if (i==0 & ran_num<prob_dist[0]) {
+		if (i==0 && ran_num<prob_dist[0]) {
 			return_num=val[i];
 		} else if ( ( ran_num < prob_dist[i] ) && ( ran_num > prob_dist[i-1] ) ) {
 			return_num=val[i];
@@ -626,7 +626,7 @@ void workplace_dist_city(int * workplace, int * job_status, int ** job_status_co
 
 }
 
-float calc_kappa(float t, float tau, float symptomatic) {
+float calc_kappa(float t, float tau, int symptomatic) {
 
 	float kappa;
 	float t1;
@@ -677,7 +677,7 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 }
 
 
-void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* num_icu, int* infected, int* infectious, int* sus_list, int* hosp_list, int * hosp_pop, int * icu_pop, int* icu_list, float* tau, int population, int t) {
+void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* num_icu, int* infected, int* infectious, int* sus_list, int* hosp_list, int * hosp_pop, int * icu_pop, int* icu_list, float* tau, int population, float t) {
 
 	*num_sus=0;
 	*num_infectious=0;
@@ -707,7 +707,7 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 
 }
 
-float calc_household_infect(float kappa, float omega, float HH_size, float alpha, float severe) {
+float calc_household_infect(float kappa, float omega, int HH_size, float alpha, int severe) {
 
 	float betah=0.627; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.4 (Ferguson 2020)
 
@@ -715,7 +715,7 @@ float calc_household_infect(float kappa, float omega, float HH_size, float alpha
 
 }
 
-float calc_workplace_infect(int job_status, float kappa, float omega, float workplace_size, float severe) {
+float calc_workplace_infect(int job_status, float kappa, float omega, int workplace_size, int severe) {
 
 	float betap[]={0.0, 1.254, 1.254, 1.254, 0.627} ; // Spread in all types of schools (preschool to college) is twice that of workplace 
 	float psi[]={0.0, 0.1, 0.2, 0.25, 0.5} ; // Accounts for absenteeism based on severe illness. Ferguson Nature 2006
@@ -723,7 +723,7 @@ float calc_workplace_infect(int job_status, float kappa, float omega, float work
 	return(betap[job_status]*kappa*(1+severe*(omega*psi[job_status]-1))/(workplace_size));
 }
 
-float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, float *community_den) {
+float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, float * community_den) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
 	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
@@ -1075,10 +1075,10 @@ int main (int argc, char *argv[]) {
 				if (d<40) {
 					age_group=floor(age[sus_person]/5);
 					community_nom+=calc_community_infect( age_group, kappa, omega, severe[infec_person], d, &community_den);
+			                infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
 				}
 			}
 	
-			infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
 
 
 			//### Probability of being infected ####
