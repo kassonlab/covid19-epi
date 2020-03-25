@@ -681,8 +681,8 @@ float calc_household_infect(float kappa, float omega, int HH_size, float alpha, 
 
 float calc_workplace_infect(int job_status, float kappa, float omega, int workplace_size, int severe, float * Iw) {
 
-	float betap[]={0.0, 1.254, 1.254, 1.254, 0.627} ; // Spread in all types of schools (preschool to college) is twice that of workplace 
-	float psi[]={0.0, 0.1, 0.2, 0.25, 0.5} ; // Accounts for absenteeism based on severe illness. Ferguson Nature 2006
+	float betap[]={0.0, 1.254, 1.254, 1.254, 0.627, 0.15627} ; // Spread in all types of schools (preschool to college) is twice that of workplace 
+	float psi[]={0.0, 0.1, 0.2, 0.25, 0.5, 0.5} ; // Accounts for absenteeism based on severe illness. Ferguson Nature 2006
 
 	return(Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
@@ -975,7 +975,7 @@ school or workplace. */
 	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
 	interIh[3]=1.0;
 	complyI[3]=0.5;
-	tauI[3]=1;
+	tauI[3]=1.5;
 	personinter=0;
 
 	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
@@ -983,7 +983,7 @@ school or workplace. */
 	float interIw4[6]={0,0,0,0,0, Ihosp};
 	interIh[4]=2.0;
 	complyI[4]=0.5;
-	tauI[4]=1;
+	tauI[4]=1.5;
 	personinter=0;
 
 	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 70% comply*/
@@ -1179,7 +1179,7 @@ school or workplace. */
 
 				infec_person=infectious[j];
 				/* Determine if person is under individual interventions and set parameters */
-				if (intervene[infec_person] == 1) {
+				if (intervene[infec_person] == 1 && t>tau[infec_person]+tauI[interventions]) {
 					Ih=interIh[interventions];
 					Ic=interIc[interventions];
 					Iw=interIw[interventions];
