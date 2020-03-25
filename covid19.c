@@ -800,6 +800,10 @@ int main (int argc, char *argv[]) {
 	int interventions=0; // Value of interventions.
 	float tauI_onset=0; //time after start of simulation that interventions for whole community take place.
         int ret;
+
+        /* Timing variables */
+        struct timespec T1, T2, t1, t2;
+        double step_time, nsdiv = 1000*1000*1000;
 	
 	/* Parse command-line arguments */
   	for (i=1;i<argc;i++) {
@@ -1025,11 +1029,6 @@ school or workplace. */
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
 
-	/* Testing parameters */
-	time_t start;
-	time_t end;
-	time_t diff=0;
-
 	/* Initialize age distribution */
 	age_dist(age, population);
 
@@ -1131,8 +1130,9 @@ school or workplace. */
 	float t=0;
 	float time_step=0;
 	/* Start simulation */			
+        ret = clock_gettime(CLOCK_MONOTONIC, &T1);
 	for (time_step=0; time_step<(tot_time/dt); time_step++) {
-		start=time(NULL);
+                ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 		t=t+dt;
 
 		/* count origin of contacts */	
@@ -1315,11 +1315,14 @@ school or workplace. */
 			}
 		}
 
-	end=time(NULL);
-	time_t step_time=end-start;			
-	printf("%ld Time %2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
+        ret = clock_gettime(CLOCK_MONOTONIC, &t2);
+        step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
+	printf("Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
 	fflush(stdout);
 	}
+        ret = clock_gettime(CLOCK_MONOTONIC, &T2);
+        step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
+        printf("Total time %8.3f\n", step_time);
 	
 	free(HH);
 	free(per_HH_size);
