@@ -234,6 +234,8 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	while (( HH_count < num_households ) && (HH_count < num_km)) {
 		min_dist=1000000;
 		int got = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_density_init_num[HH_count]);
+  		if (got != 3) break; // wrong number of tokens - maybe end of file
+
 		tot_pop_density+=pop_density_init_num[HH_count];
 
 		// Determine city of each population square.  Use city data to determine which schools students attend.  Workplaces are placed by county. //
@@ -249,8 +251,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		county_num=city_county[tmp_city];
 		tmp_county_count[county_num]++; 
 		tmp_county_density[county_num]+=pop_density_init_num[HH_count]; 
-
-  		if (got != 3) break; // wrong number of tokens - maybe end of file
 
 		while ( age[HH_person]<20 ) {
 			HH_person++;
@@ -388,6 +388,7 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 
 	for (i=0; i < 2000; i++) {
 		int got = fscanf(fp, "%[^,\n]%*c%[^,\n]%*c%[^,\n]%*c%f%*c%f\n", tmp1, tmp, tmp2, &tmp_lat, &tmp_lon);
+  		if (got != 5) break; // wrong number of tokens - maybe end of file
 			
 		/* Save city name, longitude, latitude, and increase number of cities. Looking at unique municipalities.*/
 		cities[*num_cities]=tmp1;
@@ -405,7 +406,6 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 				printf("no_county_match %s %s %i %i\n", county_names[j], tmp2, j, strcmp(county_names[j], tmp2));
 			}	
 		}
-  		if (got != 5) break; // wrong number of tokens - maybe end of file
 	}
 
 	fclose(fp);
