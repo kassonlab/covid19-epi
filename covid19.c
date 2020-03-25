@@ -1252,7 +1252,7 @@ school or workplace. */
 					}
 
 					// Community transmission // 
-					if (d<40) {
+					if (d<100) {
 						age_group=floor(age[sus_person]/5);
 						community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, &community_den);
 						contact_commun++;
