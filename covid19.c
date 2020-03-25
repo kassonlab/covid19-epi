@@ -604,12 +604,13 @@ float calc_kappa(float t, float tau, int symptomatic) {
 	return(kappa);
 }
 
-int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt) {
+int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t) {
 
 	int person_infected=0;
 	int tmp_infect=0;
 	int i;
 
+		
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
 		while ((tmp_infect<initial_infections[i])) {
@@ -623,7 +624,8 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 				if (COV_rand() < symptomatic_per) {
 					symptomatic[person_infected]=1;
 				}
-				tau[person_infected]=-COV_rand() * 5;
+		//		tau[person_infected]=-COV_rand() * 5;
+				tau[person_infected]=t;
 				infected_list[*num_infect]=person_infected;
 				*num_infect=*num_infect+1;
 				tmp_infect++;
@@ -642,8 +644,8 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 	*num_hosp=0;
 	*num_icu=0;
 
-	int i;
-	int j;
+//	int i;
+//	int j;
 	for (i=0; i<population; i++) {
 		if (infected[i]==0) {
 			sus_list[*num_sus]=i;
@@ -792,7 +794,7 @@ use as: ./covid -pop 100000 -sim_time 100 % for a population of 100,000 and a si
 int main (int argc, char *argv[]) {
 
 	/* Parameters available to change with command line */
-	int population = 1000;  // Size of total population
+	int population = 10000;  // Size of total population
 	int tot_time=500; // Simulation time. 
 	int initial_infections[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //Initial infections per county.
 	float percent_infect=0.001 ; // Default 1% of population initially infected.
@@ -816,6 +818,8 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-initial")) for (j=0; j<21; j++) initial_infections[j]=atof(argv[++i]);
   	}
 
+	printf("here");
+	fflush(stdout);
 	float HH_size = 2.2 ; // Average household size from OCED 
 	int num_households = (int)(population/HH_size); // Number of households in population
 	int * HH;  // Households 
@@ -857,6 +861,8 @@ int main (int argc, char *argv[]) {
 	memset(city_int, 0, 2000*sizeof(int));
 
 
+	printf("here");
+	fflush(stdout);
 	/* City information for allocating schools. */
 	
 	/* Initialize and allocate arrays */
@@ -907,6 +913,8 @@ int main (int argc, char *argv[]) {
 	int * sus_list; //Indices of susceptible.
 	sus_list = (int*)calloc(population,sizeof(int));
 
+	printf("here");
+	fflush(stdout);
 	/* Parameters pertaining to the population.  These could be made into a struct later to look nicer. */
 	int sus_person; //Counter for susceptible person.
 	int infec_person; //Counter for infected person.
@@ -944,6 +952,8 @@ int main (int argc, char *argv[]) {
 	intervene = (int*)calloc(population,sizeof(int));
 	
 
+	printf("here");
+	fflush(stdout);
 	/**** Introduce Interventions: must include documentation for values *****/
 	/* No interventions. */
 	interIc[0]=1.0;
@@ -1029,16 +1039,20 @@ school or workplace. */
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
 
+	printf("here");
+	fflush(stdout);
 	/* Initialize age distribution */
 	age_dist(age, population);
 
 	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_int, city_county, county_name, num_counties) ;
 
+	printf("here");
 	/* Checking data */
 	for (i=0; i<num_cities; i++) {
 //		printf("cities %i %i %i %i lat %f lon %f \n", i, city_int[i], city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
+	printf("here");
 	/* Initialize households */
 	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop) ;
 
@@ -1057,8 +1071,25 @@ school or workplace. */
 		tot+=county_size[i];
 	}
 
-
+	printf("here");
 	// Infections are randomly placed based on number of initial infections.  //
+	// Includes infections from t=-11 to t=-1.
+	// Percent per county taken from C19.se infections as of 2020/3/25.
+	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
+	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
+	float initialize[11]={4744, 5000, 3462, 2051, 2949, 1667, 1923, 385, 769, 897, 769};
+	float tmp_t;
+	for ( i=1; i<11; i++ ) {
+		tmp_t = -i;
+		for ( j=0; j<21; j++ ) {
+			initial_infections[j]=initial_per[j]*initialize[i]*population/tot_pop;
+			printf("initial_infect %i %i %i %f \n", j, initial_infections[j], county_size[j], pop_percent[j]);
+		}
+			/* Randomly assign initial infections */
+			infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t) ;
+	}		
+
+/* Old initialization of infection
 	int county_count=0;
 	for (i=0; i<num_counties; i++) {
 		pop_percent[i]=(double)county_size[i]/population;
@@ -1076,7 +1107,7 @@ school or workplace. */
 			initial_infections[j]++;
 		}
 	}
-
+*/
 	// Uncomment to see initial distribution of infections by county.
 	for (i=0; i<num_counties; i++) {
 	//	printf("initial_infect %i %i %i %f \n", i, initial_infections[i], county_size[i], pop_percent[i]);
@@ -1104,8 +1135,6 @@ school or workplace. */
 	/* Initialization complete... start simulation */
 
 	/* Seed infections */
-	/* Randomly assign initial infections */
-	infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt) ;
 
 
 	/* Initialize constants */
