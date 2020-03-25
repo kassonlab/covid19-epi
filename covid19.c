@@ -422,8 +422,16 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 		if (age[i]<1 || age[i]>75) {
 			job_status[i]=0;
 			job_status_city[0][county[i]]++;
-		} else if (age[i]>=1 && age[i]<6) {
-			if (COV_rand() < 0.9000) {
+		} else if (age[i]>=1 && age[i]<3) {
+			if (COV_rand() < 0.7800) {
+				job_status[i]=1;
+				job_status_city[1][county[i]]++;
+			} else {
+				job_status[i]=0;
+				job_status_city[0][county[i]]++;
+			}	
+		} else if (age[i]>=3 && age[i]<6) {
+			if (COV_rand() < 0.9500) {
 				job_status[i]=1;
 				job_status_city[1][county[i]]++;
 			} else {
@@ -505,8 +513,9 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 
 void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, int* class) {
 
-	int pp_class = 15; //Assumption of 15 children per class.
-	int pp_school = 200; //Assumption of 200 children per school.
+	int pp_class = 19; //Assumption of 15 children per class.
+	int pp_preschool = 53; //Assumption of 200 children per school.
+	int pp_school = 220; //Assumption of 200 children per school.
 	int pp_hospital = 120; //Assumption of 120 people per hospital.
 	int pp_work = 15; //Assumption of 15 people per close work group.
 	int i;
@@ -517,7 +526,17 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 	memset(num_workplaces2, 0, 6*sizeof(int));
 
 	for (i=0; i < num_counties; i++) {
-		for (j=0; j<4; j++) {
+		for (j=0; j<2; j++) {
+			/* First only schools then workplaces */
+			if (job_status_county[j][i]>0) {
+				num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_preschool);
+				num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_preschool);
+				if (num_workplaces2[j]>*max_num_WP) {
+					*max_num_WP=num_workplaces2[j];
+				}
+			}
+		}
+		for (j=2; j<4; j++) {
 			/* First only schools then workplaces */
 			if (job_status_county[j][i]>0) {
 				num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_school);
