@@ -783,6 +783,7 @@ int main (int argc, char *argv[]) {
 	float dt=1.00; // Time step.
 	int interventions=0; // Value of interventions.
 	float tauI_onset=0; //time after start of simulation that interventions for whole community take place.
+        int ret;
 	
 	/* Parse command-line arguments */
   	for (i=1;i<argc;i++) {
@@ -1028,8 +1029,9 @@ school or workplace. */
 
 
 	/* Evenly distribute infection by population */
-	double pop_percent[3000]; // Percent for random probability distribution.
-	memset(pop_percent, 0, num_counties*sizeof(double));
+	double *pop_percent; // Percent for random probability distribution.
+        pop_percent = (double *)malloc(num_counties * sizeof(double));
+        double *pop_prob_dist;
 	float tot=0;
 	for (i=0; i < num_counties; i++) {
 		if (county_size[i]>0) {
@@ -1048,9 +1050,14 @@ school or workplace. */
 		county_int[i]=i;
 	}
 
+        ret = generate_inc_distr_vec(&pop_prob_dist, pop_percent, num_counties, "population per county");
+        if (ret) {
+            fprintf(stderr, "Bailing out due to county distribution errors\n");
+            exit(1);
+        }
 	if (initial_infections[0]==0) {
 		for (i=0; i < num_infections; i++) {
-			j=rand_distr_indx(pop_percent, 0, num_counties-1);
+			j=rand_distr_indx(pop_prob_dist, 0, num_counties-1);
 			initial_infections[j]++;
 		}
 	}
