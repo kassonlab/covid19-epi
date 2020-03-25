@@ -1072,17 +1072,20 @@ school or workplace. */
 	}
 
 	printf("here");
+	fflush(stdout);
 	// Infections are randomly placed based on number of initial infections.  //
 	// Includes infections from t=-11 to t=-1.
 	// Percent per county taken from C19.se infections as of 2020/3/25.
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
-	float initialize[11]={4744, 5000, 3462, 2051, 2949, 1667, 1923, 385, 769, 897, 769};
+//	float initialize[11]={4744, 5000, 3462, 2051, 2949, 1667, 1923, 385, 769, 897, 769};
+//	float initialize[11]={0,0,0,0,0,4,0,0,0,0,0};
+	float initialize[11]={0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0};
 	float tmp_t;
-	for ( i=1; i<11; i++ ) {
+	for ( i=1; i<12; i++ ) {
 		tmp_t = -i;
 		for ( j=0; j<21; j++ ) {
-			initial_infections[j]=initial_per[j]*initialize[i]*population/tot_pop;
+			initial_infections[j]=initial_per[j]*initialize[i-1]*population/tot_pop;
 			printf("initial_infect %i %i %i %f \n", j, initial_infections[j], county_size[j], pop_percent[j]);
 		}
 			/* Randomly assign initial infections */
