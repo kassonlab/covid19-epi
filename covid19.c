@@ -1239,7 +1239,7 @@ school or workplace. */
 					}
 					// Household transmission //
 					if (HH[sus_person]==HH[infec_person]) {
-						infect+=0.5*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
+						infect+=0.25*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
 				//	printf("family_hosp  %f\n ", infect);
 					}
 
