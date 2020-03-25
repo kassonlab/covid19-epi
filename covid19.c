@@ -252,9 +252,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		tmp_county_count[county_num]++; 
 		tmp_county_density[county_num]+=pop_density_init_num[HH_count]; 
 
-		while ( age[HH_person]<20 ) {
-			HH_person++;
-		}
 		/* Set up household */
 		lat_HH[HH_count]=tmp_lat;	
 		lon_HH[HH_count]=tmp_lon;
