@@ -951,27 +951,27 @@ int main (int argc, char *argv[]) {
 	personinter=0;
 
 	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3. Assuming no increase in community transmission as students would be working online at the times they would be in college class.*/
-	interIc[1]=1.00;
+	interIc[1]=1.25;
 	float interIw1[6]={0, 1, 1, 0, 1, Ihosp};
-	interIh[1]=1.00;
+	interIh[1]=1.50;
 	complyI[1]=1.0;
 	tauI[1]=0;
 	personinter=1;
 	
-	/* Intervention 2: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 30% ** Check number ** in workplace interactions to account for parents becoming childcare.  Children have 50% increase in household transmission and 25% increase in community transmission .*/
+	/* Intervention 2: school closures of all schools. No school transmission for job_status 1, 2, and 3, reduction of 5% in workplace interactions to account for parents becoming childcare.  Children have 50% increase in household transmission and 25% increase in community transmission .*/
 	interIc[2]=1.25;
-	float interIw2[6]={0, 0, 0, 0, 0.7, Ihosp};
+	float interIw2[6]={0, 0, 0, 0, 1.0, Ihosp};
 	interIh[2]=1.50;
 	complyI[2]=1.0;
 	tauI[2]=0;
-	personinter=1;
+	personinter=0;
 
 	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 70% comply, householdi contacts remain the same, 25% contact with community, no contact with 
 school or workplace. */
 	interIc[3]=0.25;
 	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
 	interIh[3]=1.0;
-	complyI[3]=0.5;
+	complyI[3]=0.7;
 	tauI[3]=1.5;
 	personinter=0;
 
@@ -985,30 +985,30 @@ school or workplace. */
 
 	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 70% comply*/
 	interIc[5]=0.25;
-	float interIw5[6]={0, 0.75, 0.75, 0.75, 0.75, Ihosp};
+	float interIw5[6]={0, 1.00, 1.00, 1.00, 0.75, Ihosp};
 	interIh[5]=1.25;
 	complyI[5]=0.70;
 	tauI[5]=0;
 	personinter=1;
 
-	/* Intervention 6: social isolation of everyone.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. */
-	interIc[6]=0.75;
+	/* Intervention 6: social isolation of everyone.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
+	interIc[6]=0.25;
 	float interIw6[6]={0,0,0,0,0.25, Ihosp};
-	interIh[6]=2.0;
+	interIh[6]=1.5;
 	complyI[6]=0.7;
 	tauI[6]=0;
 	personinter=1;
 
 	/* Intervention 7: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions.  50% increase in household transmission and 25% increase in community transmission .*/
 
-	interIc[7]=1.25;
+	interIc[7]=1.50;
 	float interIw7[6]={0, 0, 0, 0, 0.25, Ihosp};
 	interIh[7]=1.50;
 	complyI[7]=1.0;
 	tauI[7]=0;
 	personinter=1;
 
-	/* Intervention 8: School closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. */
+	/* Intervention 8: School closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. NOT IN USE*/
 
 	interIc[8]=0.25;
 	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
@@ -1155,7 +1155,19 @@ school or workplace. */
 				intervene[i]=round(COV_rand()*complyI[interventions]);
 			}
 	//		printf("here1 %f %f %f %f %f %f %f %f %f %i \n", Iw[0], Iw[1], Iw[2], Iw[3], Iw[4], Iw[5], tauI_onset, Ic, Ih, interventions);
-		}
+		} else if (interventions == 2 && t >= tauI_onset && t <= tauI_onset+dt) {
+			for ( i=0; i<population; i++ ) {
+				if (age[i]>1 && age[i]<22) {
+					intervene[i]=1;	
+				} 
+			}
+		} else if (interventions == 1 && t >= tauI_onset && t <= tauI_onset+dt) {
+			for ( i=0; i<population; i++ ) {
+				if (age[i]>=15 && age[i]<22) {
+					intervene[i]=1;	
+				} 
+			}
+		}	
 
 		/* Segment population into infectious, susceptible, hospitalized, and icu */
 		segment_population( &num_sus,  &num_infectious,  &num_hosp,  &num_icu,  infected,  infectious,  sus_list,  hosp_list,  hosp_pop,  icu_pop,  icu_list,  tau, population, t) ;
