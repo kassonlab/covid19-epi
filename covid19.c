@@ -705,6 +705,7 @@ float calc_community_infect(int age_group, float kappa, float omega, int severe,
 	return(zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
+
 void hosp_entry(float t, int num_infectious, int * infectious, float * age, int * icu_pop, int * hosp_pop, int * symptomatic, float * tau, int * workplace_tmp, int * workplace_num, int * county, float dt) {
 
 	float hosp[]={0.001, 0.003, 0.012, 0.032, 0.049, 0.102, 0.166, 0.243, 0.273}; //# From Ferguson 2020
@@ -850,6 +851,8 @@ int main (int argc, char *argv[]) {
 	float * lon; //longitude of person
 	lon = (float*)calloc(population,sizeof(float));
 	float * lat_city; //latitude of city i.
+	float * fd_tot; //additive kernel density function of person with respect to all other individuals
+	fd_tot = (float*)calloc(population,sizeof(float));
 	lat_city = (float*)calloc(2000,sizeof(float));
 	float * long_city; // longitude of city i.
 	long_city = (float*)calloc(2000,sizeof(float));
@@ -1152,6 +1155,14 @@ school or workplace. */
 	}
 
 
+	/* Precalculate total density kernel function for each individual */
+	for (i=0; i<population; i++) {
+		for (j=0; j<population; j++) {
+			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
+			fd_tot[i]+=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+		}
+	}
+
 	/* Initialization complete... start simulation */
 
 	/* Seed infections */
@@ -1175,9 +1186,6 @@ school or workplace. */
 	float infect_house=0;
 	float infect_work=0;
 
-		   float avg_commun=0;
-		float num_commun=0;	
-		float std_dev_avg=0;
 	Ic=1;
 	float t=0;
 	float time_step=0;
@@ -1275,12 +1283,9 @@ school or workplace. */
 					}
 
 					// Community transmission // 
-					if (d<100) {
-						age_group=floor(age[sus_person]/5);
-						community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, &community_den);
-						contact_commun++;
-//						printf("commm %f \n", infect, community_nom, community_den);
-					}
+					age_group=floor(age[sus_person]/5);
+					community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, &community_den);
+					contact_commun++;
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
 					// Workplace/School transmission: People must be in same workplace and job type. // 
@@ -1298,12 +1303,7 @@ school or workplace. */
 			}
 	
                         if (community_den > 0) {
-//                            printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den, infect);
-			   avg_commun+=community_nom/community_den;
-				std_dev_avg+=(community_nom/community_den)*(community_nom/community_den);
-				num_commun++;
-//			    community_den+=(tot_pop-contact_commun)*.000001;
-                            infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
+                            infect+=community_nom/fd_tot[sus_person]; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
                         }
 
 
@@ -1375,8 +1375,6 @@ school or workplace. */
         step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
 	printf("Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
 	fflush(stdout);
-	avg_commun/=num_commun;
-	printf("average_comm %f %f \n", avg_commun, sqrt(fabsf(std_dev_avg/num_commun-(avg_commun*avg_commun))));
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
