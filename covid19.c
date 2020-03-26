@@ -441,8 +441,8 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 		} else if (age[i]>=15 && age[i]<22) {
 			job_status[i]=3;
 			job_status_city[3][county[i]]++;
-		} else if (age[i]>=22 && age[i]<=75) {
-			if (COV_rand() < 0.734) {
+		} else if (age[i]>=22 && age[i]<=65) {
+			if (COV_rand() < 0.773) {
 				// 17.25% of workforce is in healthcare from OECD 2017 statstics.  Assume 1/4 of these are in hospitals. 
 				if (COV_rand() < 0.04325) {
 					job_status[i]=5;
@@ -455,39 +455,17 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 				job_status[i]=0;
 				job_status_city[0][county[i]]++;
 			}
-		}
-	}
-
-/* CITY VERSION NOT IN USE All currently randomly placed based on county.  Would like to do per town but each town needs inhabitants. 
-	for (i=0; i < population; i++) {
-		if (age[i]<1 || age[i]>75) {
-			job_status[i]=0;
-			job_status_city[0][city[i]]++;
-		} else if (age[i]>=1 && age[i]<6) {
-			if (COV_rand() < 0.9000) {
-				job_status[i]=1;
-				job_status_city[1][city[i]]++;
-			} else {
-				job_status[i]=0;
-				job_status_city[0][city[i]]++;
-			}	
-		} else if (age[i]>=6 && age[i]<15) {
-			job_status[i]=2;
-			job_status_city[2][city[i]]++;
-		} else if (age[i]>=15 && age[i]<22) {
-			job_status[i]=3;
-			job_status_city[3][city[i]]++;
-		} else if (age[i]>=22 && age[i]<=75) {
-			if (COV_rand() < 0.734) {
+		} else if (age[i]>=65 && age[i]<=75) {
+			if (COV_rand() < 0.172) {
 				job_status[i]=4;
 				job_status_city[4][county[i]]++; // Workplace is based on county, not city.
 			} else {
 				job_status[i]=0;
-				job_status_city[0][city[i]]++;
+				job_status_city[0][county[i]]++;
 			}
 		}
 	}
-	*/
+
 
 /* Uncomment to test job distribution.  Tested JMG 2020-03-20. 
 	int job_dist_test[5]={0};
@@ -604,35 +582,62 @@ float calc_kappa(float t, float tau, int symptomatic) {
 	return(kappa);
 }
 
-int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t) {
+int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * tmp_lat, float * tmp_lon, float * lat, float * lon, int * num_infect_county) {
 
 	int person_infected=0;
 	int tmp_infect=0;
 	int i;
-
-		
+	float min_diff;
+	float diff_lat_lon;
+	
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
 		while ((tmp_infect<initial_infections[i])) {
-			person_infected=(int)(COV_rand() * population);
-
-			if ((county[person_infected]==i) && (infected[person_infected]==0)) {
-	
-				infected[person_infected]=1;
-				severe[person_infected]=(int)(COV_rand() * 2);
-	
-				if (COV_rand() < symptomatic_per) {
-					symptomatic[person_infected]=1;
+			int tmp_j=0;
+			//printf("infec %i %i %i \n", person_infected, infected[person_infected], j);
+			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
+			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>0.2) && tmp_j<population) {
+				person_infected=(int)(COV_rand() * population);
+				min_diff=1000;
+				if (t<-10 || num_infect_county[i]==0 ) {
+					diff_lat_lon=0;
+				} else {
+					for (j=0; j<*num_infect; j++) {
+						diff_lat_lon=(fabsf(tmp_lat[j]-lat[person_infected])+fabsf(tmp_lon[j]-lon[person_infected]));
+						if (diff_lat_lon<min_diff) {
+							min_diff=diff_lat_lon;
+						}
+					}
 				}
-		//		tau[person_infected]=-COV_rand() * 5;
-				tau[person_infected]=t;
-				infected_list[*num_infect]=person_infected;
-				*num_infect=*num_infect+1;
-				tmp_infect++;
+		//				printf("dist %f %f %i %i \n", min_diff, diff_lat_lon, tmp_j, person_infected);
+				tmp_j++;
 			}
-			
+			if (diff_lat_lon>1) {
+				while ((county[person_infected]!=i) || (infected[person_infected]!=0)) {
+					person_infected=(int)(COV_rand() * population);
+				}
+				printf("nocluster");
+			}
+
+			infected[person_infected]=1;
+			severe[person_infected]=(int)(COV_rand() * 2);
+
+			//	printf("dist %f %f %i %i %i \n", min_diff, diff_lat_lon, j, person_infected, infected[person_infected]);
+			if (COV_rand() < symptomatic_per) {
+				symptomatic[person_infected]=1;
+			}
+	//		tau[person_infected]=-COV_rand() * 5;
+			tau[person_infected]=t;
+			infected_list[*num_infect]=person_infected;
+			tmp_lat[*num_infect]=lat[person_infected];
+			tmp_lon[*num_infect]=lon[person_infected];
+			*num_infect=*num_infect+1;
+			num_infect_county[i]++;
+			tmp_infect++;
 		}
+			
 	}
+				
 	return(infected_list);
 }
 
@@ -695,6 +700,8 @@ float calc_community_infect(int age_group, float kappa, float omega, int severe,
 
 	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
 	*community_den=*community_den+fd;
+	float comm_nom=zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1));
+//	printf("community den %f fd %f kappa %f nom %f d %f severe %i omega %f betac %f zeta %f age %i\n", *community_den, fd, kappa, comm_nom, d, severe, omega, betac, zeta[age_group], age_group);  
 	return(zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
@@ -1078,20 +1085,30 @@ school or workplace. */
 	// Percent per county taken from C19.se infections as of 2020/3/25.
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
-//	float initialize[11]={4744, 5000, 3462, 2051, 2949, 1667, 1923, 385, 769, 897, 769};
-//	float initialize[11]={0,0,0,0,0,4,0,0,0,0,0};
-	float initialize[11]={0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0};
+	float initialize[11]={4744, 5000, 3462, 2051, 2949, 1667, 1923, 385, 769, 897, 769};
+	float * tmp_lat;
+	tmp_lat = (float*)calloc(population,sizeof(float));
+	float * tmp_lon;
+	tmp_lon = (float*)calloc(population,sizeof(float));
+//	float initialize[11]={100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000};
 	float tmp_t;
-	for ( i=1; i<12; i++ ) {
-		tmp_t = -i;
+	int * num_infect_county;
+	num_infect_county = (int*)calloc(population,sizeof(int));
+	for ( i=-12; i<0; i++ ) {
+		tmp_t = i;
+		int l=-1*i+1;
+		printf(" time %i %f %f ", l, tmp_t, initialize[l]);
+		fflush(stdout);
 		for ( j=0; j<21; j++ ) {
-			initial_infections[j]=initial_per[j]*initialize[i-1]*population/tot_pop;
+			initial_infections[j]=initial_per[j]*initialize[(-1*i)-1]*population/tot_pop;
 			printf("initial_infect %i %i %i %f \n", j, initial_infections[j], county_size[j], pop_percent[j]);
 		}
 			/* Randomly assign initial infections */
-			infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t) ;
+			infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, tmp_lat, tmp_lon, lat, lon, num_infect_county) ;
 	}		
 
+	printf("out of initialize");
+	fflush(stdout);
 /* Old initialization of infection
 	int county_count=0;
 	for (i=0; i<num_counties; i++) {
@@ -1158,6 +1175,9 @@ school or workplace. */
 	float infect_house=0;
 	float infect_work=0;
 
+		   float avg_commun=0;
+		float num_commun=0;	
+		float std_dev_avg=0;
 	Ic=1;
 	float t=0;
 	float time_step=0;
@@ -1259,8 +1279,7 @@ school or workplace. */
 						age_group=floor(age[sus_person]/5);
 						community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, &community_den);
 						contact_commun++;
-
-			//			printf("commm %f \n", infect);
+//						printf("commm %f \n", infect, community_nom, community_den);
 					}
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
@@ -1279,7 +1298,11 @@ school or workplace. */
 			}
 	
                         if (community_den > 0) {
-                            //printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den);
+//                            printf("commun  %f %f %f \n", community_nom, community_den, community_nom/community_den, infect);
+			   avg_commun+=community_nom/community_den;
+				std_dev_avg+=(community_nom/community_den)*(community_nom/community_den);
+				num_commun++;
+//			    community_den+=(tot_pop-contact_commun)*.000001;
                             infect+=community_nom/community_den; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
                         }
 
@@ -1288,6 +1311,7 @@ school or workplace. */
 			infect_prob=(1-exp(-infect*dt));
 			//### Monte carlo type prediction ###
 			if (COV_rand() < infect_prob) {
+		//		printf("infected %f %f %f \n", infect, infect_prob, community_nom/community_den);
 				infected[sus_person]=1;
 				tau[sus_person]=t;
 				severe[sus_person]=round(COV_rand());
@@ -1351,6 +1375,8 @@ school or workplace. */
         step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
 	printf("Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
 	fflush(stdout);
+	avg_commun/=num_commun;
+	printf("average_comm %f %f \n", avg_commun, sqrt(fabsf(std_dev_avg/num_commun-(avg_commun*avg_commun))));
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
