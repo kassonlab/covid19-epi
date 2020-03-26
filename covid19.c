@@ -433,7 +433,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 			fprintf(*stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/county_size[j]) ;
 			 
 		}
-		fprintf(*stats, "/n");
+		fprintf(*stats, "\n");
 	}
 
 //	
@@ -1441,7 +1441,6 @@ school or workplace. */
 	fflush(output_file);
 	
 	for (file_count=0; file_count<num_counties; file_count++) {
-		printf("here %i", file_count);
 		fprintf(county_files[file_count], "Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_county[file_count], num_infectious_county[file_count], num_hosp_county[file_count], num_icu_county[file_count], num_dead_county[file_count], num_recovered_county[file_count], num_recovered_hosp_county[file_count], num_recovered_icu_county[file_count], num_contact_work_county[file_count], num_contact_school_county[file_count], num_contact_house_county[file_count], num_contact_commun_county[file_count], county_size[file_count]);
 		fflush(county_files[file_count]);
 	}
