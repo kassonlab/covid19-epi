@@ -127,52 +127,6 @@ void age_dist (float * age, int population, FILE** stats, int * age_distrib) {
 }
 
 
-void HH_dist(int * HH, float * age, float HH_size, int * per_HH_size, int num_households, int population) {
-
-	int i ; // Counter
-	int HH_count=0 ; // Counter
-	int HH_person=0 ; // Counter
-
-	/* Initially set all households to -1 */
-	for (i=0; i < population; i++) {
-		HH[i]=-1;
-	}
-
-	/* First add adult head of household to each household. */
-	while ( HH_count < num_households ) {
-		while ( age[HH_person]<20 ) {
-			HH_person++;
-		}
-		HH[HH_person]=HH_count;
-		HH_person++;
-		HH_count++;
-	}
-
-
-	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
-	for ( HH_person=0; HH_person<population ; HH_person++) {
-		if (HH[HH_person]==-1) {
-			HH[HH_person]=(int)(COV_rand() * num_households);
-		}
-	}
-
-	/* Get size of each household as an array */
-	for (HH_person=0; HH_person<population; HH_person++) {
-		per_HH_size[HH[HH_person]]++;
-	}
-
-/* Uncomment to test household distribution.  Tested JMG 2020-03-20.
-	int HH_dist_test[9]={0};
-	for (i=0; i<num_households; i++) {
-		HH_dist_test[(int)(per_HH_size[i])]++;
-	}	
-
-	for (i=0; i<9; i++) {
-		printf("%i %f \n", i, HH_dist_test[i]/(float)num_households) ; 
-	}
-*/
-}
-
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
 void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE** stats) {
@@ -473,7 +427,6 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 		}
 	}	
 
-	printf("here");
 	fprintf(*stats, "Job Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<6; i++) {
@@ -623,7 +576,6 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 
 	int person_infected=0;
 	int tmp_infect=0;
-	int i;
 	float min_diff=1000;
 	float diff_lat_lon=10;
 	
@@ -631,7 +583,6 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 		tmp_infect=0;
 		while ((tmp_infect<initial_infections[i])) {
 			int tmp_j=0;
-			//printf("infec %i %i %i \n", person_infected, infected[person_infected], j);
 			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
 			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>0.2) && tmp_j<population) {
 				person_infected=(int)(COV_rand() * population);
@@ -646,20 +597,17 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 						}
 					}
 				}
-		//				printf("dist %f %f %i %i \n", min_diff, diff_lat_lon, tmp_j, person_infected);
 				tmp_j++;
 			}
 			if (diff_lat_lon>1) {
 				while ((county[person_infected]!=i) || (infected[person_infected]!=0)) {
 					person_infected=(int)(COV_rand() * population);
 				}
-				printf("nocluster");
 			}
 
 			infected[person_infected]=1;
 			severe[person_infected]=(int)(COV_rand() * 2);
 
-			//	printf("dist %f %f %i %i %i \n", min_diff, diff_lat_lon, j, person_infected, infected[person_infected]);
 			if (COV_rand() < symptomatic_per) {
 				symptomatic[person_infected]=1;
 			}
@@ -686,8 +634,6 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 	*num_infectious=0;
 	*num_hosp=0;
 	*num_icu=0;
-//	int i;
-//	int j;
 	for (i=0; i<population; i++) {
 		if (infected[i]==0) {
 			sus_list[*num_sus]=i;
@@ -755,8 +701,6 @@ void hosp_entry(float t, int num_infectious, int * infectious, float * age, int 
 	float hosp[]={0.001, 0.003, 0.012, 0.032, 0.049, 0.102, 0.166, 0.243, 0.273}; //# From Ferguson 2020
 	float icu[]={0.05, 0.05, 0.05, 0.05, 0.063, 0.122, 0.274, 0.432, 0.709} ; //# percent of hospitalized that need icu from Ferguson 2020.
 	int age_group; 
-	int i;
-	int j;
 	int infec_person;
 
 	for (i=0; i<num_infectious; i++) {
@@ -903,9 +847,6 @@ int main (int argc, char *argv[]) {
 	float tot_pop=10327589.; //For use of averaging counties only.  NOTE: land scan tot is 10,098,554, cannot use more inhabitants than that. 
 	char * county_name[]={"Stockholm", "Uppsala", "Sodermanland", "Ostergotland", "Jonkoping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Skane", "Halland", "Vastra Gotaland", "Varmland", "Orebro", "Vastmanland", "Dalarna", "Gavleborg", "Vasternorrland", "Jamtland", "Vasterbotten", "Norrbotten"}; 
 	float pop_county[]={2377081, 383713, 297540, 465495, 363599, 201469, 245446, 59686, 159606, 1377827, 333848, 1725881, 282414, 304805, 275845, 287966, 287382, 245347, 130810, 271736, 250093};
-//	char * county_name[]={"Stockholm/Uppsala", "Sodermanland", "Ostergotland", "Jonkoping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Skane", "Halland", "Vastra Gotaland", "Varmland", "Orebro", "Vastmanland", "Dalarna", "Gavleborg", "Vasternorrland", "Jamtland", "Vasterbotten", "Norrbotten"}; 
-//	float pop_county[]={2760794, 297540, 465495, 363599, 201469, 245446, 59686, 159606, 1377827, 333848, 1725881, 282414, 304805, 275845, 287966, 287382, 245347, 130810, 271736, 250093};
-	//Combine Stockholm/Uppsala for purposes of job allocating.
 	int num_counties=(sizeof(pop_county)/sizeof(pop_county[0]));
 	int county_int[num_counties]; // Integer values for random probability distribution. 
 	memset(county_int, 0, num_counties*sizeof(int));
@@ -924,7 +865,6 @@ int main (int argc, char *argv[]) {
 	int * county_size; // population of county i.
 	county_size = (int*)calloc(num_counties,sizeof(int));
 	char * city_names[2000]; //City name of city i.
-	char * city_county_names[2000];
 	int * city; // city of person i by integer assignment.
 	city = (int*)calloc(population,sizeof(int));
 	int * city_county; // county of person i by integer assignment.
@@ -953,7 +893,7 @@ int main (int argc, char *argv[]) {
 	int max_num_WP=0; // max workplaces per job_status for allocating array.
 
 	/* Parameters for infections */
-	int num_infections=(int)population*percent_infect; // Default is 10% of population has illness.
+//	int num_infections=(int)population*percent_infect; // Default is 10% of population has illness.
 	float symptomatic_per=0.67; // percent of people who are symptomatic.
 	int * infected; // 1 if person i has been infected, 0 otherwise
 	infected = (int*)calloc(population,sizeof(int));
@@ -1021,14 +961,12 @@ int main (int argc, char *argv[]) {
 	int * workplace_tmp; // Hospital location when people go into hospital.
 	workplace_tmp = (int*)calloc(population,sizeof(int));
 
-	int HH_tmp;
 	int age_group; 
 	float infect_prob=0; // Infectious probability
 	float d; //distance between people.
 	float community_nom=0; // For adding community infection.
 	float community_den=0; // For adding community infection.
 	float infect=0; //Infectiousness
-	float ran_num;
 	int file_count;
 
 	int num_I=7;
@@ -1122,8 +1060,6 @@ school or workplace. */
 	tauI[8]=0;
 	personinter=1;
 
-//	printf("interIc0 %f ", interIc[0]);
-
 	/* Make interIw array.*/
 	float *interIw[9]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8};
 
@@ -1139,7 +1075,6 @@ school or workplace. */
 //		printf("cities %i %i %i %i lat %f lon %f \n", i, city_int[i], city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
-	printf("here");
 	/* Initialize households */
 	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, &stats) ;
 
@@ -1155,28 +1090,24 @@ school or workplace. */
 		strcat(file_name, county_name[i]);
 		strcat(file_name, file_end);
 		county_files[i]=fopen(file_name, "w"); 
-		printf("%s", file_name);
 	}
 	file_beg="age_";
 	file_end=".log";
 	char str;
-	FILE** age_files = malloc(sizeof(FILE*) * 17);
-	for (i=0; i<85; i+=5) {
+	FILE** age_files = malloc(sizeof(FILE*) * 18);
+	for (i=0; i<90; i+=5) {
 		str=i;	
 		strcpy(file_name, "");
 		strcat(file_name, file_beg); 
 		sprintf(file_name, "%s%i", file_name, i);
-//		strcat(file_name, &str);
 		strcat(file_name, file_end);
 		age_files[(i/5)]=fopen(file_name, "w"); 
-		printf("%s", file_name);
 	}
 	FILE * output_file = fopen("covid19_spread.dat", "w");
 
 	/* Evenly distribute infection by population */
 	double *pop_percent; // Percent for random probability distribution.
         pop_percent = (double *)malloc(num_counties * sizeof(double));
-        double *pop_prob_dist;
 	float tot=0;
 	for (i=0; i < num_counties; i++) {
 		if (county_size[i]>0) {
@@ -1187,26 +1118,24 @@ school or workplace. */
 		tot+=county_size[i];
 	}
 
-	printf("here");
-	fflush(stdout);
 	// Infections are randomly placed based on number of initial infections.  //
 	// Includes infections from t=-11 to t=-1.
 	// Percent per county taken from C19.se infections as of 2020/3/25.
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
+	/***** THIS IS THE REAL INITIALIZATION ARRAY ******/
 //	float initialize[11]={4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678};
 	float * tmp_lat;
 	tmp_lat = (float*)calloc(population,sizeof(float));
 	float * tmp_lon;
 	tmp_lon = (float*)calloc(population,sizeof(float));
+	/**** TMP INTIALIZATION ARRAY ***/
 	float initialize[11]={1000000, 100000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
 	for ( i=0; i<12; i++ ) {
 		tmp_t = -i;
 		int l=i;
-		printf(" time %i %f %f ", l, tmp_t, initialize[l]);
-		fflush(stdout);
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l]*population/tot_pop;
 			fprintf(stats, "time %i county %i initial_infections %i percent %f total_intialized %f \n", i, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
@@ -1216,26 +1145,6 @@ school or workplace. */
 			infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, tmp_lat, tmp_lon, lat, lon, num_infect_county, num_infect_age, age) ;
 	}		
 
-
-/* Old initialization of infection
-	int county_count=0;
-	for (i=0; i<num_counties; i++) {
-		pop_percent[i]=(double)county_size[i]/population;
-		county_int[i]=i;
-	}
-
-        ret = generate_inc_distr_vec(&pop_prob_dist, pop_percent, num_counties, "population per county");
-        if (ret) {
-            fprintf(stderr, "Bailing out due to county distribution errors\n");
-            exit(1);
-        }
-	if (initial_infections[0]==0) {
-		for (i=0; i < num_infections; i++) {
-			j=rand_distr_indx(pop_prob_dist, 0, num_counties-1);
-			initial_infections[j]++;
-		}
-	}
-*/
 	// Uncomment to see initial distribution of infections by county.
 	for (i=0; i<num_counties; i++) {
 	//	printf("initial_infect %i %i %i %f \n", i, initial_infections[i], county_size[i], pop_percent[i]);
@@ -1287,9 +1196,6 @@ school or workplace. */
 	int num_contact_work=0;
 	int num_contact_school=0;	
 	int num_contact_house=0;
-	float infect_commun=0;
-	float infect_house=0;
-	float infect_work=0;
 	int num_contact_commun_county[21];	
 	int num_contact_commun_age[18];	
 	int num_contact_work_county[21];	
@@ -1304,7 +1210,7 @@ school or workplace. */
 		num_recovered_hosp_county[i]=0;
 		num_recovered_icu_county[i]=0;
 	}	
-	for (i=0; i<17; i++) {
+	for (i=0; i<18; i++) {
 		num_dead_age[i]=0;
 		num_recovered_age[i]=0;
 		num_recovered_hosp_age[i]=0;
@@ -1336,7 +1242,7 @@ school or workplace. */
 			num_icu_county[i]=0;
 			num_infectious_county[i]=0;
 		}	
-		for (i=0; i<17; i++) {
+		for (i=0; i<18; i++) {
 			num_contact_house_age[i]=0;	
 			num_contact_school_age[i]=0;	
 			num_contact_work_age[i]=0;	
@@ -1428,7 +1334,6 @@ school or workplace. */
 						} else {
 							contact_work++;
 						}
-			//		printf("work  %f %f %i %f \n", infect, Iw[job_status[sus_person]], job_status[sus_person], calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], Iw));
 					}
 
 					// Community transmission // 
@@ -1458,7 +1363,6 @@ school or workplace. */
 			infect_prob=(1-exp(-infect*dt));
 			//### Monte carlo type prediction ###
 			if (COV_rand() < infect_prob) {
-		//		printf("infected %f %f %f \n", infect, infect_prob, community_nom/community_den);
 				infected[sus_person]=1;
 				tau[sus_person]=t;
 				severe[sus_person]=round(COV_rand());
