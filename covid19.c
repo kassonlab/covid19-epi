@@ -584,7 +584,7 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 		while ((tmp_infect<initial_infections[i])) {
 			int tmp_j=0;
 			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
-			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>0.2) && tmp_j<population) {
+			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>1.0) && tmp_j<population) {
 				person_infected=(int)(COV_rand() * population);
 				min_diff=1000;
 				if (t<-10 || num_infect_county[i]==0 ) {
@@ -1130,12 +1130,11 @@ school or workplace. */
 	float * tmp_lon;
 	tmp_lon = (float*)calloc(population,sizeof(float));
 	/**** TMP INTIALIZATION ARRAY ***/
-	float initialize[11]={1000000, 100000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};
+	float initialize[11]={100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
-	for ( i=0; i<12; i++ ) {
-		tmp_t = -i;
-		int l=i;
+	for ( tmp_t=-11; tmp_t<0; tmp_t++ ) {
+		int l=(tmp_t+11);
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l]*population/tot_pop;
 			fprintf(stats, "time %i county %i initial_infections %i percent %f total_intialized %f \n", i, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
