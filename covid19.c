@@ -221,7 +221,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		county_list[HH_count][locale_count[HH_count]]=HH_count;
 		locale_HH_count[HH_count]+=1;
 		locale_count[HH_count]+=1;
-		per_HH_size[HH_count]=
 		HH_count++;
 	}
 
