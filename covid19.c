@@ -1151,21 +1151,21 @@ school or workplace. */
 	// Percent per county taken from C19.se infections as of 2020/3/25.
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
-	/***** THIS IS THE REAL INITIALIZATION ARRAY ******/
-//	float initialize[11]={4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678};
+	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
+//	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	float * tmp_lat;
 	tmp_lat = (float*)calloc(population,sizeof(float));
 	float * tmp_lon;
 	tmp_lon = (float*)calloc(population,sizeof(float));
 	/**** TMP INTIALIZATION ARRAY ***/
-	float initialize[11]={100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000};
+	float initialize[15]={500000, 400000, 200000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 1000, 1000, 1000, 1000};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
-	for ( tmp_t=-11; tmp_t<0; tmp_t++ ) {
-		int l=(tmp_t+11);
+	for ( tmp_t=-14; tmp_t<=0; tmp_t++ ) {
+		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l]*population/tot_pop;
-			fprintf(stats, "time %i county %i initial_infections %i percent %f total_intialized %f \n", i, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
+			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
 		}
 		fprintf(stats, "\n\n");
 			/* Randomly assign initial infections */
@@ -1422,7 +1422,7 @@ school or workplace. */
 				num_infect_county[county[sus_person]]++;
 				num_infect_age[(int)floor(age[sus_person]/5)]++;
 				/* Determine if following interventions only for interventions that effect individuals.*/
-				if ( personinter == 0 ) {
+				if ( personinter == 0  && t>tauI_onset ) {
 					intervene[sus_person]=round(COV_rand()*complyI[interventions]);
 					/* Intervention 4 is household quarantine. Applicable for whole household.  */
 					if (interventions == 4 ) {
