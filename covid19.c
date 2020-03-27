@@ -935,30 +935,30 @@ int main (int argc, char *argv[]) {
 	/* Infection parameters.  Mostly counters for looping. */
 	int num_sus=0; //Number susceptible.
 	int num_sus_county[21]={0};
-	int num_sus_age[17]={0};
+	int num_sus_age[18]={0};
 	int num_infect=0; //Number infected.
 	int * num_infect_county;
 	num_infect_county = (int*)calloc(population,sizeof(int));
-	int num_infect_age[17]={0};
+	int num_infect_age[18]={0};
 	int num_icu=0; //Number in ICU.
 	int num_icu_county[21]={0};
-	int num_icu_age[17]={0};
+	int num_icu_age[18]={0};
 	int num_hosp=0; //Number in hospital. 
 	int num_hosp_county[21]={0};
-	int num_hosp_age[17]={0};
+	int num_hosp_age[18]={0};
 	int num_dead=0; //Number of deaths. 
 	int num_dead_county[21]={0};
-	int num_dead_age[17]={0};
+	int num_dead_age[18]={0};
 	int num_recovered=0; //Number of people recovered. 
 	int num_recovered_county[21]={0};
-	int num_recovered_age[17]={0};
+	int num_recovered_age[18]={0};
 	int num_recovered_hosp_county[21]={0};
-	int num_recovered_hosp_age[17]={0};
+	int num_recovered_hosp_age[18]={0};
 	int num_recovered_icu_county[21]={0};
-	int num_recovered_icu_age[17]={0};
+	int num_recovered_icu_age[18]={0};
 	int num_infectious=0; //Number infectious.
 	int num_infectious_county[21]={0};
-	int num_infectious_age[17]={0};
+	int num_infectious_age[18]={0};
 	int recovered_hosp=0; //Number of people recovered. 
 	int recovered_icu=0; //Number of people recovered.
 
