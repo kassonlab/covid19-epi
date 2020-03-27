@@ -426,19 +426,23 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 // Uncomment to test job distribution.  Tested JMG 2020-03-20. 
 	int job_dist_test[6]={0};
 	int unemployed[21]={0};
+	int working_age[21]={0};
 	int city_dist_test[6][21]={0};
 	for (i=0; i<population; i++) {
 		job_dist_test[job_status[i]]++;
 		city_dist_test[job_status[i]][county[i]]++;
-		if (age[i]>22 && age[i]<=65 && job_status[i]==0) {
-			unemployed[county[i]]++;
+		if (age[i]>22 && age[i]<=65) {
+			if (job_status[i]==0) { 
+				unemployed[county[i]]++;
+			}
+			working_age[county[i]]++;
 		}
 	}	
 
 	fprintf(stats, "Job Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<6; i++) {
-			fprintf(stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/county_size[j]) ;
+			fprintf(stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
 			 
 		}
 		fprintf(stats, "\n");
