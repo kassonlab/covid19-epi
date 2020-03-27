@@ -337,7 +337,7 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 	char tmp2[199]; // county name
 	float tmp_lat; // tmp latitude
 	float tmp_lon; // tmp longitude
-        int i, j;§
+        int i, j;
 
 	for (i=0; i < 2000; i++) {
 		int got = fscanf(fp, "%[^,\n]%*c%[^,\n]%*c%[^,\n]%*c%f%*c%f\n", tmp1, tmp, tmp2, &tmp_lat, &tmp_lon);
