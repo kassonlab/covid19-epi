@@ -6,9 +6,6 @@
 
 #include "common.h"
 
-int i; // Counter
-int j; // Counter
-
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 /*::                                                                         :*/
@@ -156,6 +153,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	int tmp_city;	
 	float min_dist=1000000;
 	int placement;
+        int i, j;
 
 	int tmp_county_count[21]={0};	
 	int tmp_county_density[21]={0};	
@@ -339,6 +337,7 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 	char tmp2[199]; // county name
 	float tmp_lat; // tmp latitude
 	float tmp_lon; // tmp longitude
+        int i, j;§
 
 	for (i=0; i < 2000; i++) {
 		int got = fscanf(fp, "%[^,\n]%*c%[^,\n]%*c%[^,\n]%*c%f%*c%f\n", tmp1, tmp, tmp2, &tmp_lat, &tmp_lon);
@@ -368,7 +367,7 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 
 void job_dist(int * job_status, int ** job_status_city, float * age, int * county, int * city, int population, int num_cities, int num_counties, int * county_size, FILE * stats) {
 
-	int i; 
+	int i, j; 
 	
 
 	/* All currently randomly placed based on county.  Would like to do per town but each town needs inhabitants. See commented section below for per city distribution of schools */ 
@@ -589,6 +588,7 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 	int tmp_infect=0;
 	float min_diff=1000;
 	float diff_lat_lon=10;
+        int i, j;
 	
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
@@ -646,6 +646,8 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 
 
 void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* num_icu, int* infected, int* infectious, int* sus_list, int* hosp_list, int * hosp_pop, int * icu_pop, int* icu_list, float* tau, int population, float t, int * num_sus_county, int * num_infectious_county, int * num_infected_county, int * num_hosp_county, int * num_icu_county, int * num_sus_age, int * num_infectious_age, int * num_infected_age, int * num_hosp_age, int * num_icu_age, float * age, int * county) {
+
+        int i;
 
 	*num_sus=0;
 	*num_infectious=0;
@@ -719,6 +721,7 @@ void hosp_entry(float t, int num_infectious, int * infectious, float * age, int 
 	float icu[]={0.05, 0.05, 0.05, 0.05, 0.063, 0.122, 0.274, 0.432, 0.709} ; //# percent of hospitalized that need icu from Ferguson 2020.
 	int age_group; 
 	int infec_person;
+        int i;
 
 	for (i=0; i<num_infectious; i++) {
 		infec_person=infectious[i];
@@ -827,6 +830,7 @@ int main (int argc, char *argv[]) {
 	int interventions=0; // Value of interventions.
 	float tauI_onset=0; //time after start of simulation that interventions for whole community take place.
         int ret;
+        int i, j;
 
         /* Timing variables */
         struct timespec T1, T2, t1, t2;
