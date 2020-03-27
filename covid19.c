@@ -170,6 +170,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	/* Fill up households. */
 	int HH_count=0 ; // Counter
 	int HH_person=0 ; // Counter
+	int max_HH_size=0;
 
 	/* Initially set all households to -1 */
 	for (i=0; i < population; i++) {
@@ -214,13 +215,31 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		tmp_county_density[county_num]+=pop_density_init_num[HH_count]; 
 
 		/* Set up household */
-		lat_HH[HH_count]=tmp_lat;	
+		lat_HH[HH_count]=tmp_lat;
 		lon_HH[HH_count]=tmp_lon;
 		city_HH[HH_count]=city_num;
 		county_HH[HH_count]=county_num;
 		county_list[HH_count][locale_count[HH_count]]=HH_count;
 		locale_HH_count[HH_count]+=1;
+
+                /* Allocate an adult to the household */
+		while ( age[HH_person]<20 ) {
+			HH_person++;
+		}
+		HH[HH_person]=HH_count;
+		lat[HH_person]=lat_HH[HH_count];
+		lon[HH_person]=lon_HH[HH_count];
+		city[HH_person]=city_HH[HH_count];
+		county[HH_person]=county_HH[HH_count];
+                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
+		city_size[city[HH_person]]++;
+		county_size[county[HH_person]]++;
+		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
+		if (per_HH_size[HH[HH_person]]>max_HH_size) {
+			max_HH_size=per_HH_size[HH[HH_person]];
+		}
+		HH_person++;
 		HH_count++;
 	}
 
@@ -235,7 +254,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	HH_count=0;
 	int list=1; //This keeps track of how many times we can been through the locale list.	
 	placement=0; //Keeps track of household placement after first loop of locales.
-	/* First add adult head of household to each household. */
+	/* First add adult head of household to the rest of the households. */
 	while ( HH_count < num_households ) {
 		while ( age[HH_person]<20 ) {
 			HH_person++;
@@ -251,8 +270,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		county_HH[HH_count]=county_HH[placement];
 		county_list[placement][locale_count[placement]]=HH_count;
 		locale_HH_count[placement]+=1;
-		locale_count[placement]+=1;
-		placement+=1;
 
 		/* Set up head of household. */
 		HH[HH_person]=HH_count;
@@ -263,12 +280,21 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
                 county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
 		county_size[county[HH_person]]++;
+		locale_count[placement]+=1;
+		per_HH_size[HH[HH_person]]++;
+		if (per_HH_size[HH[HH_person]]>max_HH_size) {
+			max_HH_size=per_HH_size[HH[HH_person]];
+		}
+		placement+=1;
 		HH_person++;
 		HH_count++;
 	}
 
+        placement = 0;
+        int typical_max_HH_sz = 7;
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
+                int tmp_HH;
 		if (HH[HH_person]==-1) {
 			
 			/* Place people in random households within locale until locale is full. */
@@ -279,7 +305,11 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 			}	
 
 			/* Pick a random household in the locale. */
-			HH[HH_person]=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
+			tmp_HH=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
+                        while (per_HH_size[tmp_HH] > typical_max_HH_sz) {
+                            tmp_HH=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
+                        }
+			HH[HH_person]=tmp_HH;
 		//	printf("HH %i %i %i %f \n", HH[HH_person], placement, locale_HH_count[placement], HH_person);
 			lat[HH_person]=lat_HH[HH[HH_person]];	
 			lon[HH_person]=lon_HH[HH[HH_person]];	
@@ -289,31 +319,31 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 			city_size[city[HH_person]]++;
 			county_size[county[HH_person]]++;
 			locale_count[placement]+=1;
+                        per_HH_size[HH[HH_person]]++;
+                        if (per_HH_size[HH[HH_person]]>max_HH_size) {
+                                max_HH_size=per_HH_size[HH[HH_person]];
+                        }
 			placement+=1;
 		}
 	}
 
-	int max_HH_size=0;
-	/* Get size of each household as an array */
-	for (HH_person=0; HH_person<population; HH_person++) {
-		per_HH_size[HH[HH_person]]++;
-		if (per_HH_size[HH[HH_person]]>max_HH_size) {
-			max_HH_size=per_HH_size[HH[HH_person]];
-		}
-	}
+        printf("max_HH_size = %d\n", max_HH_size);
+        fflush(stdout);
 
 
 // Uncomment to test household distribution.  Tested JMG 2020-03-22.
-	int HH_dist_test[21]={0};
+	int *HH_dist_test;
+        HH_dist_test = (int *)calloc(max_HH_size+1, sizeof(int));
 	for (i=0; i<num_households; i++) {
 		HH_dist_test[per_HH_size[i]]++;
 	}	
 	
 	fprintf(stats, "Household distributions \n");
-	for (i=1; i<max_HH_size+1; i++) {
+	for (i=0; i<=max_HH_size; i++) {
 		fprintf(stats, "household_size %i percent_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
 		fflush(stats);
 	}
+        free(HH_dist_test);
 	
 	fprintf(stats, "\n\n County distribution \n");
 	for (i=0; i<21; i++) {
