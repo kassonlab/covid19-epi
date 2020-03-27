@@ -86,7 +86,7 @@ double rad2deg(double rad) {
 /// End of code from GEODATASOURCE
 
 
-void age_dist (float * age, int population, FILE** stats, int * age_distrib) {
+void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 	int i; // Counter
         int ret, age_sz;
@@ -117,11 +117,12 @@ void age_dist (float * age, int population, FILE** stats, int * age_distrib) {
 		age_dist_test[(int)floor(age[i]/10)]++;
 	}	
 	
-        fprintf(*stats, "Testing age distribution\n");
+        fprintf(stats, "Testing age distribution\n");
 	for (i=0; i<9; i++) {
-		fprintf(*stats, "age %i percent %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
+		fprintf(stats, "age %i percent %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
 	}
-	fprintf(*stats, "\n\n");
+	fprintf(stats, "\n\n");
+        fflush(stats);
        // exit(0);
 //
 }
@@ -129,7 +130,7 @@ void age_dist (float * age, int population, FILE** stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE** stats, int **county_p, int *county_p_n) {
+void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n) {
 
 	/* Get longitude and latitude with population density from CSV */
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
@@ -307,18 +308,19 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		HH_dist_test[per_HH_size[i]]++;
 	}	
 	
-	fprintf(*stats, "Household distributions \n");
+	fprintf(stats, "Household distributions \n");
 	for (i=1; i<max_HH_size+1; i++) {
-		fprintf(*stats, "household_size %i percent_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
-		fflush(stdout);
+		fprintf(stats, "household_size %i percent_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
+		fflush(stats);
 	}
 	
-	fprintf(*stats, "\n\n County distribution \n");
+	fprintf(stats, "\n\n County distribution \n");
 	for (i=0; i<21; i++) {
-		fprintf(*stats, "%s county %i population %i percent %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
-		fflush(stdout);
+		fprintf(stats, "%s county %i population %i percent %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
+		fflush(stats);
 	} 
-	fprintf(*stats, "\n\n");
+	fprintf(stats, "\n\n");
+        fflush(stats);
 
 	free(locale_HH_count);
 	free(county_list);
@@ -364,7 +366,7 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 }
 
 
-void job_dist(int * job_status, int ** job_status_city, float * age, int * county, int * city, int population, int num_cities, int num_counties, int * county_size, FILE ** stats) {
+void job_dist(int * job_status, int ** job_status_city, float * age, int * county, int * city, int population, int num_cities, int num_counties, int * county_size, FILE * stats) {
 
 	int i; 
 	
@@ -434,20 +436,21 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 		}
 	}	
 
-	fprintf(*stats, "Job Distribution \n");
+	fprintf(stats, "Job Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<6; i++) {
-			fprintf(*stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/county_size[j]) ;
+			fprintf(stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/county_size[j]) ;
 			 
 		}
-		fprintf(*stats, "\n");
+		fprintf(stats, "\n");
 	}
+        fflush(stats);
 
 //	
 
 }
 
-void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, int* class, FILE ** stats) {
+void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, int* class, FILE * stats) {
 
 	int pp_class = 19; //Assumption of 15 children per class.
 	int pp_preschool = 53; //Assumption of 200 children per school.
@@ -539,19 +542,20 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 		class_dist_test[workplace[i]][(int)county[i]][class[i]]++;
 	}	
 
-	fprintf(*stats, "Workplace Distribution \n");
+	fprintf(stats, "Workplace Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<*max_num_WP; i++) {
 			if (work_dist_test[i][j]>0) {
-				fprintf(*stats, "county %i workplace %i size %i \n", j, i, work_dist_test[i][j]) ;
+				fprintf(stats, "county %i workplace %i size %i \n", j, i, work_dist_test[i][j]) ;
 			}
 			for (k=0; k<max_num_classes; k++) {
 				if (class_dist_test[i][j][k]>0) {
-					fprintf(*stats, "county %i school %i class %i size %i \n", j, i, k, class_dist_test[i][j][k]) ;
+					fprintf*stats, "county %i school %i class %i size %i \n", j, i, k, class_dist_test[i][j][k]) ;
 				}	
 			}
 		}
 	}
+        fflush(stats);
 
 	free(work_dist_test);
 	free(class_dist_test);
@@ -1087,7 +1091,7 @@ school or workplace. */
 	COV_init_rand();
 
 	/* Initialize age distribution */
-	age_dist(age, population, &stats, age_distrib);
+	age_dist(age, population, stats, age_distrib);
 	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_int, city_county, county_name, num_counties) ;
 
 	/* Checking data */
@@ -1096,7 +1100,7 @@ school or workplace. */
 	}
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, &stats, county_p, county_p_n) ;
+	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n) ;
 
 
 	/* Open files */
@@ -1173,12 +1177,14 @@ school or workplace. */
 	job_status_county = (int**)calloc(6,sizeof(int*));
 	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_counties,sizeof(int)) ;
 	/* Initialize job/school status */
-	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, &stats); 
+	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, stats); 
 
 	int hosp_num[num_counties]; //Number of hospitals per county
 	memset(hosp_num, 0, num_counties);
 	/* Initialize workplace/school */	
-	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, &stats); 
+	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats); 
+
+        fclose(stats);
 
 	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
 	int workplace_size[6][max_num_WP];
@@ -1515,8 +1521,4 @@ school or workplace. */
 		fclose(age_files[(i/5)]); 
 	}
 	fclose(output_file);
-
-	fclose(stats);
-
-
 }
