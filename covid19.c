@@ -306,7 +306,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 
 			/* Pick a random household in the locale. */
 			tmp_HH=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
-                        while (per_HH_size[tmp_HH] > typical_max_HH_sz) {
+                        while (per_HH_size[tmp_HH]+1 > typical_max_HH_sz) {
                             tmp_HH=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
                         }
 			HH[HH_person]=tmp_HH;
