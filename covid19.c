@@ -1364,7 +1364,6 @@ if (x==0) {
 				
 
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
-				d=distance(lat[sus_person], lon[sus_person], lat[infec_person], lon[infec_person], 'K');
 				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person]);
 
 				
@@ -1390,6 +1389,7 @@ if (x==0) {
 
 					// Community transmission // 
 					age_group=floor(age[sus_person]/5);
+                                        d=distance(lat[sus_person], lon[sus_person], lat[infec_person], lon[infec_person], 'K');
 					community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d);
 					contact_commun++;
 				} else {
