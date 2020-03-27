@@ -1206,13 +1206,13 @@ school or workplace. */
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
-//	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
+	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	float * tmp_lat;
 	tmp_lat = (float*)calloc(population,sizeof(float));
 	float * tmp_lon;
 	tmp_lon = (float*)calloc(population,sizeof(float));
 	/**** TMP INTIALIZATION ARRAY ***/
-	float initialize[15]={500000, 400000, 200000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 1000, 1000, 1000, 1000};
+//	float initialize[15]={500000, 400000, 200000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 1000, 1000, 1000, 1000};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
 	for ( tmp_t=-14; tmp_t<=0; tmp_t++ ) {
