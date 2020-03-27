@@ -131,12 +131,12 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n) {
 
 	/* Get longitude and latitude with population density from CSV */
-	FILE* lat_long = fopen("land_pop_test.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
+	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 
 	/* Initialize helpers for population density */
-	//int num_km=206959;
+	int num_km=206959;
 	// FOR TEST TEXT 
-	int num_km=63;
+	//int num_km=63;
 	float pop_density_init_num[num_km];
 	float tot_pop_density=0;
 	float tmp_lat;
@@ -251,7 +251,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	}
 */
 
-	HH_count=0;
 	int list=1; //This keeps track of how many times we can been through the locale list.	
 	placement=0; //Keeps track of household placement after first loop of locales.
 	/* First add adult head of household to the rest of the households. */
@@ -1151,6 +1150,21 @@ school or workplace. */
 //		printf("cities %i %i %i %i lat %f lon %f \n", i, city_int[i], city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
+	/* Seed infections */
+	/* Evenly distribute infection by population */
+	double *pop_percent; // Percent for random probability distribution.
+        pop_percent = (double *)malloc(num_counties * sizeof(double));
+	float tot=0;
+	for (i=0; i < num_counties; i++) {
+		if (county_size[i]>0) {
+			pop_percent[i]=county_size[i]/(float)population;
+		} else {
+			pop_percent[i]=0;
+		}
+		tot+=county_size[i];
+	}
+
+
 	/* Initialize households */
 	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n) ;
 
@@ -1183,53 +1197,6 @@ school or workplace. */
 
 	FILE * lat_lon_out = fopen("lat_lon.dat", "w");
 	
-
-	int ** job_status_county; // Jobs per county
-	job_status_county = (int**)calloc(6,sizeof(int*));
-	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_counties,sizeof(int)) ;
-	/* Initialize job/school status */
-	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, stats); 
-
-	int hosp_num[num_counties]; //Number of hospitals per county
-	memset(hosp_num, 0, num_counties);
-	/* Initialize workplace/school */	
-	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats); 
-
-        fclose(stats);
-
-	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
-	int workplace_size[6][max_num_WP];
-	memset(workplace_size, 0, 6*max_num_WP*sizeof(int));
-	for (i=0; i < population; i++) {
-		workplace_size[job_status[i]][workplace[i]]++;
-	}
-
-
-	/* Precalculate total density kernel function for each individual */
-	for (i=0; i<population; i++) {
-		for (j=0; j<population; j++) {
-			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
-			fd_tot[i]+=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-		}
-	}
-int x=1; 
-if (x==0) {
-	/* Initialization complete... start simulation */
-
-	/* Seed infections */
-	/* Evenly distribute infection by population */
-	double *pop_percent; // Percent for random probability distribution.
-        pop_percent = (double *)malloc(num_counties * sizeof(double));
-	float tot=0;
-	for (i=0; i < num_counties; i++) {
-		if (county_size[i]>0) {
-			pop_percent[i]=county_size[i]/(float)population;
-		} else {
-			pop_percent[i]=0;
-		}
-		tot+=county_size[i];
-	}
-
 	// Infections are randomly placed based on number of initial infections.  //
 	// Includes infections from t=-11 to t=-1.
 	// Percent per county taken from C19.se infections as of 2020/3/25.
@@ -1260,6 +1227,38 @@ if (x==0) {
 	for (i=0; i<num_counties; i++) {
 	//	printf("initial_infect %i %i %i %f \n", i, initial_infections[i], county_size[i], pop_percent[i]);
 	}
+
+
+
+	int ** job_status_county; // Jobs per county
+	job_status_county = (int**)calloc(6,sizeof(int*));
+	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_counties,sizeof(int)) ;
+	/* Initialize job/school status */
+	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, stats); 
+
+	int hosp_num[num_counties]; //Number of hospitals per county
+	memset(hosp_num, 0, num_counties);
+	/* Initialize workplace/school */	
+	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats); 
+
+        fclose(stats);
+
+	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
+	int workplace_size[6][max_num_WP];
+	memset(workplace_size, 0, 6*max_num_WP*sizeof(int));
+	for (i=0; i < population; i++) {
+		workplace_size[job_status[i]][workplace[i]]++;
+	}
+
+
+	/* Precalculate total density kernel function for each individual */
+	for (i=0; i<population; i++) {
+		for (j=0; j<population; j++) {
+			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
+			fd_tot[i]+=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+		}
+	}
+	/* Initialization complete... start simulation */
 
 
 
@@ -1533,7 +1532,7 @@ if (x==0) {
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
         fprintf(output_file, "Total time %8.3f\n", step_time);
-}	
+
 	free(HH);
 	free(per_HH_size);
 	free(lat);
