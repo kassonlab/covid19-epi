@@ -5,6 +5,10 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "common.h"
 
 int typical_max_HH_sz = 7;
