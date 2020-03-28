@@ -627,7 +627,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 
 int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat, float * lon, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_p_n) {
 
-	int person_infected=0;
+	int person_infected=0, county_person_inf = 0;
 	int tmp_infect=0;
 	float min_diff=1000;
 	float diff_lat_lon=10;
@@ -642,10 +642,17 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 		while ((tmp_infect<initial_infections[i])) {
 			int tmp_j=0;
 			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
+                        county_person_inf = (int)(COV_rand() * county_p_n[i]);
+                        person_infected=county_p[i][county_person_inf];
 			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>1.0) && tmp_j<population) {
-				person_infected=county_p[i][(int)(COV_rand() * county_p_n[i])];
+                                /* pick first available person in the county to infect if the randomly choosen aren't free to pick */
+                                county_person_inf++;
+                                if (county_person_inf >= county_p_n[i]) {
+                                    county_person_inf = 0;
+                                }
+                                person_infected=county_p[i][county_person_inf];
                                 if (county[person_infected] != i) {
-                                    fprintf(stderr, "Error: random person is not in expected county, is in %d\n", county[person_infected]);
+                                    fprintf(stderr, "Error: random person is not in expected county %d, is in %d\n", i, county[person_infected]);
                                 }
 				min_diff=1000;
 				if (t<-10 || num_infect_county[i]==0 ) {
@@ -662,9 +669,13 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 			}
 			if (diff_lat_lon>1) {
 				while ((county[person_infected]!=i) || (infected[person_infected]!=0)) {
-					person_infected=county_p[i][(int)(COV_rand() * county_p_n[i])];
+                                        county_person_inf++;
+                                        if (county_person_inf >= county_p_n[i]) {
+                                            county_person_inf = 0;
+                                        }
+                                        person_infected=county_p[i][county_person_inf];
                                         if (county[person_infected] != i) {
-                                            fprintf(stderr, "Error: random person is not in expected county, is in %d\n", county[person_infected]);
+                                            fprintf(stderr, "Error: random person is not in expected county %d, is in %d\n", i, county[person_infected]);
                                         }
 				}
 			}
