@@ -605,7 +605,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	int t2;
 	//###Determine kappa for infected person.  This is the infectiousness of the person based on time since infection started.  Latency period is 4.6 days.  Infection starts at 5.1 days and lasts for 6 days.  Sympotmatic people are twice as likely to infect others as asymptomatic.
 	// Kappa is a log normal function with mean of -0.72 and standard deviation of 1.8.  From Ferguson Nature 2005
-	if (t-tau<4.6) {
+	if (t-tau <= 4.6) {
 		kappa=0.;
 	} else if (t-tau>11.1) {
 		kappa=0.; //# Recovered or dead
@@ -613,7 +613,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
 //		t1=(log(t-tau-4.6)+0.72)/1.8;
 //		kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
-		t2=(t-tau)/dt;
+		t2=(t-tau-4.6)/dt;
 		kappa=kappa_vals[t2];
 	}
 	if (symptomatic==0) {
@@ -1292,8 +1292,12 @@ school or workplace. */
 	float * kappa_vals;
 	float tau1=0;	
 	kappa_vals = (float*)calloc(count_kappa_vals,sizeof(float));
-	for (i=0; i<count_kappa_vals; i++) {
-		kappa_t=i*dt-4.6;
+        /* Can't use i=0 since that would result in div-by-zero */
+        /* This is handled in the calc_kappa function by making sure it shortcuts to 0 for t-tau <= 4.6 */
+        /* Play it safe and set kappa_vals[0] = 0 */
+        kappa_vals[0] = 0;
+	for (i=1; i<count_kappa_vals; i++) {
+		kappa_t=i*dt;
 		tmp_t=(log(kappa_t)+0.72)/1.8;
 		kappa_vals[i]=exp(-0.5*pow(tmp_t,2))/((kappa_t)*1.8*sqrt(2*pi));
 	}
