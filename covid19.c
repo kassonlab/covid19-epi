@@ -598,19 +598,23 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 
 }
 
-float calc_kappa(float t, float tau, int symptomatic) {
+float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_vals) {
 
 	float kappa;
 	float t1;
+	int t2;
 	//###Determine kappa for infected person.  This is the infectiousness of the person based on time since infection started.  Latency period is 4.6 days.  Infection starts at 5.1 days and lasts for 6 days.  Sympotmatic people are twice as likely to infect others as asymptomatic.
 	// Kappa is a log normal function with mean of -0.72 and standard deviation of 1.8.  From Ferguson Nature 2005
-	if (t-tau<4.6) {
+	if (t-tau <= 4.6) {
 		kappa=0.;
 	} else if (t-tau>11.1) {
 		kappa=0.; //# Recovered or dead
 	} else {
-		t1=(log(t-tau-4.6)+0.72)/1.8;
-		kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
+		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
+//		t1=(log(t-tau-4.6)+0.72)/1.8;
+//		kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
+		t2=(t-tau-4.6)/dt;
+		kappa=kappa_vals[t2];
 	}
 	if (symptomatic==0) {
 		kappa=kappa*0.5;
@@ -747,15 +751,15 @@ float calc_workplace_infect(int job_status, float kappa, float omega, int workpl
 	return(Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
-float calc_community_infect(int age_group, float kappa, float omega, int severe, float d) {
+float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, double * fd_vals) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
 	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
-	float fd;
+	float fd, fd1;
 	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
-	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-
+//	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+	fd=fd_vals[(int)(d*10)];
 	return(zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
@@ -923,8 +927,8 @@ int main (int argc, char *argv[]) {
 	float * lon; //longitude of person
 	lon = (float*)calloc(population,sizeof(float));
 	float * lat_city; //latitude of city i.
-	float * fd_tot; //additive kernel density function of person with respect to all other individuals
-	fd_tot = (float*)calloc(population,sizeof(float));
+	double * fd_tot; //additive kernel density function of person with respect to all other individuals
+	fd_tot = (double*)calloc(population,sizeof(double));
 	lat_city = (float*)calloc(2000,sizeof(float));
 	float * long_city; // longitude of city i.
 	long_city = (float*)calloc(2000,sizeof(float));
@@ -1248,6 +1252,13 @@ school or workplace. */
 	for (i=0; i < population; i++) {
 		workplace_size[job_status[i]][workplace[i]]++;
 	}
+	
+	
+	double fd_calc[22000];
+	/*Precalculate density kernel */
+	for (i=0; i<22000; i++) {
+		fd_calc[i]=1/(1+pow((((double)i/10.)/4), 3)); //kernel density function as parameterized for GB.	
+	}	
 
 
 	/* Precalculate total density kernel function for each individual */
@@ -1258,12 +1269,13 @@ school or workplace. */
                         float d;
                         float tmp_fd;
 			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
-			tmp_fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+			tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
                         itmp_fd += tmp_fd;
 			fd_tot[j]+=tmp_fd;
 		}
                 fd_tot[i] += itmp_fd;
 	}
+
 	/* Initialization complete... start simulation */
 
 
@@ -1273,7 +1285,23 @@ school or workplace. */
 	float alpha=0.8 ; // From Ferguson Nature 2006
 	float omega=2 ; // From Ferguson Nature 2006
 	// #Leaving out rho from Ferguson 2006.  This is a measure of how infectious person is.  For now, we will assume all people are the same.
-	
+
+	/* precalculate kappa */
+	int count_kappa_vals=ceil(12/dt);
+	float kappa_t=0;
+	float * kappa_vals;
+	float tau1=0;	
+	kappa_vals = (float*)calloc(count_kappa_vals,sizeof(float));
+        /* Can't use i=0 since that would result in div-by-zero */
+        /* This is handled in the calc_kappa function by making sure it shortcuts to 0 for t-tau <= 4.6 */
+        /* Play it safe and set kappa_vals[0] = 0 */
+        kappa_vals[0] = 0;
+	for (i=1; i<count_kappa_vals; i++) {
+		kappa_t=i*dt;
+		tmp_t=(log(kappa_t)+0.72)/1.8;
+		kappa_vals[i]=exp(-0.5*pow(tmp_t,2))/((kappa_t)*1.8*sqrt(2*pi));
+	}
+
 	int contact_commun=0;
 	int contact_work=0;
 	int contact_school=0;	
@@ -1398,7 +1426,7 @@ school or workplace. */
 				
 
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
-				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person]);
+				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals);
 
 				
 				if (hosp_pop[infec_person]==0) {
@@ -1425,7 +1453,7 @@ school or workplace. */
 					// Community transmission // 
 					age_group=floor(age[sus_person]/5);
                                         d=distance(lat[sus_person], lon[sus_person], lat[infec_person], lon[infec_person], 'K');
-					community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d);
+					community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc);
 					contact_commun++;
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
@@ -1440,7 +1468,6 @@ school or workplace. */
 
 				}
 			}
-	
                         infect+=community_nom/fd_tot[sus_person]; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
 
 
@@ -1539,6 +1566,7 @@ school or workplace. */
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
         fprintf(output_file, "Total time %8.3f\n", step_time);
+
 
 	free(HH);
 	free(per_HH_size);
