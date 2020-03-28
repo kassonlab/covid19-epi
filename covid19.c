@@ -1299,18 +1299,28 @@ school or workplace. */
 
 
 	/* Precalculate total density kernel function for each individual */
-	for (i=0; i<population; i++) {
+	for (i=0; i<num_locale; i++) {
                 float itmp_fd;
+                int npi; /* number of persons in locale i */
                 itmp_fd = 0;
-		for (j=i+1; j<population; j++) {
-                        float d;
-                        float tmp_fd;
-			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
+                npi = 0;
+                for (int hh = 0; hh < locale_to_HH_n[i]; hh++) {
+                    npi += per_HH_size[locale_to_HH[i][hh]];
+                }
+		for (j=i+1; j<num_locale; j++) {
+                        double d;
+                        double tmp_fd;
+                        int npj; /* number of persons in locale j */
+                        npj = 0;
+                        for (int hh = 0; hh < locale_to_HH_n[j]; hh++) {
+                            npj += per_HH_size[locale_to_HH[j][hh]];
+                        }
+			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
 			tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
-                        itmp_fd += tmp_fd;
-			fd_tot[j]+=tmp_fd;
+                        itmp_fd += tmp_fd * npj;
+			fd_tot[j] += tmp_fd * npi;
 		}
-                fd_tot[i] += itmp_fd;
+                fd_tot[i] += itmp_fd + npi - 1;
 	}
 
 	/* Initialization complete... start simulation */
