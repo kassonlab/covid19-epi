@@ -1477,6 +1477,9 @@ school or workplace. */
 			contact_school=0;
                         age_group=floor(age[sus_person]/5);
 
+#ifdef _OPENMP
+#pragma omp parallel for private(j) default(shared) reduction(+:infect) reduction(+:community_nom) reduction(+:contact_commun) reduction(+:contact_work) reduction(+:contact_house) reduction(+:contact_school)
+#endif
 			for (j=0; j<num_infectious; j++) {
 
 
