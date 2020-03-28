@@ -13,6 +13,8 @@
 
 int typical_max_HH_sz = 7;
 
+float betac_scale = 1.0, betah_scale = 1.0, betaw_scale = 1.0;
+
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 /*::                                                                         :*/
@@ -763,7 +765,7 @@ float calc_household_infect(float kappa, float omega, int HH_size, float alpha, 
 
 	float betah=0.55; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
-	return(betah*kappa*(1+(float)severe*(omega-1))/(pow((float)HH_size,alpha))); 
+	return(betah_scale*betah*kappa*(1+(float)severe*(omega-1))/(pow((float)HH_size,alpha))); 
 
 }
 
@@ -772,7 +774,7 @@ float calc_workplace_infect(int job_status, float kappa, float omega, int workpl
 	float betap[]={0.0, 1.1, 1.1, 1.1, 0.55, 0.1375} ; // Spread in all types of schools (preschool to college) is twice that of workplace 
 	float psi[]={0.0, 0.1, 0.2, 0.25, 0.5, 0.5} ; // Accounts for absenteeism based on severe illness. Ferguson Nature 2006
 
-	return(Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
+	return(betaw_scale*Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
 float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, double * fd_vals) {
@@ -784,7 +786,7 @@ float calc_community_infect(int age_group, float kappa, float omega, int severe,
 
 //	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
 	fd=fd_vals[(int)(d*10)];
-	return(zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
+	return(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
 
@@ -920,6 +922,9 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-tauI")) tauI_onset=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-initial")) for (j=0; j<21; j++) initial_infections[j]=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-print_loc")) print_lat_lon=atoi(argv[++i]);
+    		else if (!strcmp(argv[i],"-betac")) betac_scale=atof(argv[++i]);
+    		else if (!strcmp(argv[i],"-betah")) betah_scale=atof(argv[++i]);
+    		else if (!strcmp(argv[i],"-betaw")) betaw_scale=atof(argv[++i]);
   	}
 
 	/* print out population statistics to file */
