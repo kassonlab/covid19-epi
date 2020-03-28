@@ -1269,13 +1269,9 @@ school or workplace. */
                         float d;
                         float tmp_fd;
 			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
-<<<<<<< HEAD
-			fd_tot[i]+=fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
-=======
-			tmp_fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+			tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
                         itmp_fd += tmp_fd;
 			fd_tot[j]+=tmp_fd;
->>>>>>> 0e76797ffc72e59b908417b6d4b6e8e31e2d7cf1
 		}
                 fd_tot[i] += itmp_fd;
 	}
