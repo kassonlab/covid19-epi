@@ -1322,6 +1322,9 @@ school or workplace. */
                 for (int hh = 0; hh < locale_to_HH_n[i]; hh++) {
                     npi += per_HH_size[locale_to_HH[i][hh]];
                 }
+#ifdef _OPENMP
+#pragma omp parallel for private(j) reduction(+:itmp_fd)
+#endif
 		for (j=i+1; j<num_locale; j++) {
                         double d;
                         double tmp_fd;
