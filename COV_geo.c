@@ -24,6 +24,35 @@ static struct timespec ts_diff(struct timespec* ts1, struct timespec* ts2) {
 
 static double const pi = 3.14159265358979323846;
 
+double COV_geo_vertical_distance(double lat1, double lon, double lat2) {
+	if (lat1 == lat2) {
+        return 0.0;
+    }
+    double theta = 0.0;
+    double lat1r = lat1 * pi / 180.0;
+    double lat2r = lat2 * pi / 180.0;
+    double dist = sin(lat1r) * sin(lat2r) + cos(lat1r) * cos(lat2r);
+    dist = acos(dist);
+
+    // Angle converted from radians to centigrades is close to the distance in kilometers
+    return dist * 100.0 * 200.0 / pi;
+}
+
+double COV_geo_horizontal_distance(double lat, double lon1, double lon2) {
+    if (lon1 == lon2) {
+        return 0.0;
+    }
+    double theta = (lon1 - lon2) * pi / 180.0;
+    double latr = lat * pi / 180.0;
+	double sin_latr = sin(latr);
+	double cos_latr = cos(latr);
+    double dist = sin_latr * sin_latr + cos_latr * cos_latr * cos(theta);
+    dist = acos(dist);
+
+    // Angle converted from radians to centigrades is close to the distance in kilometers
+    return dist * 100.0 * 200.0 / pi;
+}
+
 double COV_geo_distance(double lat1, double lon1, double lat2, double lon2) {
     if (lat1 == lat2 && lon1 == lon2) {
         return 0.0;
@@ -88,6 +117,14 @@ static size_t index_slices(float lon, float lon_min, float lon_max, size_t slice
 	float slice_mapping = unlerpf(lon_min, lon_max, lon) * slice_count;
 	size_t slice_id = (size_t)clampf(slice_mapping, 0.0, slice_count - 1.0);
 	return slice_id;
+}
+
+static float band_lower_latitude(size_t band_id, float lat_min, float lat_max, size_t band_count) {
+	return lerpf(lat_min, lat_max, band_id / (float)band_count);
+}
+
+static float slice_lower_longitude(size_t slice_id, float lon_min, float lon_max, size_t slice_count) {
+	return lerpf(lon_min, lon_max, slice_id / (float)slice_count);
 }
 
 struct COV_geo* COV_create_geo(size_t coord_count, uint32_t* ids, float* lat, float* lon,
@@ -177,9 +214,11 @@ void COV_destroy_geo(struct COV_geo* geo) {
 struct COV_geo_query_context COV_geo_prepare_query(struct COV_geo* geo, float lat, float lon, float cutoff_distance) {
 	struct COV_geo_query_context qc;
 	qc.geo = geo;
+	qc.cutoff_distance = cutoff_distance;
 	qc.lat_cutoff = latitude_offset(cutoff_distance);
 	qc.first_band = index_bands(lat - qc.lat_cutoff, geo->lat_min, geo->lat_max, geo->band_count);
 	qc.last_band = index_bands(lat + qc.lat_cutoff, geo->lat_min, geo->lat_max, geo->band_count);
+	qc.mid_slice = index_slices(lon, geo->lon_min, geo->lon_max, geo->bands->slice_count);
 	qc.iteration_started = false;
 	return qc;
 }
@@ -190,10 +229,37 @@ bool set_query_band(struct COV_geo_query_context* qc, size_t band_id) {
 		return false;
 	}
 	struct COV_geo_band* band = qc->geo->bands + band_id;
-	// TODO(LV): Scan west for first slice
-	qc->current_slice_start = 0;
-	// TODO(LV): Scan east for last slice
-	qc->current_slice_end = band->slice_count;
+
+	/* The idea for finding the westmost/eastmost slices is to find the
+	latitude border of the band that has the shortest length. This allows
+	us to compute the number of slices that we need to touch for a conservative
+	estimate of the number of slices we need to consider for the current band.
+	*/
+	double band_lat_south = band_lower_latitude(band_id, qc->geo->lat_min, qc->geo->lat_max, qc->geo->band_count);
+	double band_lat_north = band_lower_latitude(band_id + 1, qc->geo->lat_min, qc->geo->lat_max, qc->geo->band_count);
+	double band_lat_south_mag = fabs(band_lat_south);
+	double band_lat_north_mag = fabs(band_lat_north);
+
+	// The narrowest edge of the slice is the one that has the latitude closest to a pole.
+	double band_lat_narrowest_edge = (band_lat_south_mag > band_lat_north_mag)
+		? band_lat_south_mag
+		: band_lat_north_mag;
+
+	double slice_lon_west = slice_lower_longitude(0, qc->geo->lon_min, qc->geo->lon_max, band->slice_count);
+	double slice_lon_east = slice_lower_longitude(1, qc->geo->lon_min, qc->geo->lon_max, band->slice_count);
+
+	double narrow_width = COV_geo_horizontal_distance(band_lat_narrowest_edge, slice_lon_west, slice_lon_east);
+	size_t narrow_cells = ceilf(qc->cutoff_distance / narrow_width);
+	size_t narrow_cells_east = narrow_cells + 1;
+		
+	size_t west_cells_clamped = narrow_cells > qc->mid_slice ? qc->mid_slice : narrow_cells;
+	qc->current_slice_start = qc->mid_slice - west_cells_clamped;
+
+	qc->current_slice_end = qc->mid_slice + narrow_cells_east;
+	qc->current_slice_end = qc->current_slice_end > band->slice_count
+		? band->slice_count
+		: qc->current_slice_end;
+
 	qc->current_slice = qc->current_slice_start;
 
 	return true;

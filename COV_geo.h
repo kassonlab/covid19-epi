@@ -30,9 +30,11 @@ struct COV_geo {
 
 struct COV_geo_query_context {
 	struct COV_geo* geo;
+    double cutoff_distance;
 	double lat_cutoff;
 	size_t first_band;
 	size_t last_band;
+    size_t mid_slice;
 	size_t current_band;
 	size_t current_slice;
 	size_t current_slice_start;
