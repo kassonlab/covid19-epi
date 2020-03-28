@@ -8,8 +8,8 @@ CC := gcc
 LD := $(CC)
 
 #OMP = -fopenmp
-OPT = -O3 -march=native -mtune=native
-#DEBUG = -O0 -g
+#OPT = -O3 -march=native -mtune=native
+DEBUG = -O0 -g
 CPPFLAGS = 
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -lm
@@ -17,7 +17,7 @@ LIBS := -lm
 all: $(PROGRAM)
 
 $(PROGRAM): $(OBJECTS)
-	$(LD) -o $@ $(LDFLAGS) $(OBJECTS) $(LIBS)
+	$(LD) -o $@ $(LDFLAGS) $(OBJECTS) $(LIBS) $(CFLAGS)
 
 $(OBJECTS): common.h
 
