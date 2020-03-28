@@ -1042,7 +1042,6 @@ int main (int argc, char *argv[]) {
 
 	int age_group; 
 	float infect_prob=0; // Infectious probability
-	float d; //distance between people.
 	float community_nom=0; // For adding community infection.
 	float community_den=0; // For adding community infection.
 	float infect=0; //Infectiousness
@@ -1264,10 +1263,21 @@ school or workplace. */
 
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<population; i++) {
-		for (j=0; j<population; j++) {
+                float itmp_fd;
+                itmp_fd = 0;
+		for (j=i+1; j<population; j++) {
+                        float d;
+                        float tmp_fd;
 			d=distance(lat[i], lon[i], lat[j], lon[j], 'K');
+<<<<<<< HEAD
 			fd_tot[i]+=fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
+=======
+			tmp_fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+                        itmp_fd += tmp_fd;
+			fd_tot[j]+=tmp_fd;
+>>>>>>> 0e76797ffc72e59b908417b6d4b6e8e31e2d7cf1
 		}
+                fd_tot[i] += itmp_fd;
 	}
 
 	/* Initialization complete... start simulation */
@@ -1420,6 +1430,7 @@ school or workplace. */
 
 				
 				if (hosp_pop[infec_person]==0) {
+                                        float d; //distance between people.
 					if (HH[sus_person]==HH[infec_person]) {
 						// Household transmission //
 						infect+=Ih*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
