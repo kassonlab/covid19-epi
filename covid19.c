@@ -907,8 +907,8 @@ int main (int argc, char *argv[]) {
         int i, j;
 
         /* Timing variables */
-        struct timespec T1, T2, t1, t2;
-        double step_time, nsdiv = 1000*1000*1000;
+        struct timespec T1, T2, t1, t2, t3, t4;
+        double tt, step_time, nsdiv = 1000*1000*1000;
 	
 	/* Parse command-line arguments */
   	for (i=1;i<argc;i++) {
@@ -931,6 +931,8 @@ int main (int argc, char *argv[]) {
 	fprintf(stats, "Date: %s \n", ctime(&date));
 	fprintf(stats, "Population: %i \nSimulationTime: %i \ndt: %f \nInterventions: %i \nTau_onset: %f \n\n\n ", population, tot_time, dt, interventions, tauI_onset);	
  
+        ret = clock_gettime(CLOCK_MONOTONIC, &T1);
+
 	float HH_size = 2.2 ; // Average household size from OCED 
 	int num_households = (int)(population/HH_size); // Number of households in population
 	int * HH;  // Households 
@@ -1264,6 +1266,7 @@ school or workplace. */
 //	float initialize[15]={500000, 400000, 200000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 1000, 1000, 1000, 1000};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
+        fflush(stats);
 	for ( tmp_t=-14; tmp_t<=0; tmp_t++ ) {
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
@@ -1271,9 +1274,13 @@ school or workplace. */
 			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
 		}
 		fprintf(stats, "\n\n");
+                fflush(stats);
                 /* Randomly assign initial infections */
                 infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat, lon, num_infect_county, num_infect_age, age, county_p, county_p_n) ;
-	}		
+	}
+        fflush(stats);
+        printf("All infections initialized\n");
+        fflush(stdout);
 
 	// Uncomment to see initial distribution of infections by county.
 	for (i=0; i<num_counties; i++) {
@@ -1310,6 +1317,9 @@ school or workplace. */
 	}	
 
 
+        printf("Starting density kernel calculations\n");
+        fflush(stdout);
+        ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<num_locale; i++) {
                 float itmp_fd;
@@ -1337,6 +1347,10 @@ school or workplace. */
 		}
                 fd_tot[i] += itmp_fd + npi - 1;
 	}
+        ret = clock_gettime(CLOCK_MONOTONIC, &t2);
+        tt = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
+        printf("Done with density kernel calculations in %5.2f\n", tt);
+        fflush(stdout);
 
 	/* Initialization complete... start simulation */
 
@@ -1396,11 +1410,21 @@ school or workplace. */
 	Ic=1;
 	float t=0;
 	float time_step=0;
+
+        ret = clock_gettime(CLOCK_MONOTONIC, &T2);
+        tt = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
+        printf("Total initialization time %5.2f\n", tt);
+
 	/* Start simulation */			
+        printf("Starting simulation\n");
+        fflush(stdout);
+
         ret = clock_gettime(CLOCK_MONOTONIC, &T1);
 	for (time_step=0; time_step<(tot_time/dt); time_step++) {
                 ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 		t=t+dt;
+                printf("Timestep %5.2f ", t);
+                fflush(stdout);
 
 		/* count origin of contacts */	
 		 num_contact_commun=0;
@@ -1622,6 +1646,8 @@ school or workplace. */
 
         ret = clock_gettime(CLOCK_MONOTONIC, &t2);
         step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
+        printf("time %5.2f\n", step_time);
+        fflush(stdout);
 	fprintf(output_file, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
 	fflush(output_file);
 	
@@ -1639,6 +1665,7 @@ school or workplace. */
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
         fprintf(output_file, "Total time %8.3f\n", step_time);
+        printf("Total simulation time %8.3f\n", step_time);
 
 
 	free(HH);
