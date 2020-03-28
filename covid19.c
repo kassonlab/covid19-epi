@@ -1056,8 +1056,6 @@ int main (int argc, char *argv[]) {
 	sus_list = (int*)calloc(population,sizeof(int));
 
 	/* Parameters pertaining to the population.  These could be made into a struct later to look nicer. */
-	int sus_person; //Counter for susceptible person.
-	int infec_person; //Counter for infected person.
 	int * hosp_pop; // 1 if person i in hospital, 0 otherwise
 	hosp_pop = (int*)calloc(population,sizeof(int));
 	int * icu_pop; // 1 if person i in ICU, 0 otherwise
@@ -1069,7 +1067,6 @@ int main (int argc, char *argv[]) {
 	int * workplace_tmp; // Hospital location when people go into hospital.
 	workplace_tmp = (int*)calloc(population,sizeof(int));
 
-	int age_group; 
 	float infect_prob=0; // Infectious probability
 	float community_nom=0; // For adding community infection.
 	float community_den=0; // For adding community infection.
@@ -1346,7 +1343,6 @@ school or workplace. */
 
 
 	/* Initialize constants */
-	float kappa=4 ; // #Infectiousness
 	float alpha=0.8 ; // From Ferguson Nature 2006
 	float omega=2 ; // From Ferguson Nature 2006
 	// #Leaving out rho from Ferguson 2006.  This is a measure of how infectious person is.  For now, we will assume all people are the same.
@@ -1469,6 +1465,8 @@ school or workplace. */
 
 		//#### Only Susceptible people can get the virus and infected people spread it.
 		for (i=0; i<num_sus; i++) {
+                        int sus_person; //Counter for susceptible person.
+                        int age_group;
 			sus_person=sus_list[i];
 			community_nom=0;
 			community_den=0;
@@ -1477,16 +1475,23 @@ school or workplace. */
 			contact_work=0;
 			contact_house=0;
 			contact_school=0;
+                        age_group=floor(age[sus_person]/5);
 
 			for (j=0; j<num_infectious; j++) {
 
 
+                                int infec_person; //Counter for infected person.
+                                float kappa; // #Infectiousness
+                                float tIc, tIh, *tIw;
 				infec_person=infectious[j];
+                                tIc = Ic;
+                                tIh = Ih;
+                                tIw = Iw;
 				/* Determine if person is under individual interventions and set parameters */
 				if (intervene[infec_person] == 1 && t>tau[infec_person]+tauI[interventions]) {
-					Ih=interIh[interventions];
-					Ic=interIc[interventions];
-					Iw=interIw[interventions];
+					tIh=interIh[interventions];
+					tIc=interIc[interventions];
+					tIw=interIw[interventions];
 				} 
 				
 
@@ -1498,17 +1503,17 @@ school or workplace. */
                                         float d; //distance between people.
 					if (HH[sus_person]==HH[infec_person]) {
 						// Household transmission //
-						infect+=Ih*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
+						infect+=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
 						contact_house++;
 					}
 
 					// Workplace/School transmission: People must be in same workplace and job type. // 
-					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person]) && (job_status[sus_person]>0) && Iw[job_status[sus_person]]>0) {
-						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], Iw) ;
+					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person]) && (job_status[sus_person]>0) && tIw[job_status[sus_person]]>0) {
+						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 						if (job_status[sus_person]<4) {
 							contact_school++;
 							if (class[sus_person]==class[infec_person]) {
-								infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, 15.00, severe[infec_person], Iw) ;
+								infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, 15.00, severe[infec_person], tIw) ;
 							}
 						} else {
 							contact_work++;
@@ -1516,15 +1521,14 @@ school or workplace. */
 					}
 
 					// Community transmission // 
-					age_group=floor(age[sus_person]/5);
                                         d=distance(lat[sus_person], lon[sus_person], lat[infec_person], lon[infec_person], 'K');
-					community_nom+=Ic*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc);
+					community_nom+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc);
 					contact_commun++;
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
 					// Workplace/School transmission: People must be in same workplace and job type. // 
 					if ((workplace[sus_person]==workplace_tmp[infec_person]) && (job_status[sus_person]==job_status[infec_person])) {
-						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], Iw) ;
+						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 					}
 					// Household transmission //
 					if (HH[sus_person]==HH[infec_person]) {
@@ -1602,6 +1606,7 @@ school or workplace. */
 
 		// Recovered after 11 days (6 days of symptoms) if not in hospital/ICU. // 
 		for (i=0; i<num_infectious; i++) {
+                        int infec_person;
 			infec_person=infectious[i];
 			if ((tau[infec_person]==t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
 				recovered[infec_person]=1;
