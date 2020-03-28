@@ -7,6 +7,8 @@
 
 #include "common.h"
 
+int typical_max_HH_sz = 7;
+
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 /*::                                                                         :*/
@@ -128,7 +130,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n) {
+void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person) {
 
 	/* Get longitude and latitude with population density from CSV */
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
@@ -234,6 +236,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
                 county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
 		county_size[county[HH_person]]++;
+                HH_to_person[HH_count][per_HH_size[HH_count]] = HH_person;
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -280,6 +283,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		city_size[city[HH_person]]++;
 		county_size[county[HH_person]]++;
 		locale_count[placement]+=1;
+                HH_to_person[HH_count][per_HH_size[HH_count]] = HH_person;
 		per_HH_size[HH[HH_person]]++;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
 			max_HH_size=per_HH_size[HH[HH_person]];
@@ -290,7 +294,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	}
 
         placement = 0;
-        int typical_max_HH_sz = 7;
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
                 int tmp_HH;
@@ -318,6 +321,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 			city_size[city[HH_person]]++;
 			county_size[county[HH_person]]++;
 			locale_count[placement]+=1;
+                        HH_to_person[tmp_HH][per_HH_size[tmp_HH]] = HH_person;
                         per_HH_size[HH[HH_person]]++;
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
                                 max_HH_size=per_HH_size[HH[HH_person]];
@@ -913,6 +917,11 @@ int main (int argc, char *argv[]) {
 	HH = (int*)calloc(population,sizeof(int));
 	int * per_HH_size; // Size of each household.  Need for infectiousness calculations.
 	per_HH_size = (int*)calloc(num_households,sizeof(int));
+        int **HH_to_person;
+        HH_to_person = (int **)malloc(num_households * sizeof(int *));
+        for (i = 0; i < num_households; i++) {
+            HH_to_person[i] = (int *)calloc(typical_max_HH_sz, sizeof(int));
+        }
 
 	/* Population information */
 	/* Specific to Sweden.  Averaging population based on total population of Sweden regardless of population size. */
@@ -1169,7 +1178,7 @@ school or workplace. */
 
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n) ;
+	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person) ;
 
 
 	/* Open files */
