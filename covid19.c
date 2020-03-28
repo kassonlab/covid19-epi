@@ -130,19 +130,16 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person) {
+void household_lat_long(int num_households, int * HH, float * lat, float * lon, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person, int *num_locale, double *lat_locale, double *lon_locale, double *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n) {
 
 	/* Get longitude and latitude with population density from CSV */
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 
 	/* Initialize helpers for population density */
-	int num_km=206959;
+	int num_km=*num_locale;
 	// FOR TEST TEXT 
 	//int num_km=63;
-	float pop_density_init_num[num_km];
 	float tot_pop_density=0;
-	float tmp_lat;
-	float tmp_lon;
 
 	/* Initialize helpers for household distribution */
 	float lat_HH[num_households];	
@@ -162,11 +159,10 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	int tmp_county_density[21]={0};	
 
 	/* find how many locales will have households */
-	int num_locale=0;
 	if (num_households<num_km) {
-		num_locale=num_households;
+		*num_locale=num_households;
 	} else {
-		num_locale=num_km;
+		*num_locale=num_km;
 	}
 
 	/* Fill up households. */
@@ -181,21 +177,21 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 
 	/* Save list of households in each locale. */
 	int ** county_list;
-	county_list = (int**)calloc(num_locale,sizeof(int*));
-	for (i=0;i<num_locale;i++) county_list[i] = (int*)calloc(num_households,sizeof(int));
+	county_list = (int**)calloc(*num_locale,sizeof(int*));
+	for (i=0;i<*num_locale;i++) county_list[i] = (int*)calloc(num_households,sizeof(int));
 	int * locale_count;
-	locale_count = (int*)calloc(num_locale,sizeof(int));
+	locale_count = (int*)calloc(*num_locale,sizeof(int));
 	int * locale_HH_count;
-	locale_HH_count = (int*)calloc(num_locale,sizeof(int));
+	locale_HH_count = (int*)calloc(*num_locale,sizeof(int));
 	
 
         tmp_city = -1;
-	/* Parse land_scan file to get population density.  */
 	while (( HH_count < num_households ) && (HH_count < num_km)) {
+                float tmp_lat, tmp_lon;
 		min_dist=1000000;
-		int got = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_density_init_num[HH_count]);
-  		if (got != 3) break; // wrong number of tokens - maybe end of file
 
+                tmp_lat = lat_locale[HH_count];
+                tmp_lon = lon_locale[HH_count];
 		tot_pop_density+=pop_density_init_num[HH_count];
 
 		// Determine city of each population square.  Use city data to determine which schools students attend.  Workplaces are placed by county. //
@@ -222,6 +218,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		city_HH[HH_count]=city_num;
 		county_HH[HH_count]=county_num;
 		county_list[HH_count][locale_count[HH_count]]=HH_count;
+                locale_to_HH[HH_count][locale_to_HH_n[HH_count]++] = HH_count;
 		locale_HH_count[HH_count]+=1;
 
                 /* Allocate an adult to the household */
@@ -271,6 +268,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		city_HH[HH_count]=city_HH[placement];
 		county_HH[HH_count]=county_HH[placement];
 		county_list[placement][locale_count[placement]]=HH_count;
+                locale_to_HH[placement][locale_to_HH_n[placement]++] = HH_count;
 		locale_HH_count[placement]+=1;
 
 		/* Set up head of household. */
@@ -300,7 +298,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 		if (HH[HH_person]==-1) {
 			
 			/* Place people in random households within locale until locale is full. */
-			if (placement>=num_locale) {
+			if (placement>=*num_locale) {
 				placement=0;
 			} else if (locale_count[placement]>=pop_density_init_num[placement]) {
 					placement=0; // Start over at top of list.  Remember list is sorted by biggest to smallest locales.
@@ -359,7 +357,6 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	free(locale_HH_count);
 	free(county_list);
 	free(locale_count);
-	fclose(lat_long);
 }
 
 void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * city, int * county, char ** county_names, int num_county) {
@@ -626,13 +623,17 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	return(kappa);
 }
 
-int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * tmp_lat, float * tmp_lon, float * lat, float * lon, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_p_n) {
+int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat, float * lon, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_p_n) {
 
 	int person_infected=0;
 	int tmp_infect=0;
 	float min_diff=1000;
 	float diff_lat_lon=10;
+        float *tmp_lat, *tmp_lon;
         int i, j;
+
+        tmp_lat = (float*)calloc(population,sizeof(float));
+        tmp_lon = (float*)calloc(population,sizeof(float));
 	
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
@@ -684,6 +685,8 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 		}
 			
 	}
+        free(tmp_lat);
+        free(tmp_lon);
 				
 	return(infected_list);
 }
@@ -1177,8 +1180,33 @@ school or workplace. */
 	}
 
 
+	/* Parse land_scan file to get population density.  */
+        double *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
+        int num_locale = 0, max_locale = 0;
+        double tmp_lat, tmp_lon, pop_den;
+	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
+        while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
+            if (num_locale + 1 > max_locale) {
+                max_locale += 10;
+                lat_locale = (double *)realloc(lat_locale, max_locale * sizeof(double));
+                lon_locale = (double *)realloc(lon_locale, max_locale * sizeof(double));
+                pop_density_init_num = (double *)realloc(pop_density_init_num, max_locale * sizeof(double));
+            }
+            lat_locale[num_locale] = tmp_lat;
+            lon_locale[num_locale] = tmp_lon;
+            pop_density_init_num[num_locale] = pop_den;
+        }
+        fclose(lat_long);
+        int **locale_to_HH;
+        int *locale_to_HH_n;
+        locale_to_HH = (int **) malloc(num_locale * sizeof(int *));
+        for (i = 0; i < num_locale; i++) {
+            locale_to_HH[i] = (int *)calloc(num_households, sizeof(int));
+        }
+        locale_to_HH_n = (int *)calloc(num_locale, sizeof(int));
+
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person) ;
+	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n) ;
 
 
 	/* Open files */
@@ -1216,10 +1244,6 @@ school or workplace. */
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
 	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
-	float * tmp_lat;
-	tmp_lat = (float*)calloc(population,sizeof(float));
-	float * tmp_lon;
-	tmp_lon = (float*)calloc(population,sizeof(float));
 	/**** TMP INTIALIZATION ARRAY ***/
 //	float initialize[15]={500000, 400000, 200000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 1000, 1000, 1000, 1000};
 	float tmp_t;
@@ -1231,8 +1255,8 @@ school or workplace. */
 			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
 		}
 		fprintf(stats, "\n\n");
-			/* Randomly assign initial infections */
-			infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, tmp_lat, tmp_lon, lat, lon, num_infect_county, num_infect_age, age, county_p, county_p_n) ;
+                /* Randomly assign initial infections */
+                infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat, lon, num_infect_county, num_infect_age, age, county_p, county_p_n) ;
 	}		
 
 	// Uncomment to see initial distribution of infections by county.
