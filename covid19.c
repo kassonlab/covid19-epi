@@ -1515,7 +1515,7 @@ school or workplace. */
 
 				}
 			}
-                        infect+=community_nom/fd_tot[sus_person]; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
+                        infect+=community_nom/fd_tot[locale_HH[HH[sus_person]]]; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
 
 
 			//### Probability of being infected ####
