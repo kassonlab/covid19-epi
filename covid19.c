@@ -114,7 +114,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
                 int indx;
                 indx = rand_distr_indx(age_dst, 0, age_sz-1);
 		age[i] = age_start[indx] + COV_rand()*10;
-		age_distrib[(int)age[i]/5]++;
+		age_distrib[(int)floor(age[i]/5)]++;
 	}
         free(age_dst);
 
@@ -861,7 +861,7 @@ void hosp_release(float t, int num_hosp, int * hosp_list, float * tau, int * rec
 	}
 }
 
-int death(float t, int num_infectious, int * infectious, float * tau, int * dead, int * icu_pop, int * hosp_pop, int * symptomatic, int num_dead, float * age, float dt, int * num_dead_age, int * num_dead_county, int * county) {
+int death(float t, int num_infectious, int * infectious, float * tau, int * dead, int * icu_pop, int * hosp_pop, int * symptomatic, int num_dead, float * age, float dt, int * num_dead_county, int * num_dead_age, int * county) {
 
 	float fatal_in_icu=0.5;
 	float fatal_symptomatic[]={0.00002, 0.00006, 0.0003, 0.0008, 0.0015, 0.006, 0.022, 0.051, 0.093};
@@ -1283,17 +1283,17 @@ school or workplace. */
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
-	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
+//	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	/**** TMP INTIALIZATION ARRAY ***/
-//	float initialize[15]={500000, 400000, 200000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 1000, 1000, 1000, 1000};
+	float initialize[15]={500, 400, 200, 100, 100, 100, 100, 100, 100, 100, 100, 10, 10, 10, 10};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
         fflush(stats);
 	for ( tmp_t=-14; tmp_t<=0; tmp_t++ ) {
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
-			initial_infections[j]=initial_per[j]*initialize[l]*population/tot_pop;
-			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]*population/tot_pop);
+			initial_infections[j]=initial_per[j]*initialize[l];
+			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
 		}
 		fprintf(stats, "\n\n");
                 fflush(stats);
