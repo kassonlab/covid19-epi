@@ -1142,7 +1142,7 @@ school or workplace. */
 	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
 	interIh[3]=1.0;
 	complyI[3]=0.9;
-	tauI[3]=1.5;
+	tauI[3]=6.1;
 	personinter=0;
 
 	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
@@ -1150,7 +1150,7 @@ school or workplace. */
 	float interIw4[6]={0,0,0,0,0, Ihosp};
 	interIh[4]=2.0;
 	complyI[4]=0.7;
-	tauI[4]=1.5;
+	tauI[4]=6.1;
 	personinter=0;
 
 	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 70% comply*/
