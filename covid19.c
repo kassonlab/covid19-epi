@@ -13,6 +13,8 @@
 
 int typical_max_HH_sz = 7;
 
+int full_fd = 0, full_kappa = 0;
+
 float betac_scale = 1.0, betah_scale = 1.0, betaw_scale = 1.0;
 
 //Taken from geodatasource.com //
@@ -620,10 +622,13 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 		kappa=0.; //# Recovered or dead
 	} else {
 		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
-//		t1=(log(t-tau-4.6)+0.72)/1.8;
-//		kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
-		t2=(t-tau-4.6)/dt;
-		kappa=kappa_vals[t2];
+                if (full_kappa) {
+                    t1=(log(t-tau-4.6)+0.72)/1.8;
+                    kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
+                } else {
+                    t2=(t-tau-4.6)/dt;
+                    kappa=kappa_vals[t2];
+                }
 	}
 	if (symptomatic==0) {
 		kappa=kappa*0.5;
@@ -784,8 +789,11 @@ float calc_community_infect(int age_group, float kappa, float omega, int severe,
 	float fd, fd1;
 	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
-//	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-	fd=fd_vals[(int)(d*10)];
+        if (full_fd) {
+            fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+        } else {
+            fd=fd_vals[(int)(d*10)];
+        }
 	return(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
@@ -925,6 +933,8 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-betac")) betac_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-betah")) betah_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-betaw")) betaw_scale=atof(argv[++i]);
+    		else if (!strcmp(argv[i],"-full_fd")) full_fd = 1;
+    		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
   	}
 
 	/* print out population statistics to file */
@@ -1346,7 +1356,11 @@ school or workplace. */
                             npj += per_HH_size[locale_to_HH[j][hh]];
                         }
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
-			tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
+                        if (full_fd) {
+                            tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+                        } else {
+                            tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
+                        }
                         itmp_fd += tmp_fd * npj;
 			fd_tot[j] += tmp_fd * npi;
 		}
