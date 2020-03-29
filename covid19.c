@@ -642,7 +642,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	return(kappa);
 }
 
-int * initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * infected_list, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat, float * lon, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_p_n) {
+void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat, float * lon, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_p_n) {
 
 	int person_infected=0, county_person_inf = 0;
 	int tmp_infect=0;
@@ -705,7 +705,6 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 			}
 	//		tau[person_infected]=-COV_rand() * 5;
 			tau[person_infected]=t;
-			infected_list[*num_infect]=person_infected;
 			tmp_lat[*num_infect]=lat[person_infected];
 			tmp_lon[*num_infect]=lon[person_infected];
 			*num_infect=*num_infect+1;
@@ -717,8 +716,6 @@ int * initialize_infections(int * initial_infections, float * tau, int * infecte
 	}
         free(tmp_lat);
         free(tmp_lon);
-				
-	return(infected_list);
 }
 
 
@@ -1072,8 +1069,6 @@ int main (int argc, char *argv[]) {
 	icu_list = (int*)calloc(population,sizeof(int));
 	int * hosp_list; //Indices in hospital.
 	hosp_list = (int*)calloc(population,sizeof(int));
-	int * infected_list; //Indices of infected.
-	infected_list = (int*)calloc(population,sizeof(int));
 	int * infectious; //Indices of infected.
 	infectious = (int*)calloc(population,sizeof(int));
 	int * sus_list; //Indices of susceptible.
@@ -1298,7 +1293,7 @@ school or workplace. */
 		fprintf(stats, "\n\n");
                 fflush(stats);
                 /* Randomly assign initial infections */
-                infected_list = initialize_infections( initial_infections,  tau,  infected,  severe,  infected_list,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat, lon, num_infect_county, num_infect_age, age, county_p, county_p_n) ;
+                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat, lon, num_infect_county, num_infect_age, age, county_p, county_p_n) ;
 	}
         fflush(stats);
         printf("All infections initialized\n");
