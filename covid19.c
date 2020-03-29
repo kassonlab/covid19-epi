@@ -185,7 +185,7 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 
 	/* Save list of households in each locale. */
 	int ** county_list;
-	county_list = (int**)calloc(*num_locale,sizeof(int*));
+        county_list = (int**)calloc(*num_locale,sizeof(int*));
 	for (i=0;i<*num_locale;i++) county_list[i] = (int*)calloc(num_households,sizeof(int));
 	int * locale_count;
 	locale_count = (int*)calloc(*num_locale,sizeof(int));
@@ -364,9 +364,12 @@ void household_lat_long(int num_households, int * HH, float * lat, float * lon, 
 	fprintf(stats, "\n\n");
         fflush(stats);
 
-	free(locale_HH_count);
+        for (i = 0; i < *num_locale; i++) {
+            free(county_list[i]);
+        }
 	free(county_list);
 	free(locale_count);
+	free(locale_HH_count);
 }
 
 void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * city, int * county, char ** county_names, int num_county) {
