@@ -632,7 +632,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
                     t1=(log(t-tau-4.6)+0.72)/1.8;
                     kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
                 } else {
-                    t2=(t-tau-4.6)/dt;
+                    t2=(t-tau)/dt;
                     kappa=kappa_vals[t2];
                 }
 	}
@@ -1392,14 +1392,14 @@ school or workplace. */
 	float * kappa_vals;
 	float tau1=0;	
 	kappa_vals = (float*)calloc(count_kappa_vals,sizeof(float));
-        /* Can't use i=0 since that would result in div-by-zero */
-        /* This is handled in the calc_kappa function by making sure it shortcuts to 0 for t-tau <= 4.6 */
-        /* Play it safe and set kappa_vals[0] = 0 */
-        kappa_vals[0] = 0;
 	for (i=1; i<count_kappa_vals; i++) {
-		kappa_t=i*dt;
-		tmp_t=(log(kappa_t)+0.72)/1.8;
-		kappa_vals[i]=exp(-0.5*pow(tmp_t,2))/((kappa_t)*1.8*sqrt(2*pi));
+		kappa_t=i*dt-4.6;
+                if (kappa_t <= 0) {
+                    kappa_vals[i] = 0;
+                } else {
+                    tmp_t=(log(kappa_t)+0.72)/1.8;
+                    kappa_vals[i]=exp(-0.5*pow(tmp_t,2))/((kappa_t)*1.8*sqrt(2*pi));
+                }
 	}
 
 	int contact_commun=0;
