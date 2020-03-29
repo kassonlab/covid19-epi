@@ -471,9 +471,9 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 
 // Uncomment to test job distribution.  Tested JMG 2020-03-20. 
 	int job_dist_test[6]={0};
-	int unemployed[21]={0};
-	int working_age[21]={0};
-	int city_dist_test[6][21]={0};
+	int unemployed[num_counties]={0};
+	int working_age[num_counties]={0};
+	int city_dist_test[6][num_counties]={0};
 	for (i=0; i<population; i++) {
 		job_dist_test[job_status[i]]++;
 		city_dist_test[job_status[i]][county[i]]++;
@@ -589,9 +589,9 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 	int k;
 	int max=*max_num_WP;
 	int * work_dist_test;
-	work_dist_test = (int*)calloc((max)*21,sizeof(int));
+	work_dist_test = (int*)calloc((max)*num_counties,sizeof(int));
 	int * class_dist_test;
-	class_dist_test = (int*)calloc((max)*21*max_num_classes,sizeof(int));
+	class_dist_test = (int*)calloc((max)*num_counties*max_num_classes,sizeof(int));
 	for (i=0; i<population; i++) {
 		work_dist_test[workplace[i]][(int)county[i]]++;
 		class_dist_test[workplace[i]][(int)county[i]][class[i]]++;
@@ -1005,13 +1005,14 @@ int main (int argc, char *argv[]) {
 	float * age;  // Age of population
 	age = (float*)calloc(population,sizeof(float));
 	int * age_distrib;
-	age_distrib = (int*)calloc(population,sizeof(int));
+	/* Distribution of ages in the generated population, people probably won't be older ehan 150 */
+	age_distrib = (int*)calloc(150,sizeof(int));
 	int * county;  // County of each inhabitant
 	county = (int*)calloc(population,sizeof(int));
         int **county_p; /* List of persons per county */
         county_p = (int **)malloc(num_counties * sizeof(int *));
         for(i=0; i < num_counties; i++) {
-            county_p[i] = (int *) malloc(population * sizeof(int));
+            county_p[i] = (int *) malloc(population * sizeof(int)); /* AS: can be reduced to max number of persons in the most populated county */
         }
         int *county_p_n; /* Nr of persons per county */
         county_p_n = (int *)calloc(num_counties, sizeof(int));
@@ -1038,30 +1039,38 @@ int main (int argc, char *argv[]) {
 
 	/* Infection parameters.  Mostly counters for looping. */
 	int num_sus=0; //Number susceptible.
-	int num_sus_county[21]={0};
 	int num_sus_age[18]={0};
 	int num_infect=0; //Number infected.
+	int *num_sus_county;
+        num_sus_county = (int *)calloc(num_counties, sizeof(int));
 	int * num_infect_county;
-	num_infect_county = (int*)calloc(population,sizeof(int));
+	num_infect_county = (int*)calloc(num_counties, sizeof(int));
 	int num_infect_age[18]={0};
 	int num_icu=0; //Number in ICU.
-	int num_icu_county[21]={0};
+	int *num_icu_county;
+        num_icu_county = (int *)calloc(num_counties, sizeof(int));
 	int num_icu_age[18]={0};
 	int num_hosp=0; //Number in hospital. 
-	int num_hosp_county[21]={0};
+	int num_hosp_county;
+        num_hosp_county = (int *)calloc(num_counties, sizeof(int));
 	int num_hosp_age[18]={0};
 	int num_dead=0; //Number of deaths. 
-	int num_dead_county[21]={0};
+	int *num_dead_county;
+        num_dead_county = (int *)calloc(num_counties, sizeof(int));
 	int num_dead_age[18]={0};
 	int num_recovered=0; //Number of people recovered. 
-	int num_recovered_county[21]={0};
+	int *num_recovered_county;
+        num_recovered_county = (int *)calloc(num_counties, sizeof(int));
 	int num_recovered_age[18]={0};
-	int num_recovered_hosp_county[21]={0};
+	int *num_recovered_hosp_county;
+        num_recovered_hosp_county = (int *)calloc(num_counties, sizeof(int));
 	int num_recovered_hosp_age[18]={0};
-	int num_recovered_icu_county[21]={0};
+	int *num_recovered_icu_county;
+        num_recovered_icu_county = (int *)calloc(num_counties, sizeof(int));
 	int num_recovered_icu_age[18]={0};
 	int num_infectious=0; //Number infectious.
-	int num_infectious_county[21]={0};
+	int *num_infectious_county;
+        num_infectious_county = (int *)calloc(num_counties, sizeof(int));
 	int num_infectious_age[18]={0};
 	int recovered_hosp=0; //Number of people recovered. 
 	int recovered_icu=0; //Number of people recovered.
@@ -1246,12 +1255,19 @@ school or workplace. */
 	/* Initialize households */
 	household_lat_long( num_households,  HH,  lat,  lon, lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH) ;
 
+        /* HH_to_person no longer needed */
+        for (i = 0; i < num_households; i++) {
+            HH_to_person[i];
+        }
+        free(HH_to_person);
+	free(city_county);
+
 
 	/* Open files */
 	char * file_beg="county_";
 	char * file_end=".log";
 	char file_name[1000];
-	FILE** county_files = malloc(sizeof(FILE*) * 21);
+	FILE** county_files = malloc(num_counties * sizeof(FILE*));
 	for (i=0; i<num_counties; i++) {
 		strcpy(file_name, "");
 		strcat(file_name, file_beg); 
@@ -1319,6 +1335,8 @@ school or workplace. */
 	memset(hosp_num, 0, num_counties);
 	/* Initialize workplace/school */	
 	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats); 
+
+	free(city);
 
         fclose(stats);
 
@@ -1409,15 +1427,15 @@ school or workplace. */
 	int num_contact_work=0;
 	int num_contact_school=0;	
 	int num_contact_house=0;
-	int num_contact_commun_county[21];	
+	int num_contact_commun_county[num_counties];
 	int num_contact_commun_age[18];	
-	int num_contact_work_county[21];	
+	int num_contact_work_county[num_counties];
 	int num_contact_work_age[18];	
-	int num_contact_school_county[21];	
+	int num_contact_school_county[num_counties];
 	int num_contact_school_age[18];	
-	int num_contact_house_county[21];	
+	int num_contact_house_county[num_counties];
 	int num_contact_house_age[18];	
-	for (i=0; i<21; i++) {
+	for (i=0; i<num_counties; i++) {
 		num_dead_county[i]=0;
 		num_recovered_county[i]=0;
 		num_recovered_hosp_county[i]=0;
@@ -1455,7 +1473,7 @@ school or workplace. */
 		 num_contact_work=0;
 		 num_contact_school=0;	
 		 num_contact_house=0;
-		for (i=0; i<21; i++) {
+		for (i=0; i<num_counties; i++) {
 			num_contact_commun_county[i]=0;	
 			num_contact_work_county[i]=0;	
 			num_contact_school_county[i]=0;	
@@ -1700,8 +1718,6 @@ school or workplace. */
 	free(long_city);
 	free(city_size);
 	free(county_size);
-	free(city);
-	free(city_county);
 	free(age);
 	free(county);
 	free(job_status);
