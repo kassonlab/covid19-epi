@@ -468,9 +468,15 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 
 // Uncomment to test job distribution.  Tested JMG 2020-03-20. 
 	int job_dist_test[6]={0};
-	int unemployed[num_counties]={0};
-	int working_age[num_counties]={0};
-	int city_dist_test[6][num_counties]={0};
+	int *unemployed;
+        unemployed = (int *)calloc(num_counties, sizeof(int));
+	int *working_age;
+        working_age = (int *)calloc(num_counties, sizeof(int));
+	int **city_dist_test;
+        city_dist_test = (int **)calloc(6, sizeof(int *));
+        for (i = 0; i < 6; i++) {
+            city_dist_test[i] = (int *)calloc(num_counties, sizeof(int));
+        }
 	for (i=0; i<population; i++) {
 		job_dist_test[job_status[i]]++;
 		city_dist_test[job_status[i]][county[i]]++;
@@ -491,6 +497,13 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 		fprintf(stats, "\n");
 	}
         fflush(stats);
+
+        free(unemployed);
+        free(working_age);
+        for (i = 0; i < 6; i++) {
+            free(city_dist_test[i]);
+        }
+        free(city_dist_test);
 
 //	
 
@@ -1048,7 +1061,7 @@ int main (int argc, char *argv[]) {
         num_icu_county = (int *)calloc(num_counties, sizeof(int));
 	int num_icu_age[18]={0};
 	int num_hosp=0; //Number in hospital. 
-	int num_hosp_county;
+	int *num_hosp_county;
         num_hosp_county = (int *)calloc(num_counties, sizeof(int));
 	int num_hosp_age[18]={0};
 	int num_dead=0; //Number of deaths. 
@@ -1727,7 +1740,6 @@ school or workplace. */
 
 	free(icu_list);
 	free(hosp_list);
-	free(infected_list);
 	free(infectious);
 	free(sus_list);
 
