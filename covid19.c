@@ -505,12 +505,13 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 	int pp_work = 15; //Assumption of 15 people per close work group.
 	int i;
 	int j;
-	int num_workplaces[6][num_counties];
-	memset(num_workplaces, 0, 6*num_counties*sizeof(int));
+	int num_workplaces[6][num_cities];
+	memset(num_workplaces, 0, 6*num_cities*sizeof(int));
 	int num_workplaces2[6];
 	memset(num_workplaces2, 0, 6*sizeof(int));
 
-	for (i=0; i < num_counties; i++) {
+        /* THIS WILL NOW BE BY CITY FOR SCHOOLS AND PRESCHOOLS. */
+	for (i=0; i < num_cities; i++) {
 		for (j=0; j<2; j++) {
 			/* First only schools then workplaces */
 			if (job_status_county[j][i]>0) {
@@ -521,7 +522,7 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 				}
 			}
 		}
-		for (j=2; j<4; j++) {
+		for (j=2; j<3; j++) {
 			/* First only schools then workplaces */
 			if (job_status_county[j][i]>0) {
 				num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_school);
@@ -533,15 +534,17 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 		}
 	}
 
-	j=4; // Broken down in case we want to do schools by municipality.
+	// Broken down in case we want to do schools by municipality.
 	for (i=0; i < num_counties; i++) {
-		if (job_status_county[4][i]>0) {
-			num_workplaces[4][i]=ceil(job_status_county[4][i]/(float)pp_work);
-			num_workplaces2[4]+=ceil(job_status_county[4][i]/(float)pp_work);
-			if (num_workplaces2[4]>*max_num_WP) {
-				*max_num_WP=num_workplaces2[4];
-			}
-		}
+		for (j=3; j<5; j++) {
+                    if (job_status_county[j][i]>0) {
+                            num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_work);
+                            num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_work);
+                            if (num_workplaces2[j]>*max_num_WP) {
+                                    *max_num_WP=num_workplaces2[j];
+                            }
+                    }
+                }
 		// Need to use floor+1 equation because each county should have a hospital even if no one works there. */
 		num_workplaces[5][i]=floor(job_status_county[5][i]/(float)pp_hospital)+1;
 		num_workplaces2[5]+=floor(job_status_county[5][i]/(float)pp_hospital)+1;
@@ -555,18 +558,21 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 	for (i=0; i < population; i++) {
 		//Try to minimize necessary memory by making job_numbers independent with job_status. //
 		int prior_workplaces=0;
-		for (j=0; j<county[i]; j++) {
-			prior_workplaces+=num_workplaces[job_status[i]][j];
-		}
-		if (((num_workplaces[job_status[i]][county[i]])>0) && (job_status[i]<4)) {
-			workplace[i]=(int)(COV_rand() * (num_workplaces[job_status[i]][county[i]]))+prior_workplaces;
-			class[i]=(int)(COV_rand() * (ceil(num_workplaces[job_status[i]][county[i]]/(float)pp_class)));
+		if (job_status[i] < 3 && num_workplaces[job_status[i]][city[i]] > 0) {
+                        for (j=0; j < city[i]; j++) {
+                                prior_workplaces+=num_workplaces[job_status[i]][j];
+                        }
+			workplace[i]=(int)(COV_rand() * (num_workplaces[job_status[i]][city[i]]))+prior_workplaces;
+			class[i]=(int)(COV_rand() * (ceil(num_workplaces[job_status[i]][city[i]]/(float)pp_class)));
 
-			if (ceil(num_workplaces[job_status[i]][county[i]]/(float)pp_class)>max_num_classes) {
-				max_num_classes=ceil(num_workplaces[job_status[i]][county[i]]/(float)pp_class);
+			if (ceil(num_workplaces[job_status[i]][city[i]]/(float)pp_class)>max_num_classes) {
+				max_num_classes=ceil(num_workplaces[job_status[i]][city[i]]/(float)pp_class);
 			}
 	
 		} else if ((num_workplaces[job_status[i]][county[i]])>0) {
+                        for (j=0; j<county[i]; j++) {
+                                prior_workplaces+=num_workplaces[job_status[i]][j];
+                        }
 			workplace[i]=(int)(COV_rand() * (num_workplaces[job_status[i]][county[i]]))+prior_workplaces;
 		} else {
 			workplace[i]=0;
@@ -1304,9 +1310,9 @@ school or workplace. */
 
 
 
-	int ** job_status_county; // Jobs per county
+	int ** job_status_county; // Jobs per county, or city for schools
 	job_status_county = (int**)calloc(6,sizeof(int*));
-	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_counties,sizeof(int)) ;
+	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_cities,sizeof(int)) ;
 	/* Initialize job/school status */
 	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, stats); 
 
