@@ -1162,14 +1162,22 @@ school or workplace. */
 	tauI[4]=6.1;
 	personinter[4]=0;
 
-	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 90% comply*/
+	/* Intervention 5: Case isolation of entire household if one member becomes sick.  This adds for the case of a quarantined household member getting ill.  tauI=0 */
+	interIc[5]=0.25;
+	float interIw5[6]={0,0,0,0,0, Ihosp};
+	interIh[5]=1.0;
+	complyI[5]=0.9;
+	tauI[5]=0.0;
+	personinter[5]=0;
+
+	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 90% comply
 	interIc[5]=0.25;
 	float interIw5[6]={0, 1.00, 1.00, 1.00, 0.75, Ihosp};
 	interIh[5]=1.50;
 	complyI[5]=0.90;
 	tauI[5]=0;
 	personinter[5]=1;
-
+*/
 	/* Intervention 6: social distancing with school closure.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
 	interIc[6]=0.25;
 	float interIw6[6]={0,0,0,0,0.25, Ihosp};
@@ -1653,7 +1661,11 @@ school or workplace. */
 				num_infect_age[(int)floor(age[sus_person]/5)]++;
 				/* Determine if following interventions only for interventions that effect individuals.*/
 				if ( interventions > 0 && COV_rand() < complyI[3] ) {
-					intervene[sus_person]=3;
+					if ( interventions == 2 && intervene[sus_person] == 4 ) {
+						intervene[sus_person]=5;
+					} else {
+						intervene[sus_person]=3;
+					}
 					/* Intervention 2 is household quarantine with current recommendations. Applicable for whole household.  */
 					if ( interventions == 2 && t>tauI_onset ) {
 						int i1;
