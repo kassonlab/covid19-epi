@@ -1530,7 +1530,7 @@ school or workplace. */
 			Ih=interIh[7];
 			Iw=interIw[7];
 			for ( i=0; i<population; i++ ) {
-				if ( round(COV_rand()/0.9) ) {
+				if ( COV_rand()<0.9 ) {
 					intervene[i]=6;
 				}	
 			}
