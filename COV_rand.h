@@ -3,6 +3,8 @@
 
 /* Wrapper functions for random generator */
 
+extern int use_fixed_seed;
+
 void COV_init_rand();
 
 double COV_rand();

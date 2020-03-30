@@ -4,11 +4,11 @@ OBJECTS := $(SOURCES:%.c=%.o)
 
 PROGRAM = covid19
 
-CC := gcc
+CC := icc
 LD := $(CC)
 
-#OMP = -fopenmp
-OPT = -O3 -march=native -mtune=native
+OMP = -qopenmp
+OPT = -O3 -xHost
 #DEBUG = -O0 -g
 CPPFLAGS = 
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
@@ -17,7 +17,7 @@ LIBS := -lm
 all: $(PROGRAM)
 
 $(PROGRAM): $(OBJECTS)
-	$(LD) -o $@ $(LDFLAGS) $(OBJECTS) $(LIBS)
+	$(LD) -o $@ $(LDFLAGS) $(OMP) $(OBJECTS) $(LIBS)
 
 $(OBJECTS): common.h
 
