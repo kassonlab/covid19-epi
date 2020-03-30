@@ -1505,7 +1505,7 @@ school or workplace. */
 				/* high school and university closures */
 				if (age[i]>=15 && age[i]<22) {
 					intervene[i]=1;	
-				} else if ( age[i]>=70 && round(COV_rand()/complyI[8]) ) {
+				} else if ( age[i]>=70 && COV_rand()<complyI[8] ) {
 					intervene[i]=8;	
 				} 
 			}
@@ -1652,13 +1652,13 @@ school or workplace. */
 				num_infect_county[county[sus_person]]++;
 				num_infect_age[(int)floor(age[sus_person]/5)]++;
 				/* Determine if following interventions only for interventions that effect individuals.*/
-				if ( interventions > 0 && round(COV_rand()/complyI[3]) ) {
+				if ( interventions > 0 && COV_rand() < complyI[3] ) {
 					intervene[sus_person]=3;
 					/* Intervention 2 is household quarantine with current recommendations. Applicable for whole household.  */
 					if ( interventions == 2 && t>tauI_onset ) {
 						int i1;
 						for (i1=0; i1<population; i1++) {
-							if ( HH[sus_person] == HH[i1] && round(COV_rand()/complyI[4])) {
+							if ( HH[sus_person] == HH[i1] && COV_rand()<complyI[4] ) {
 								intervene[i1]=4;
 							}
 						}
