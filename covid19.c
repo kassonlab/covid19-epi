@@ -1104,7 +1104,7 @@ int main (int argc, char *argv[]) {
 	float infect=0; //Infectiousness
 	int file_count;
 
-	int num_I=7;
+	int num_I=9;
 	float Ic=1.0; //Intervention constant for community transmission.
 	float (*Iw); //Intervention constant for workplace transmission.
 	float Ih=1; //Intervention constant for household transmission.
