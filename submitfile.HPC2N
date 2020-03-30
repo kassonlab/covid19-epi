@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH -A SNIC2020-5-176
+#SBATCH -J CV19
+#SBATCH --timelimit=12:00:00
+#SBATCH -N 1
+#SBATCH --exclusive
+
+# This submitfile is generic for HPC2N (for the covid19 runs)
+# To run on the large memory nodes, just add "-p largemem" as an argument to the sbatch command (before the submit file)
+
+# Don't user -o/-e let the stdout go to the defaulty slurm-xxxx.out, xxx being the jobid
+# The job always starts in the same directory that it was submitted from
+# So no need to make a "cd" to it
+
+ml purge > /dev/null 2>&1
+ml intel/2019b
+
+# Set OMP_NUM_THREADS to the number of cores allocated to the job
+export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
+
+# Don't redirect standard out, use the default slurm-xxxx.out
+# No need to put the job in the background
+./covid19 -pop xxxxxx

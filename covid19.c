@@ -15,7 +15,7 @@ int typical_max_HH_sz = 7;
 
 int full_fd = 0, full_kappa = 0;
 
-float betac_scale = 1.0, betah_scale = 1.0, betaw_scale = 1.0;
+float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0;
 
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -921,7 +921,7 @@ int main (int argc, char *argv[]) {
 	float percent_infect=0.001 ; // Default 1% of population initially infected.
 	float dt=1.00; // Time step.
 	int interventions=0; // Value of interventions.
-	float tauI_onset=0; //time after start of simulation that interventions for whole community take place.
+	float tauI_onset=1; //time after start of simulation that interventions for whole community take place.
 	int print_lat_lon=0; // Choose whether to print latitude and longitude data of infected individuals for each time step. 
         int ret;
         int i, j;
@@ -1104,7 +1104,7 @@ int main (int argc, char *argv[]) {
 	float infect=0; //Infectiousness
 	int file_count;
 
-	int num_I=7;
+	int num_I=9;
 	float Ic=1.0; //Intervention constant for community transmission.
 	float (*Iw); //Intervention constant for workplace transmission.
 	float Ih=1; //Intervention constant for household transmission.
@@ -1112,12 +1112,13 @@ int main (int argc, char *argv[]) {
 	float tauI[num_I]; // time after infection that intervention takes place
 	float interIc[num_I]; //Intervention constants for Ic
 	float interIh[num_I]; //Intervention constants for Ih
-	int personinter=0; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
+	int personinter[num_I]; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
 	float Ihosp=0.25;  // Accounts for increased cleanliness and infection control at hospital.  
 	int * intervene; // 1 if person is currently undergoing interventions, 0 otherwise. 
 	intervene = (int*)calloc(population,sizeof(int));
 	
 
+	/* current recommendations are intervention 1, 3, and 8. */
 	/**** Introduce Interventions: must include documentation for values *****/
 	/* No interventions. */
 	interIc[0]=1.0;
@@ -1126,7 +1127,7 @@ int main (int argc, char *argv[]) {
 	interIh[0]=1.00;
 	complyI[0]=1.0;
 	tauI[0]=0;
-	personinter=0;
+	personinter[0]=1;
 
 	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3. Assuming no increase in community transmission as students would be working online at the times they would be in college class.*/
 	interIc[1]=1.25;
@@ -1134,7 +1135,7 @@ int main (int argc, char *argv[]) {
 	interIh[1]=1.50;
 	complyI[1]=1.0;
 	tauI[1]=0;
-	personinter=1;
+	personinter[1]=0;
 	
 	/* Intervention 2: school closures of all schools. No school transmission for job_status 1, 2, and 3, reduction of 5% in workplace interactions to account for parents becoming childcare.  Children have 50% increase in household transmission and 25% increase in community transmission .*/
 	interIc[2]=1.25;
@@ -1142,58 +1143,58 @@ int main (int argc, char *argv[]) {
 	interIh[2]=1.50;
 	complyI[2]=1.0;
 	tauI[2]=0;
-	personinter=0;
+	personinter[2]=0;
 
-	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 70% comply, householdi contacts remain the same, 25% contact with community, no contact with 
+	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 90% comply, householdi contacts remain the same, 25% contact with community, no contact with 
 school or workplace. */
 	interIc[3]=0.25;
 	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
 	interIh[3]=1.0;
 	complyI[3]=0.9;
 	tauI[3]=6.1;
-	personinter=0;
+	personinter[3]=0;
 
-	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
+	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household.  90% of symptomatic comply and 70% household members comply. */
 	interIc[4]=0.25;
 	float interIw4[6]={0,0,0,0,0, Ihosp};
-	interIh[4]=2.0;
+	interIh[4]=1.5;
 	complyI[4]=0.7;
 	tauI[4]=6.1;
-	personinter=0;
+	personinter[4]=0;
 
-	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 70% comply*/
+	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 90% comply*/
 	interIc[5]=0.25;
 	float interIw5[6]={0, 1.00, 1.00, 1.00, 0.75, Ihosp};
-	interIh[5]=1.25;
-	complyI[5]=1.00;
+	interIh[5]=1.50;
+	complyI[5]=0.90;
 	tauI[5]=0;
-	personinter=1;
+	personinter[5]=1;
 
-	/* Intervention 6: social isolation of everyone.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
+	/* Intervention 6: social distancing with school closure.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
 	interIc[6]=0.25;
 	float interIw6[6]={0,0,0,0,0.25, Ihosp};
-	interIh[6]=1.5;
-	complyI[6]=1.0;
+	interIh[6]=1.50;
+	complyI[6]=0.9;
 	tauI[6]=0;
-	personinter=1;
+	personinter[6]=1;
 
-	/* Intervention 7: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions.  50% increase in household transmission and 25% increase in community transmission .*/
+	/* Intervention 7: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions.  50% increase in household transmission and 50% increase in community transmission .*/
 
 	interIc[7]=1.50;
 	float interIw7[6]={0, 0, 0, 0, 0.25, Ihosp};
 	interIh[7]=1.50;
 	complyI[7]=1.0;
 	tauI[7]=0;
-	personinter=1;
+	personinter[7]=1;
 
-	/* Intervention 8: Social distancing of people over 70 years old. School closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%.*/
+	/* Intervention 8: Social distancing of people over 70 years old. Reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. 80% comply*/
 
 	interIc[8]=0.25;
 	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
 	interIh[8]=1.25;
 	complyI[8]=0.8;
 	tauI[8]=0;
-	personinter=1;
+	personinter[8]=0;
 
 	/* Make interIw array.*/
 	float *interIw[9]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8};
@@ -1230,7 +1231,7 @@ school or workplace. */
         int num_locale = 0, max_locale = 0;
         float tmp_lat, tmp_lon, pop_den;
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
-        while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
+	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
             if (num_locale + 1 > max_locale) {
                 max_locale += 10;
                 lat_locale = (float *)realloc(lat_locale, max_locale * sizeof(float));
@@ -1297,9 +1298,9 @@ school or workplace. */
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	float initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
-	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
+//	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	/**** TMP INTIALIZATION ARRAY ***/
-//	float initialize[15]={500, 400, 200, 100, 100, 100, 100, 100, 100, 100, 100, 10, 10, 10, 10};
+	float initialize[15]={100, 50, 40, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
         fflush(stats);
@@ -1320,7 +1321,6 @@ school or workplace. */
 
 	// Uncomment to see initial distribution of infections by county.
 	for (i=0; i<num_counties; i++) {
-	//	printf("initial_infect %i %i %i %f \n", i, initial_infections[i], county_size[i], pop_percent[i]);
 	}
 
 
@@ -1379,6 +1379,7 @@ school or workplace. */
                             npj += per_HH_size[locale_to_HH[j][hh]];
                         }
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
+
                         if (full_fd) {
                             tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
                         } else {
@@ -1495,34 +1496,43 @@ school or workplace. */
 		}
 
 		/* Introduce overall community interventions. */
-		if (interventions == 0)  {
-			Ic=interIc[0];
-			Ih=interIh[0];
-			Iw=interIw[0];
-		} else if (personinter>0 && t >= tauI_onset && t <= tauI_onset+dt) {
+		if ( interventions == 0 ) {
 			Ic=interIc[interventions];
 			Ih=interIh[interventions];
 			Iw=interIw[interventions];
+		} else if ( interventions > 0 )  {
 			for (i=0; i<population; i++) {
-				intervene[i]=round(COV_rand()*complyI[interventions]);
-			}
-		} else if (interventions == 2 && t >= tauI_onset && t <= tauI_onset+dt) {
-			for ( i=0; i<population; i++ ) {
-				if (age[i]>1 && age[i]<22) {
-					intervene[i]=1;	
-				} 
-			}
-		} else if (interventions == 1 && t >= tauI_onset && t <= tauI_onset+dt) {
-			for ( i=0; i<population; i++ ) {
+				/* high school and university closures */
 				if (age[i]>=15 && age[i]<22) {
 					intervene[i]=1;	
+				} else if ( age[i]>=70 && COV_rand()<complyI[8] ) {
+					intervene[i]=8;	
 				} 
 			}
-		} else if (interventions == 8 && t >= tauI_onset && t <= tauI_onset+dt) {
+		}
+	 
+		if (interventions == 3 && t >= tauI_onset && t <= tauI_onset+dt) {
 			for ( i=0; i<population; i++ ) {
-				if (age[i]>=70) {
-					intervene[i]=round(COV_rand()*complyI[interventions]);	
+				if (age[i]>1 && age[i]<15) {
+					intervene[i]=2;	
 				} 
+			}
+		} else if (interventions == 4 && t >= tauI_onset && t <= tauI_onset+dt) {
+			Ic=interIc[7];
+			Ih=interIh[7];
+			Iw=interIw[7];
+	//		for ( i=0; i<population; i++ ) {
+	//			intervene[i]=1;	
+	//		}
+		} else if (interventions == 5 && t >= tauI_onset && t <= tauI_onset+dt) {
+			/* if not complying, have same interactions as type 7 */
+			Ic=interIc[7];
+			Ih=interIh[7];
+			Iw=interIw[7];
+			for ( i=0; i<population; i++ ) {
+				if ( COV_rand()<0.9 ) {
+					intervene[i]=6;
+				}	
 			}
 		}	
 
@@ -1557,13 +1567,12 @@ school or workplace. */
                                 tIh = Ih;
                                 tIw = Iw;
 				/* Determine if person is under individual interventions and set parameters */
-				if (intervene[infec_person] == 1 && t>tau[infec_person]+tauI[interventions]) {
-					tIh=interIh[interventions];
-					tIc=interIc[interventions];
-					tIw=interIw[interventions];
+				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
+					tIh=interIh[intervene[infec_person]];
+					tIc=interIc[intervene[infec_person]];
+					tIw=interIw[intervene[infec_person]];
 				} 
-				
-
+			//	printf("inter %f %f %f \n", tIc, tIh, tIw[job_status[infec_person]]);	
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
 				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals);
 
@@ -1643,15 +1652,17 @@ school or workplace. */
 				num_infect_county[county[sus_person]]++;
 				num_infect_age[(int)floor(age[sus_person]/5)]++;
 				/* Determine if following interventions only for interventions that effect individuals.*/
-				if ( personinter == 0  && t>tauI_onset ) {
-					intervene[sus_person]=round(COV_rand()*complyI[interventions]);
-					/* Intervention 4 is household quarantine. Applicable for whole household.  */
-					if (interventions == 4 ) {
-						for (i=0; i<population; i++) {
-							if ( HH[sus_person] == HH[i]) {
-								intervene[i]=round(COV_rand()*complyI[interventions]);
+				if ( interventions > 0 && COV_rand() < complyI[3] ) {
+					intervene[sus_person]=3;
+					/* Intervention 2 is household quarantine with current recommendations. Applicable for whole household.  */
+					if ( interventions == 2 && t>tauI_onset ) {
+						int i1;
+						for (i1=0; i1<population; i1++) {
+							if ( HH[sus_person] == HH[i1] && COV_rand()<complyI[4] ) {
+								intervene[i1]=4;
 							}
 						}
+			
 					}
 				}
 			}	
@@ -1677,7 +1688,7 @@ school or workplace. */
 		for (i=0; i<num_infectious; i++) {
                         int infec_person;
 			infec_person=infectious[i];
-			if ((tau[infec_person]==t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
+			if ((tau[infec_person]>t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
 				recovered[infec_person]=1;
 				num_recovered++;
 				num_recovered_county[county[infec_person]]++;
