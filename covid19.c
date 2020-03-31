@@ -261,7 +261,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                 /* And in relation to simulated population / total population according to density */
                 if (locale_HH_count[placement]*2.2 > pop_density_init_num[placement] * tot_pop_actual / Total_pop_dens) {
 				placement++;
-				printf("placement %i", placement);
 		}	
 		lat_HH[HH_count]=lat_HH[placement];	
 		lon_HH[HH_count]=lon_HH[placement];
@@ -288,14 +287,14 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH_count++;
 	}
 
-        //
+        /*
         int WW = 0;
         for (int q = 0; q < *num_locale; q++) {
             printf("locale %d : nHH %d : nHH*2.2 %6.1f pdin %6.1f\n", q, locale_HH_count[q], locale_HH_count[q]*2.2, pop_density_init_num[q] * tot_pop_actual / Total_pop_dens);
             WW += locale_HH_count[q];
         }
         printf("WW = %d num_households = %d\n", WW, num_households);
-        //
+        */
         placement = 0;
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
@@ -314,7 +313,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 			tmp_county_HH=(int)(COV_rand() * locale_HH_count[placement]);
 			tmp_HH=county_list[placement][tmp_county_HH];
                         while (per_HH_size[tmp_HH]+1 > typical_max_HH_sz) {
-                            printf("tmpHH %d, lHHc %d, pHHsz %d, typical %d\n", tmp_HH, locale_HH_count[placement], per_HH_size[tmp_HH], typical_max_HH_sz);
+                           // printf("tmpHH %d, lHHc %d, pHHsz %d, typical %d\n", tmp_HH, locale_HH_count[placement], per_HH_size[tmp_HH], typical_max_HH_sz);
                             tmp_county_HH++;
                             if (tmp_county_HH >= locale_HH_count[placement]) {
                                 if (only_once) {
