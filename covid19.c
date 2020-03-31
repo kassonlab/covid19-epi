@@ -15,7 +15,7 @@ int typical_max_HH_sz = 7;
 
 int full_fd = 0, full_kappa = 0;
 
-float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0;
+float betac_scale = 1.0, betah_scale = 1.0, betaw_scale = 1.0;
 
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -127,7 +127,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 	
         fprintf(stats, "Testing age distribution\n");
 	for (i=0; i<9; i++) {
-		fprintf(stats, "age %i fraction %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
+		fprintf(stats, "age %i percent %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
 	}
 	fprintf(stats, "\n\n");
         fflush(stats);
@@ -138,7 +138,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float Total_pop_dens) {
+void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float Total_pop_dens) {
 
 	/* Initialize helpers for population density */
 	int num_km=*num_locale;
@@ -151,6 +151,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	int city_HH[num_households];	
 	int county_HH[num_households];	
 	int county_num;	
+	int city_num;	
 	
 	float dist1;
 	int tmp_city;	
@@ -192,7 +193,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	while (( HH_count < num_households ) && (HH_count < num_km)) {
                 float tmp_lat, tmp_lon;
 		min_dist=1000000;
-		tmp_city=-1;
 
                 tmp_lat = lat_locale[HH_count];
                 tmp_lon = lon_locale[HH_count];
@@ -210,6 +210,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                     exit(0);
                 }
 
+		city_num=tmp_city;
 		county_num=city_county[tmp_city];
 		tmp_county_count[county_num]++; 
 		tmp_county_density[county_num]+=pop_density_init_num[HH_count]; 
@@ -217,7 +218,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		/* Set up household */
 		lat_HH[HH_count]=tmp_lat;
 		lon_HH[HH_count]=tmp_lon;
-		city_HH[HH_count]=tmp_city;
+		city_HH[HH_count]=city_num;
 		county_HH[HH_count]=county_num;
 		county_list[HH_count][locale_count[HH_count]]=HH_count;
                 locale_HH[HH_count] = HH_count;
@@ -231,8 +232,10 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];
 		county[HH_person]=county_HH[HH_count];
-                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
+                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
+		county_size[county[HH_person]]++;
+                HH_to_person[HH_count][per_HH_size[HH_count]] = HH_person;
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -274,9 +277,11 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];	
 		county[HH_person]=county_HH[HH_count];	
-                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
+                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
+		county_size[county[HH_person]]++;
 		locale_count[placement]+=1;
+                HH_to_person[HH_count][per_HH_size[HH_count]] = HH_person;
 		per_HH_size[HH[HH_person]]++;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
 			max_HH_size=per_HH_size[HH[HH_person]];
@@ -300,7 +305,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		if (HH[HH_person]==-1) {
 			
 			/* Place people in random households within locale until locale is full. */
-//                        if (locale_count[placement] + 1 > pop_density_init_num[placement] tot_pop_actual / Total_pop_dens) {
                         if (locale_count[placement] + 1 > pop_density_init_num[placement] * tot_pop_actual / Total_pop_dens) {
                             placement++;
 			}	
@@ -311,7 +315,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 			tmp_county_HH=(int)(COV_rand() * locale_HH_count[placement]);
 			tmp_HH=county_list[placement][tmp_county_HH];
                         while (per_HH_size[tmp_HH]+1 > typical_max_HH_sz) {
-                           // printf("tmpHH %d, lHHc %d, pHHsz %d, typical %d\n", tmp_HH, locale_HH_count[placement], per_HH_size[tmp_HH], typical_max_HH_sz);
+                            //printf("tmpHH %d, lHHc %d, pHHsz %d, typical %d\n", tmp_HH, locale_HH_count[placement], per_HH_size[tmp_HH], typical_max_HH_sz);
                             tmp_county_HH++;
                             if (tmp_county_HH >= locale_HH_count[placement]) {
                                 if (only_once) {
@@ -343,9 +347,11 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		//	printf("HH %i %i %i %f \n", HH[HH_person], placement, locale_HH_count[placement], HH_person);
 			city[HH_person]=city_HH[HH[HH_person]];	
 			county[HH_person]=county_HH[HH[HH_person]];	
-                        county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
+                        county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
 			city_size[city[HH_person]]++;
+			county_size[county[HH_person]]++;
 			locale_count[placement]+=1;
+                        HH_to_person[tmp_HH][per_HH_size[tmp_HH]] = HH_person;
                         per_HH_size[HH[HH_person]]++;
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
                                 max_HH_size=per_HH_size[HH[HH_person]];
@@ -366,14 +372,14 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	
 	fprintf(stats, "Household distributions \n");
 	for (i=0; i<=max_HH_size; i++) {
-		fprintf(stats, "household_size %i fraction_of_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
+		fprintf(stats, "household_size %i percent_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
 		fflush(stats);
 	}
         free(HH_dist_test);
 	
 	fprintf(stats, "\n\n County distribution \n");
 	for (i=0; i<21; i++) {
-		fprintf(stats, "%s county %i population %i fraction %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
+		fprintf(stats, "%s county %i population %i percent %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
 		fflush(stats);
 	} 
 	fprintf(stats, "\n\n");
@@ -387,7 +393,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	free(locale_HH_count);
 }
 
-void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * county, char ** county_names, int num_county) {
+void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * city, int * county, char ** county_names, int num_county) {
 
 	/* Get longitude and latitude of cities in Sweden from CSV */
 	FILE* fp = fopen("cities_all.csv", "r");  // Not sure about the validity of this file.  Could use a better source.
@@ -406,6 +412,7 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 			
 		/* Save city name, longitude, latitude, and increase number of cities. Looking at unique municipalities.*/
 		cities[*num_cities]=tmp1;
+		city[*num_cities]=*num_cities;
 		lat_city[*num_cities]=tmp_lat;
 		long_city[*num_cities]=tmp_lon;
 		*num_cities=*num_cities+1;
@@ -441,7 +448,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 				job_status_city[1][city[i]]++;
 			} else {
 				job_status[i]=0;
-				job_status_city[0][city[i]]++;
+				job_status_city[0][county[i]]++;
 			}	
 		} else if (age[i]>=3 && age[i]<6) {
 			if (COV_rand() < 0.9500) {
@@ -449,7 +456,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 				job_status_city[1][city[i]]++;
 			} else {
 				job_status[i]=0;
-				job_status_city[0][city[i]]++;
+				job_status_city[0][county[i]]++;
 			}	
 		} else if (age[i]>=6 && age[i]<15) {
 			job_status[i]=2;
@@ -508,7 +515,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 	fprintf(stats, "Job Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<6; i++) {
-			fprintf(stats, "job_status %i county %i fraction_of_jobs_total %f num_jobs_in_county %i unemployed %i fraction_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
+			fprintf(stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
 			 
 		}
 		fprintf(stats, "\n");
@@ -566,22 +573,16 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 
 	// Broken down in case we want to do schools by municipality.
 	for (i=0; i < num_counties; i++) {
-		for (j=3; j<6; j++) {
-                    if (job_status_county[j][i]>0 && j==4) {
+		for (j=3; j<5; j++) {
+                    if (job_status_county[j][i]>0 && j==4 ) {
                             num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_work);
                             num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_work);
                             if (num_workplaces2[j]>*max_num_WP) {
                                     *max_num_WP=num_workplaces2[j];
                             }
-                    } else if (job_status_county[j][i]>0 && j==3) {
+                    } else if (job_status_county[j][i]>0 && j==3 ) {
                             num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_school);
                             num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_school);
-                            if (num_workplaces2[j]>*max_num_WP) {
-                                    *max_num_WP=num_workplaces2[j];
-                            }
-                    } else if (job_status_county[j][i]>0 && j==5) {
-                            num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_hospital);
-                            num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_hospital);
                             if (num_workplaces2[j]>*max_num_WP) {
                                     *max_num_WP=num_workplaces2[j];
                             }
@@ -956,7 +957,7 @@ int main (int argc, char *argv[]) {
 	float percent_infect=0.001 ; // Default 1% of population initially infected.
 	float dt=1.00; // Time step.
 	int interventions=0; // Value of interventions.
-	float tauI_onset=1; //time after start of simulation that interventions for whole community take place.
+	float tauI_onset=0; //time after start of simulation that interventions for whole community take place.
 	int print_lat_lon=0; // Choose whether to print latitude and longitude data of infected individuals for each time step. 
         int ret;
         int i, j;
@@ -1000,6 +1001,11 @@ int main (int argc, char *argv[]) {
 	HH = (int*)calloc(population,sizeof(int));
 	int * per_HH_size; // Size of each household.  Need for infectiousness calculations.
 	per_HH_size = (int*)calloc(num_households,sizeof(int));
+        int **HH_to_person;
+        HH_to_person = (int **)malloc(num_households * sizeof(int *));
+        for (i = 0; i < num_households; i++) {
+            HH_to_person[i] = (int *)calloc(typical_max_HH_sz+1, sizeof(int));
+        }
 
 	/* Population information */
 	/* Specific to Sweden.  Averaging population based on total population of Sweden regardless of population size. */
@@ -1025,6 +1031,8 @@ int main (int argc, char *argv[]) {
 	int * city_county; // county of person i by integer assignment.
 	city_county = (int*)calloc(2000,sizeof(int));
 	int num_cities=0; // total number of cities
+	int city_int[2000]; // Integer values for random probability distribution. 
+	memset(city_int, 0, 2000*sizeof(int));
 
 
 	/* City information for allocating schools. */
@@ -1033,8 +1041,8 @@ int main (int argc, char *argv[]) {
 	float * age;  // Age of population
 	age = (float*)calloc(population,sizeof(float));
 	int * age_distrib;
-	/* Distribution of ages in 5 year increments */
-	age_distrib = (int*)calloc(18,sizeof(int));
+	/* Distribution of ages in the generated population, people probably won't be older ehan 150 */
+	age_distrib = (int*)calloc(150,sizeof(int));
 	int * county;  // County of each inhabitant
 	county = (int*)calloc(population,sizeof(int));
         int **county_p; /* List of persons per county */
@@ -1042,10 +1050,9 @@ int main (int argc, char *argv[]) {
         for(i=0; i < num_counties; i++) {
             county_p[i] = (int *) malloc(population * sizeof(int)); /* AS: can be reduced to max number of persons in the most populated county */
         }
-//THIS ARRAY IS THE SAME AS county_size.  Changed all occurences to county_size. //
-//        int *county_p_n; /* Nr of persons per county */
-//      county_p_n = (int *)calloc(num_counties, sizeof(int));
-	int * job_status; // Type of job each person holds: 0-5 for no job, preschool, elementary school, highschool/college, job, and hospital, respectively. 	
+        int *county_p_n; /* Nr of persons per county */
+        county_p_n = (int *)calloc(num_counties, sizeof(int));
+	int * job_status; // Type of job each person holds: 0-4 for no job, preschool, elementary school, highschool/college, and job, respectively. 	
 	job_status = (int*)calloc(population,sizeof(int));
 	int * workplace; // Workplace of each person.
 	workplace = (int*)calloc(population,sizeof(int));
@@ -1054,157 +1061,8 @@ int main (int argc, char *argv[]) {
 
 	int max_num_WP=0; // max workplaces per job_status for allocating array.
 
-
-	/**** Set random number generator seed. ****/
-	COV_init_rand();
-
-	/* Initialize age distribution */
-	age_dist(age, population, stats, age_distrib);
-	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_county, county_name, num_counties) ;
-
-	/* Checking data */
-	for (i=0; i<num_cities; i++) {
-//		printf("cities %i %i %i %i lat %f lon %f \n", i, city_county[i], num_cities, lat_city[i], long_city[i]);
-	}
-
-
-	/* Parse land_scan file to get population density.  */
-        float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
-        float Total_pop_dens = 0;
-        int num_locale = 0, max_locale = 0;
-        float tmp_lat, tmp_lon, pop_den;
-	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
-	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
-            if (num_locale + 1 > max_locale) {
-                max_locale += 10;
-                lat_locale = (float *)realloc(lat_locale, max_locale * sizeof(float));
-                lon_locale = (float *)realloc(lon_locale, max_locale * sizeof(float));
-                pop_density_init_num = (float *)realloc(pop_density_init_num, max_locale * sizeof(float));
-            }
-            lat_locale[num_locale] = tmp_lat;
-            lon_locale[num_locale] = tmp_lon;
-            pop_density_init_num[num_locale++] = pop_den;
-            Total_pop_dens += pop_den;
-        }
-        fclose(lat_long);
-        int **locale_to_HH;
-        int *locale_to_HH_n;
-        int *locale_HH;
-        locale_to_HH = (int **) malloc(num_locale * sizeof(int *));
-        for (i = 0; i < num_locale; i++) {
-            locale_to_HH[i] = (int *)calloc(num_households, sizeof(int));
-        }
-        locale_to_HH_n = (int *)calloc(num_locale, sizeof(int));
-        locale_HH = (int *)calloc(num_households, sizeof(int));
-
-	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, Total_pop_dens) ;
-
-	free(city_county);
-
-
-	int ** job_status_county; // Jobs per county, or city for schools
-	job_status_county = (int**)calloc(6,sizeof(int*));
-	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_cities,sizeof(int)) ;
-	/* Initialize job/school status */
-	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, stats); 
-
-	int hosp_num[num_counties]; //Number of hospitals per county
-	memset(hosp_num, 0, num_counties);
-	/* Initialize workplace/school */	
-	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats); 
-
-	free(city);
-
-        fclose(stats);
-
-	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
-	int workplace_size[6][max_num_WP];
-	memset(workplace_size, 0, 6*max_num_WP*sizeof(int));
-	for (i=0; i < population; i++) {
-		workplace_size[job_status[i]][workplace[i]]++;
-	}
-	
-	
-	double fd_calc[22000];
-	/*Precalculate density kernel */
-	for (i=0; i<22000; i++) {
-		fd_calc[i]=1/(1+pow((((double)i/10.)/4), 3)); //kernel density function as parameterized for GB.	
-	}	
-
-
-        printf("Starting density kernel calculations\n");
-        fflush(stdout);
-        ret = clock_gettime(CLOCK_MONOTONIC, &t1);
-	/* Precalculate total density kernel function for each individual */
-	for (i=0; i<num_locale; i++) {
-                float itmp_fd;
-                int npi; /* number of persons in locale i */
-                itmp_fd = 0;
-                npi = 0;
-                for (int hh = 0; hh < locale_to_HH_n[i]; hh++) {
-                    npi += per_HH_size[locale_to_HH[i][hh]];
-                }
-#ifdef _OPENMP
-#pragma omp parallel for private(j) reduction(+:itmp_fd)
-#endif
-		for (j=i+1; j<num_locale; j++) {
-                        double d;
-                        double tmp_fd;
-                        int npj; /* number of persons in locale j */
-                        npj = 0;
-                        for (int hh = 0; hh < locale_to_HH_n[j]; hh++) {
-                            npj += per_HH_size[locale_to_HH[j][hh]];
-                        }
-			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
-
-                        if (full_fd) {
-                            tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-                        } else {
-                            tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
-                        }
-                        itmp_fd += tmp_fd * npj;
-			fd_tot[j] += tmp_fd * npi;
-		}
-                fd_tot[i] += itmp_fd + npi - 1;
-	}
-        ret = clock_gettime(CLOCK_MONOTONIC, &t2);
-        tt = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
-        printf("Done with density kernel calculations in %5.2f\n", tt);
-        fflush(stdout);
-
-	/* Initialization complete... start simulation */
-
-
-	/* Open files */
-	char * file_beg="county_";
-	char * file_end=".log";
-	char file_name[1000];
-	FILE** county_files = malloc(num_counties * sizeof(FILE*));
-	for (i=0; i<num_counties; i++) {
-		strcpy(file_name, "");
-		strcat(file_name, file_beg); 
-		strcat(file_name, county_name[i]);
-		strcat(file_name, file_end);
-		county_files[i]=fopen(file_name, "w"); 
-	}
-	file_beg="age_";
-	file_end=".log";
-	char str;
-	FILE** age_files = malloc(sizeof(FILE*) * 18);
-	for (i=0; i<90; i+=5) {
-		str=i;	
-		strcpy(file_name, "");
-		strcat(file_name, file_beg); 
-		sprintf(file_name, "%s%i", file_name, i);
-		strcat(file_name, file_end);
-		age_files[(i/5)]=fopen(file_name, "w"); 
-	}
-	FILE * output_file = fopen("covid19_spread.dat", "w");
-
-	FILE * lat_lon_out = fopen("lat_lon.dat", "w");
-	
 	/* Parameters for infections */
+//	int num_infections=(int)population*percent_infect; // Default is 10% of population has illness.
 	float symptomatic_per=0.67; // percent of people who are symptomatic.
 	int * infected; // 1 if person i has been infected, 0 otherwise
 	infected = (int*)calloc(population,sizeof(int));
@@ -1290,13 +1148,12 @@ int main (int argc, char *argv[]) {
 	float tauI[num_I]; // time after infection that intervention takes place
 	float interIc[num_I]; //Intervention constants for Ic
 	float interIh[num_I]; //Intervention constants for Ih
-	int personinter[num_I]; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
+	int personinter=0; // Tells us whether the intervention needs to be calculated on a person to person basis or for the whole community. 
 	float Ihosp=0.25;  // Accounts for increased cleanliness and infection control at hospital.  
 	int * intervene; // 1 if person is currently undergoing interventions, 0 otherwise. 
 	intervene = (int*)calloc(population,sizeof(int));
 	
 
-	/* current recommendations are intervention 1, 3, and 8. */
 	/**** Introduce Interventions: must include documentation for values *****/
 	/* No interventions. */
 	interIc[0]=1.0;
@@ -1305,7 +1162,7 @@ int main (int argc, char *argv[]) {
 	interIh[0]=1.00;
 	complyI[0]=1.0;
 	tauI[0]=0;
-	personinter[0]=1;
+	personinter=0;
 
 	/* Intervention 1: school closures, only highschools and colleges.  No school transmission for job_status 3. Assuming no increase in community transmission as students would be working online at the times they would be in college class.*/
 	interIc[1]=1.25;
@@ -1313,7 +1170,7 @@ int main (int argc, char *argv[]) {
 	interIh[1]=1.50;
 	complyI[1]=1.0;
 	tauI[1]=0;
-	personinter[1]=0;
+	personinter=1;
 	
 	/* Intervention 2: school closures of all schools. No school transmission for job_status 1, 2, and 3, reduction of 5% in workplace interactions to account for parents becoming childcare.  Children have 50% increase in household transmission and 25% increase in community transmission .*/
 	interIc[2]=1.25;
@@ -1321,70 +1178,157 @@ int main (int argc, char *argv[]) {
 	interIh[2]=1.50;
 	complyI[2]=1.0;
 	tauI[2]=0;
-	personinter[2]=0;
+	personinter=0;
 
-	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 90% comply, householdi contacts remain the same, 25% contact with community, no contact with 
+	/* Intervention 3: Case isolation within household. 1 day after symptoms start, 70% comply, householdi contacts remain the same, 25% contact with community, no contact with 
 school or workplace. */
 	interIc[3]=0.25;
 	float interIw3[6]={0, 0, 0, 0, 0, Ihosp};
 	interIh[3]=1.0;
 	complyI[3]=0.9;
 	tauI[3]=6.1;
-	personinter[3]=0;
+	personinter=0;
 
-	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household.  90% of symptomatic comply and 70% household members comply. */
+	/* Intervention 4: Case isolation of entire household if one member becomes sick.  Same as case isoloation of single person but now includes all in household but only 50% comply. */
 	interIc[4]=0.25;
 	float interIw4[6]={0,0,0,0,0, Ihosp};
-	interIh[4]=1.5;
+	interIh[4]=2.0;
 	complyI[4]=0.7;
 	tauI[4]=6.1;
-	personinter[4]=0;
+	personinter=0;
 
-	/* Intervention 5: Case isolation of entire household if one member becomes sick.  This adds for the case of a quarantined household member getting ill.  tauI=0 */
-	interIc[5]=0.25;
-	float interIw5[6]={0,0,0,0,0, Ihosp};
-	interIh[5]=1.0;
-	complyI[5]=0.9;
-	tauI[5]=0.0;
-	personinter[5]=0;
-
-	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 90% comply
+	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 70% comply*/
 	interIc[5]=0.25;
 	float interIw5[6]={0, 1.00, 1.00, 1.00, 0.75, Ihosp};
-	interIh[5]=1.50;
-	complyI[5]=0.90;
+	interIh[5]=1.25;
+	complyI[5]=1.00;
 	tauI[5]=0;
-	personinter[5]=1;
-*/
-	/* Intervention 6: social distancing with school closure.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
+	personinter=1;
+
+	/* Intervention 6: social isolation of everyone.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
 	interIc[6]=0.25;
 	float interIw6[6]={0,0,0,0,0.25, Ihosp};
-	interIh[6]=1.50;
-	complyI[6]=0.9;
+	interIh[6]=1.5;
+	complyI[6]=1.0;
 	tauI[6]=0;
-	personinter[6]=1;
+	personinter=1;
 
-	/* Intervention 7: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions.  50% increase in household transmission and 50% increase in community transmission .*/
+	/* Intervention 7: school closures of all schools and non-essential businesses. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions.  50% increase in household transmission and 25% increase in community transmission .*/
 
 	interIc[7]=1.50;
 	float interIw7[6]={0, 0, 0, 0, 0.25, Ihosp};
 	interIh[7]=1.50;
 	complyI[7]=1.0;
 	tauI[7]=0;
-	personinter[7]=1;
+	personinter=1;
 
-	/* Intervention 8: Social distancing of people over 70 years old. Reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%. 80% comply*/
+	/* Intervention 8: Social distancing of people over 70 years old. School closures of all schools and non-essential businesses combined with social distancing. No school transmission for job_status 1, 2, and 3, reduction of 75% workplace interactions. decrease of 75% of community contacts, household contacts increases 25%.*/
 
 	interIc[8]=0.25;
 	float interIw8[6]={0, 0, 0, 0, 0.25, Ihosp};
 	interIh[8]=1.25;
 	complyI[8]=0.8;
 	tauI[8]=0;
-	personinter[8]=0;
+	personinter=1;
 
 	/* Make interIw array.*/
 	float *interIw[9]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8};
 
+	/**** Set random number generator seed. ****/
+	COV_init_rand();
+
+	/* Initialize age distribution */
+	age_dist(age, population, stats, age_distrib);
+	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_int, city_county, county_name, num_counties) ;
+
+	/* Checking data */
+	for (i=0; i<num_cities; i++) {
+//		printf("cities %i %i %i %i lat %f lon %f \n", i, city_int[i], city_county[i], num_cities, lat_city[i], long_city[i]);
+	}
+
+	/* Seed infections */
+	/* Evenly distribute infection by population */
+	double *pop_percent; // Percent for random probability distribution.
+        pop_percent = (double *)malloc(num_counties * sizeof(double));
+	float tot=0;
+	for (i=0; i < num_counties; i++) {
+		if (county_size[i]>0) {
+			pop_percent[i]=county_size[i]/(float)population;
+		} else {
+			pop_percent[i]=0;
+		}
+		tot+=county_size[i];
+	}
+
+
+	/* Parse land_scan file to get population density.  */
+        float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
+        float Total_pop_dens = 0;
+        int num_locale = 0, max_locale = 0;
+        float tmp_lat, tmp_lon, pop_den;
+	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
+        while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
+            if (num_locale + 1 > max_locale) {
+                max_locale += 10;
+                lat_locale = (float *)realloc(lat_locale, max_locale * sizeof(float));
+                lon_locale = (float *)realloc(lon_locale, max_locale * sizeof(float));
+                pop_density_init_num = (float *)realloc(pop_density_init_num, max_locale * sizeof(float));
+            }
+            lat_locale[num_locale] = tmp_lat;
+            lon_locale[num_locale] = tmp_lon;
+            pop_density_init_num[num_locale++] = pop_den;
+            Total_pop_dens += pop_den;
+        }
+        fclose(lat_long);
+        int **locale_to_HH;
+        int *locale_to_HH_n;
+        int *locale_HH;
+        locale_to_HH = (int **) malloc(num_locale * sizeof(int *));
+        for (i = 0; i < num_locale; i++) {
+            locale_to_HH[i] = (int *)calloc(num_households, sizeof(int));
+        }
+        locale_to_HH_n = (int *)calloc(num_locale, sizeof(int));
+        locale_HH = (int *)calloc(num_households, sizeof(int));
+
+	/* Initialize households */
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, Total_pop_dens) ;
+
+        /* HH_to_person no longer needed */
+        for (i = 0; i < num_households; i++) {
+            HH_to_person[i];
+        }
+        free(HH_to_person);
+	free(city_county);
+
+
+	/* Open files */
+	char * file_beg="county_";
+	char * file_end=".log";
+	char file_name[1000];
+	FILE** county_files = malloc(num_counties * sizeof(FILE*));
+	for (i=0; i<num_counties; i++) {
+		strcpy(file_name, "");
+		strcat(file_name, file_beg); 
+		strcat(file_name, county_name[i]);
+		strcat(file_name, file_end);
+		county_files[i]=fopen(file_name, "w"); 
+	}
+	file_beg="age_";
+	file_end=".log";
+	char str;
+	FILE** age_files = malloc(sizeof(FILE*) * 18);
+	for (i=0; i<90; i+=5) {
+		str=i;	
+		strcpy(file_name, "");
+		strcat(file_name, file_beg); 
+		sprintf(file_name, "%s%i", file_name, i);
+		strcat(file_name, file_end);
+		age_files[(i/5)]=fopen(file_name, "w"); 
+	}
+	FILE * output_file = fopen("covid19_spread.dat", "w");
+
+	FILE * lat_lon_out = fopen("lat_lon.dat", "w");
+	
 	// Infections are randomly placed based on number of initial infections.  //
 	// Includes infections from t=-11 to t=-1.
 	// Percent per county taken from C19.se infections as of 2020/3/25.
@@ -1393,7 +1337,7 @@ school or workplace. */
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
 	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	/**** TMP INTIALIZATION ARRAY ***/
-//	float initialize[15]={100, 50, 40, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+//	float initialize[15]={500, 400, 200, 100, 100, 100, 100, 100, 100, 100, 100, 10, 10, 10, 10};
 	float tmp_t;
 	fprintf(stats, "Initial Infections by county \n");
         fflush(stats);
@@ -1401,12 +1345,12 @@ school or workplace. */
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l];
-			fprintf(stats, "time %f county %i initial_infections %i fraction_of_infections %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
+			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
 		}
 		fprintf(stats, "\n\n");
                 fflush(stats);
                 /* Randomly assign initial infections */
-                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_size, locale_HH, HH) ;
+                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_p_n, locale_HH, HH) ;
 	}
         fflush(stats);
         printf("All infections initialized\n");
@@ -1414,8 +1358,81 @@ school or workplace. */
 
 	// Uncomment to see initial distribution of infections by county.
 	for (i=0; i<num_counties; i++) {
+	//	printf("initial_infect %i %i %i %f \n", i, initial_infections[i], county_size[i], pop_percent[i]);
 	}
 
+
+
+	int ** job_status_county; // Jobs per county, or city for schools
+	job_status_county = (int**)calloc(6,sizeof(int*));
+	for (i=0;i<6;i++) job_status_county[i] = (int*)calloc(num_cities,sizeof(int)) ;
+	/* Initialize job/school status */
+	job_dist(job_status, job_status_county, age, county, city, population, num_cities, num_counties, county_size, stats); 
+
+	int hosp_num[num_counties]; //Number of hospitals per county
+	memset(hosp_num, 0, num_counties);
+	/* Initialize workplace/school */	
+	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats); 
+
+	free(city);
+
+        fclose(stats);
+
+	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
+	int workplace_size[6][max_num_WP];
+	memset(workplace_size, 0, 6*max_num_WP*sizeof(int));
+	for (i=0; i < population; i++) {
+		workplace_size[job_status[i]][workplace[i]]++;
+	}
+	
+	
+	double fd_calc[22000];
+	/*Precalculate density kernel */
+	for (i=0; i<22000; i++) {
+		fd_calc[i]=1/(1+pow((((double)i/10.)/4), 3)); //kernel density function as parameterized for GB.	
+	}	
+
+
+        printf("Starting density kernel calculations\n");
+        fflush(stdout);
+        ret = clock_gettime(CLOCK_MONOTONIC, &t1);
+	/* Precalculate total density kernel function for each individual */
+	for (i=0; i<num_locale; i++) {
+                float itmp_fd;
+                int npi; /* number of persons in locale i */
+                itmp_fd = 0;
+                npi = 0;
+                for (int hh = 0; hh < locale_to_HH_n[i]; hh++) {
+                    npi += per_HH_size[locale_to_HH[i][hh]];
+                }
+#ifdef _OPENMP
+#pragma omp parallel for private(j) reduction(+:itmp_fd)
+#endif
+		for (j=i+1; j<num_locale; j++) {
+                        double d;
+                        double tmp_fd;
+                        int npj; /* number of persons in locale j */
+                        npj = 0;
+                        for (int hh = 0; hh < locale_to_HH_n[j]; hh++) {
+                            npj += per_HH_size[locale_to_HH[j][hh]];
+                        }
+			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
+                        if (full_fd) {
+                            tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+                        } else {
+                            tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
+                        }
+                        itmp_fd += tmp_fd * npj;
+			fd_tot[j] += tmp_fd * npi;
+		}
+                fd_tot[i] += itmp_fd + npi - 1;
+	}
+        ret = clock_gettime(CLOCK_MONOTONIC, &t2);
+        tt = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
+        printf("Done with density kernel calculations in %5.2f\n", tt);
+        fflush(stdout);
+
+	/* Initialization complete... start simulation */
 
 
 
@@ -1516,43 +1533,34 @@ school or workplace. */
 		}
 
 		/* Introduce overall community interventions. */
-		if ( interventions == 0 ) {
+		if (interventions == 0)  {
+			Ic=interIc[0];
+			Ih=interIh[0];
+			Iw=interIw[0];
+		} else if (personinter>0 && t >= tauI_onset && t <= tauI_onset+dt) {
 			Ic=interIc[interventions];
 			Ih=interIh[interventions];
 			Iw=interIw[interventions];
-		} else if ( interventions > 0 )  {
 			for (i=0; i<population; i++) {
-				/* high school and university closures */
+				intervene[i]=round(COV_rand()*complyI[interventions]);
+			}
+		} else if (interventions == 2 && t >= tauI_onset && t <= tauI_onset+dt) {
+			for ( i=0; i<population; i++ ) {
+				if (age[i]>1 && age[i]<22) {
+					intervene[i]=1;	
+				} 
+			}
+		} else if (interventions == 1 && t >= tauI_onset && t <= tauI_onset+dt) {
+			for ( i=0; i<population; i++ ) {
 				if (age[i]>=15 && age[i]<22) {
 					intervene[i]=1;	
-				} else if ( age[i]>=70 && COV_rand()<complyI[8] ) {
-					intervene[i]=8;	
 				} 
 			}
-		}
-	 
-		if (interventions == 3 && t >= tauI_onset && t <= tauI_onset+dt) {
+		} else if (interventions == 8 && t >= tauI_onset && t <= tauI_onset+dt) {
 			for ( i=0; i<population; i++ ) {
-				if (age[i]>1 && age[i]<15) {
-					intervene[i]=2;	
+				if (age[i]>=70) {
+					intervene[i]=round(COV_rand()*complyI[interventions]);	
 				} 
-			}
-		} else if (interventions == 4 && t >= tauI_onset && t <= tauI_onset+dt) {
-			Ic=interIc[7];
-			Ih=interIh[7];
-			Iw=interIw[7];
-	//		for ( i=0; i<population; i++ ) {
-	//			intervene[i]=1;	
-	//		}
-		} else if (interventions == 5 && t >= tauI_onset && t <= tauI_onset+dt) {
-			/* if not complying, have same interactions as type 7 */
-			Ic=interIc[7];
-			Ih=interIh[7];
-			Iw=interIw[7];
-			for ( i=0; i<population; i++ ) {
-				if ( COV_rand()<0.9 ) {
-					intervene[i]=6;
-				}	
 			}
 		}	
 
@@ -1587,12 +1595,13 @@ school or workplace. */
                                 tIh = Ih;
                                 tIw = Iw;
 				/* Determine if person is under individual interventions and set parameters */
-				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
-					tIh=interIh[intervene[infec_person]];
-					tIc=interIc[intervene[infec_person]];
-					tIw=interIw[intervene[infec_person]];
+				if (intervene[infec_person] == 1 && t>tau[infec_person]+tauI[interventions]) {
+					tIh=interIh[interventions];
+					tIc=interIc[interventions];
+					tIw=interIw[interventions];
 				} 
-			//	printf("inter %f %f %f \n", tIc, tIh, tIw[job_status[infec_person]]);	
+				
+
 				/* This will probably have to move outside to a pair list.  NOTE: The list of coworkers/classmates and community members within contact may not completely overlap. i.e. a coworker could be outside of the realm of commumnity transmission if someone lives on the edge of a county. */	
 				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals);
 
@@ -1607,13 +1616,14 @@ school or workplace. */
 
 					// Workplace/School transmission: People must be in same workplace and job type. // 
 					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person]) && (job_status[sus_person]>0) && tIw[job_status[sus_person]]>0) {
-						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 						if (job_status[sus_person]<4) {
 							contact_school++;
+							infect+=0.75*calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 							if (class[sus_person]==class[infec_person]) {
-								infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, 15.00, severe[infec_person], tIw) ;
+								infect+=0.25*calc_workplace_infect(job_status[sus_person], kappa, omega, 15.00, severe[infec_person], tIw) ;
 							}
 						} else {
+							infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 							contact_work++;
 						}
 					}
@@ -1672,21 +1682,15 @@ school or workplace. */
 				num_infect_county[county[sus_person]]++;
 				num_infect_age[(int)floor(age[sus_person]/5)]++;
 				/* Determine if following interventions only for interventions that effect individuals.*/
-				if ( interventions > 0 && COV_rand() < complyI[3] ) {
-					if ( interventions == 2 && intervene[sus_person] == 4 ) {
-						intervene[sus_person]=5;
-					} else {
-						intervene[sus_person]=3;
-					}
-					/* Intervention 2 is household quarantine with current recommendations. Applicable for whole household.  */
-					if ( interventions == 2 && t>tauI_onset ) {
-						int i1;
-						for (i1=0; i1<population; i1++) {
-							if ( HH[sus_person] == HH[i1] && COV_rand()<complyI[4] ) {
-								intervene[i1]=4;
+				if ( personinter == 0  && t>tauI_onset ) {
+					intervene[sus_person]=round(COV_rand()*complyI[interventions]);
+					/* Intervention 4 is household quarantine. Applicable for whole household.  */
+					if (interventions == 4 ) {
+						for (i=0; i<population; i++) {
+							if ( HH[sus_person] == HH[i]) {
+								intervene[i]=round(COV_rand()*complyI[interventions]);
 							}
 						}
-			
 					}
 				}
 			}	
@@ -1712,7 +1716,7 @@ school or workplace. */
 		for (i=0; i<num_infectious; i++) {
                         int infec_person;
 			infec_person=infectious[i];
-			if ((tau[infec_person]>t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
+			if ((tau[infec_person]==t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
 				recovered[infec_person]=1;
 				num_recovered++;
 				num_recovered_county[county[infec_person]]++;
