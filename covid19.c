@@ -1008,7 +1008,6 @@ int main (int argc, char *argv[]) {
 	int max_num_WP=0; // max workplaces per job_status for allocating array.
 
 	/* Parameters for infections */
-//	int num_infections=(int)population*percent_infect; // Default is 10% of population has illness.
 	float symptomatic_per=0.67; // percent of people who are symptomatic.
 	int * infected; // 1 if person i has been infected, 0 otherwise
 	infected = (int*)calloc(population,sizeof(int));
