@@ -138,7 +138,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH) {
+void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH) {
 
 	/* Initialize helpers for population density */
 	int num_km=*num_locale;
@@ -357,7 +357,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	free(locale_HH_count);
 }
 
-void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * city, int * county, char ** county_names, int num_county) {
+void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * county, char ** county_names, int num_county) {
 
 	/* Get longitude and latitude of cities in Sweden from CSV */
 	FILE* fp = fopen("cities_all.csv", "r");  // Not sure about the validity of this file.  Could use a better source.
@@ -376,7 +376,6 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 			
 		/* Save city name, longitude, latitude, and increase number of cities. Looking at unique municipalities.*/
 		cities[*num_cities]=tmp1;
-		city[*num_cities]=*num_cities;
 		lat_city[*num_cities]=tmp_lat;
 		long_city[*num_cities]=tmp_lon;
 		*num_cities=*num_cities+1;
@@ -984,8 +983,6 @@ int main (int argc, char *argv[]) {
 	int * city_county; // county of person i by integer assignment.
 	city_county = (int*)calloc(2000,sizeof(int));
 	int num_cities=0; // total number of cities
-	int city_int[2000]; // Integer values for random probability distribution. 
-	memset(city_int, 0, 2000*sizeof(int));
 
 
 	/* City information for allocating schools. */
@@ -1199,11 +1196,11 @@ school or workplace. */
 
 	/* Initialize age distribution */
 	age_dist(age, population, stats, age_distrib);
-	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_int, city_county, county_name, num_counties) ;
+	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_county, county_name, num_counties) ;
 
 	/* Checking data */
 	for (i=0; i<num_cities; i++) {
-//		printf("cities %i %i %i %i lat %f lon %f \n", i, city_int[i], city_county[i], num_cities, lat_city[i], long_city[i]);
+//		printf("cities %i %i %i lat %f lon %f \n", i, city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
 	/* Seed infections */
@@ -1249,7 +1246,7 @@ school or workplace. */
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH) ;
 
 	free(city_county);
 
