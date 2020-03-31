@@ -127,7 +127,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 	
         fprintf(stats, "Testing age distribution\n");
 	for (i=0; i<9; i++) {
-		fprintf(stats, "age %i percent %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
+		fprintf(stats, "age %i fraction %f actual %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
 	}
 	fprintf(stats, "\n\n");
         fflush(stats);
@@ -138,7 +138,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float Total_pop_dens) {
+void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float Total_pop_dens) {
 
 	/* Initialize helpers for population density */
 	int num_km=*num_locale;
@@ -232,10 +232,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];
 		county[HH_person]=county_HH[HH_count];
-                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
-		city_size[city[HH_person]]++;
-		county_size[county[HH_person]]++;
-                HH_to_person[HH_count][per_HH_size[HH_count]] = HH_person;
+                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -277,11 +274,9 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];	
 		county[HH_person]=county_HH[HH_count];	
-                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
+                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
-		county_size[county[HH_person]]++;
 		locale_count[placement]+=1;
-                HH_to_person[HH_count][per_HH_size[HH_count]] = HH_person;
 		per_HH_size[HH[HH_person]]++;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
 			max_HH_size=per_HH_size[HH[HH_person]];
@@ -347,11 +342,9 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		//	printf("HH %i %i %i %f \n", HH[HH_person], placement, locale_HH_count[placement], HH_person);
 			city[HH_person]=city_HH[HH[HH_person]];	
 			county[HH_person]=county_HH[HH[HH_person]];	
-                        county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
+                        county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 			city_size[city[HH_person]]++;
-			county_size[county[HH_person]]++;
 			locale_count[placement]+=1;
-                        HH_to_person[tmp_HH][per_HH_size[tmp_HH]] = HH_person;
                         per_HH_size[HH[HH_person]]++;
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
                                 max_HH_size=per_HH_size[HH[HH_person]];
@@ -366,24 +359,29 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 // Uncomment to test household distribution.  Tested JMG 2020-03-22.
 	int *HH_dist_test;
         HH_dist_test = (int *)calloc(max_HH_size+1, sizeof(int));
+	int *HH_county_test;
+        HH_county_test = (int *)calloc(21, sizeof(int));
 	for (i=0; i<num_households; i++) {
 		HH_dist_test[per_HH_size[i]]++;
+		HH_county_test[county_HH[i]]++;	
 	}	
 	
 	fprintf(stats, "Household distributions \n");
 	for (i=0; i<=max_HH_size; i++) {
-		fprintf(stats, "household_size %i percent_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
+		fprintf(stats, "household_size %i fraction_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
 		fflush(stats);
 	}
         free(HH_dist_test);
 	
 	fprintf(stats, "\n\n County distribution \n");
 	for (i=0; i<21; i++) {
-		fprintf(stats, "%s county %i population %i percent %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
+		fprintf(stats, "%s county %i population %i fraction %f actual %f num_households %i \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual, HH_county_test[i])  ;
 		fflush(stats);
 	} 
 	fprintf(stats, "\n\n");
         fflush(stats);
+	free(HH_county_test);
+
 
         for (i = 0; i < *num_locale; i++) {
             free(county_list[i]);
@@ -515,7 +513,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 	fprintf(stats, "Job Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<6; i++) {
-			fprintf(stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
+			fprintf(stats, "job_status %i county %i fraction_of_jobs_total %f num_jobs_in_county %i num_unemployed %i fraction_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
 			 
 		}
 		fprintf(stats, "\n");
@@ -1001,11 +999,6 @@ int main (int argc, char *argv[]) {
 	HH = (int*)calloc(population,sizeof(int));
 	int * per_HH_size; // Size of each household.  Need for infectiousness calculations.
 	per_HH_size = (int*)calloc(num_households,sizeof(int));
-        int **HH_to_person;
-        HH_to_person = (int **)malloc(num_households * sizeof(int *));
-        for (i = 0; i < num_households; i++) {
-            HH_to_person[i] = (int *)calloc(typical_max_HH_sz+1, sizeof(int));
-        }
 
 	/* Population information */
 	/* Specific to Sweden.  Averaging population based on total population of Sweden regardless of population size. */
@@ -1050,8 +1043,6 @@ int main (int argc, char *argv[]) {
         for(i=0; i < num_counties; i++) {
             county_p[i] = (int *) malloc(population * sizeof(int)); /* AS: can be reduced to max number of persons in the most populated county */
         }
-        int *county_p_n; /* Nr of persons per county */
-        county_p_n = (int *)calloc(num_counties, sizeof(int));
 	int * job_status; // Type of job each person holds: 0-4 for no job, preschool, elementary school, highschool/college, and job, respectively. 	
 	job_status = (int*)calloc(population,sizeof(int));
 	int * workplace; // Workplace of each person.
@@ -1246,20 +1237,6 @@ school or workplace. */
 //		printf("cities %i %i %i %i lat %f lon %f \n", i, city_int[i], city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
-	/* Seed infections */
-	/* Evenly distribute infection by population */
-	double *pop_percent; // Percent for random probability distribution.
-        pop_percent = (double *)malloc(num_counties * sizeof(double));
-	float tot=0;
-	for (i=0; i < num_counties; i++) {
-		if (county_size[i]>0) {
-			pop_percent[i]=county_size[i]/(float)population;
-		} else {
-			pop_percent[i]=0;
-		}
-		tot+=county_size[i];
-	}
-
 
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
@@ -1291,13 +1268,8 @@ school or workplace. */
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, Total_pop_dens) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, Total_pop_dens) ;
 
-        /* HH_to_person no longer needed */
-        for (i = 0; i < num_households; i++) {
-            HH_to_person[i];
-        }
-        free(HH_to_person);
 	free(city_county);
 
 
@@ -1345,22 +1317,16 @@ school or workplace. */
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l];
-			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
+			fprintf(stats, "time %f county %i initial_infections %i fraction %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
 		}
 		fprintf(stats, "\n\n");
                 fflush(stats);
                 /* Randomly assign initial infections */
-                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_p_n, locale_HH, HH) ;
+                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_size, locale_HH, HH) ;
 	}
         fflush(stats);
         printf("All infections initialized\n");
         fflush(stdout);
-
-	// Uncomment to see initial distribution of infections by county.
-	for (i=0; i<num_counties; i++) {
-	//	printf("initial_infect %i %i %i %f \n", i, initial_infections[i], county_size[i], pop_percent[i]);
-	}
-
 
 
 	int ** job_status_county; // Jobs per county, or city for schools
