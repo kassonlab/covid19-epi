@@ -1201,20 +1201,6 @@ school or workplace. */
 //		printf("cities %i %i %i lat %f lon %f \n", i, city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
-	/* Seed infections */
-	/* Evenly distribute infection by population */
-	double *pop_percent; // Percent for random probability distribution.
-        pop_percent = (double *)malloc(num_counties * sizeof(double));
-	float tot=0;
-	for (i=0; i < num_counties; i++) {
-		if (county_size[i]>0) {
-			pop_percent[i]=county_size[i]/(float)population;
-		} else {
-			pop_percent[i]=0;
-		}
-		tot+=county_size[i];
-	}
-
 
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
