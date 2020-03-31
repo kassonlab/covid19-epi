@@ -406,22 +406,22 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 		} else if (age[i]>=1 && age[i]<3) {
 			if (COV_rand() < 0.7800) {
 				job_status[i]=1;
-				job_status_city[1][county[i]]++;
+				job_status_city[1][city[i]]++;
 			} else {
 				job_status[i]=0;
-				job_status_city[0][county[i]]++;
+				job_status_city[0][city[i]]++;
 			}	
 		} else if (age[i]>=3 && age[i]<6) {
 			if (COV_rand() < 0.9500) {
 				job_status[i]=1;
-				job_status_city[1][county[i]]++;
+				job_status_city[1][city[i]]++;
 			} else {
 				job_status[i]=0;
-				job_status_city[0][county[i]]++;
+				job_status_city[0][city[i]]++;
 			}	
 		} else if (age[i]>=6 && age[i]<15) {
 			job_status[i]=2;
-			job_status_city[2][county[i]]++;
+			job_status_city[2][city[i]]++;
 		} else if (age[i]>=15 && age[i]<22) {
 			job_status[i]=3;
 			job_status_city[3][county[i]]++;
@@ -534,13 +534,25 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 
 	// Broken down in case we want to do schools by municipality.
 	for (i=0; i < num_counties; i++) {
-		for (j=3; j<5; j++) {
-                    if (job_status_county[j][i]>0) {
+		for (j=3; j<6; j++) {
+                    if (job_status_county[j][i]>0 && j==4) {
                             num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_work);
                             num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_work);
                             if (num_workplaces2[j]>*max_num_WP) {
                                     *max_num_WP=num_workplaces2[j];
                             }
+                    } else if (job_status_county[j][i]>0 && j==3) {
+                        num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_school);
+                        num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_school);
+                        if (num_workplaces2[j]>*max_num_WP) {
+                            *max_num_WP=num_workplaces2[j];
+                        }
+                    } else if (job_status_county[j][i]>0 && j==5) {
+                        num_workplaces[j][i]=ceil(job_status_county[j][i]/(float)pp_hospital);
+                        num_workplaces2[j]+=ceil(job_status_county[j][i]/(float)pp_hospital);
+                        if (num_workplaces2[j]>*max_num_WP) {
+                            *max_num_WP=num_workplaces2[j];
+                        }
                     }
                 }
 		// Need to use floor+1 equation because each county should have a hospital even if no one works there. */
@@ -998,7 +1010,7 @@ int main (int argc, char *argv[]) {
         for(i=0; i < num_counties; i++) {
             county_p[i] = (int *) malloc(population * sizeof(int)); /* AS: can be reduced to max number of persons in the most populated county */
         }
-	int * job_status; // Type of job each person holds: 0-4 for no job, preschool, elementary school, highschool/college, and job, respectively. 	
+	int * job_status; // Type of job each person holds: 0-5 for no job, preschool, elementary school, highschool/college, job, and hospital, respectively. 	
 	job_status = (int*)calloc(population,sizeof(int));
 	int * workplace; // Workplace of each person.
 	workplace = (int*)calloc(population,sizeof(int));
