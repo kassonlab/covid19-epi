@@ -138,7 +138,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH) {
+void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH) {
 
 	/* Initialize helpers for population density */
 	int num_km=*num_locale;
@@ -234,9 +234,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];
 		county[HH_person]=county_HH[HH_count];
-                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
+                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
-		county_size[county[HH_person]]++;
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -279,9 +278,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];	
 		county[HH_person]=county_HH[HH_count];	
-                county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
+                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
-		county_size[county[HH_person]]++;
 		locale_count[placement]+=1;
 		per_HH_size[HH[HH_person]]++;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -314,9 +312,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		//	printf("HH %i %i %i %f \n", HH[HH_person], placement, locale_HH_count[placement], HH_person);
 			city[HH_person]=city_HH[HH[HH_person]];	
 			county[HH_person]=county_HH[HH[HH_person]];	
-                        county_p[county[HH_person]][county_p_n[county[HH_person]]++] = HH_person;
+                        county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 			city_size[city[HH_person]]++;
-			county_size[county[HH_person]]++;
 			locale_count[placement]+=1;
                         per_HH_size[HH[HH_person]]++;
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -646,7 +643,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	return(kappa);
 }
 
-void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat_locale, float * lon_locale, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_p_n, int *locale_HH, int *HH) {
+void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat_locale, float * lon_locale, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_size, int *locale_HH, int *HH) {
 
 	int person_infected=0, county_person_inf = 0;
 	int tmp_infect=0;
@@ -663,12 +660,12 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 		while ((tmp_infect<initial_infections[i])) {
 			int tmp_j=0;
 			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
-                        county_person_inf = (int)(COV_rand() * county_p_n[i]);
+                        county_person_inf = (int)(COV_rand() * county_size[i]);
                         person_infected=county_p[i][county_person_inf];
 			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>1.0) && tmp_j<population) {
                                 /* pick first available person in the county to infect if the randomly choosen aren't free to pick */
                                 county_person_inf++;
-                                if (county_person_inf >= county_p_n[i]) {
+                                if (county_person_inf >= county_size[i]) {
                                     county_person_inf = 0;
                                 }
                                 person_infected=county_p[i][county_person_inf];
@@ -691,7 +688,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 			if (diff_lat_lon>1) {
 				while ((county[person_infected]!=i) || (infected[person_infected]!=0)) {
                                         county_person_inf++;
-                                        if (county_person_inf >= county_p_n[i]) {
+                                        if (county_person_inf >= county_size[i]) {
                                             county_person_inf = 0;
                                         }
                                         person_infected=county_p[i][county_person_inf];
@@ -1006,8 +1003,6 @@ int main (int argc, char *argv[]) {
         for(i=0; i < num_counties; i++) {
             county_p[i] = (int *) malloc(population * sizeof(int)); /* AS: can be reduced to max number of persons in the most populated county */
         }
-        int *county_p_n; /* Nr of persons per county */
-        county_p_n = (int *)calloc(num_counties, sizeof(int));
 	int * job_status; // Type of job each person holds: 0-4 for no job, preschool, elementary school, highschool/college, and job, respectively. 	
 	job_status = (int*)calloc(population,sizeof(int));
 	int * workplace; // Workplace of each person.
@@ -1254,7 +1249,7 @@ school or workplace. */
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH) ;
 
 	free(city_county);
 
@@ -1308,7 +1303,7 @@ school or workplace. */
 		fprintf(stats, "\n\n");
                 fflush(stats);
                 /* Randomly assign initial infections */
-                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_p_n, locale_HH, HH) ;
+                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_size, locale_HH, HH) ;
 	}
         fflush(stats);
         printf("All infections initialized\n");
