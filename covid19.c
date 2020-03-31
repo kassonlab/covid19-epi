@@ -290,12 +290,14 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH_count++;
 	}
 
+        /*
         int WW = 0;
         for (int q = 0; q < *num_locale; q++) {
             printf("locale %d : nHH %d : nHH*2.2 %6.1f pdin %6.1f\n", q, locale_HH_count[q], locale_HH_count[q]*2.2, pop_density_init_num[q] * tot_pop_actual / Total_pop_dens);
             WW += locale_HH_count[q];
         }
         printf("WW = %d num_households = %d\n", WW, num_households);
+        */
         placement = 0;
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
@@ -304,7 +306,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 			
 			/* Place people in random households within locale until locale is full. */
                         if (locale_count[placement] + 1 > pop_density_init_num[placement] * tot_pop_actual / Total_pop_dens) {
-					placement++;
+                            placement++;
 			}	
 
 			/* Pick a random household in the locale. */
@@ -317,10 +319,12 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                             tmp_county_HH++;
                             if (tmp_county_HH >= locale_HH_count[placement]) {
                                 if (only_once) {
+                                    /*
                                     printf("only once: locale %d, nHH %d, nPP %d, outof %f\n", placement, locale_HH_count[placement], locale_count[placement], pop_density_init_num[placement]);
                                     for (int q = 0; q < locale_HH_count[placement]; q++) {
                                         printf("HH %d : %d\n", q, per_HH_size[county_list[placement][q]]);
                                     }
+                                    */
                                     if (placement + 1 >= *num_locale) {
                                         printf("Bailing out, no more locale to put people in\n");
                                         printf("locale %d, nHH %d, nPP %d, outof %f\n", placement, locale_HH_count[placement], locale_count[placement], pop_density_init_num[placement]);
@@ -330,7 +334,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                                     }
                                     placement++;
                                     tmp_county_HH=(int)(COV_rand() * locale_HH_count[placement]);
-                                    printf("Continuing with next locale\n");
+                                    //printf("Continuing with next locale\n");
                                     only_once = 0;
                                 } else {
                                     tmp_county_HH = 0;
