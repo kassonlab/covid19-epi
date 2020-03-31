@@ -127,7 +127,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 	
         fprintf(stats, "Testing age distribution\n");
 	for (i=0; i<9; i++) {
-		fprintf(stats, "age %i percent %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ; 
+		fprintf(stats, "age %i fraction %f num %f \n", i, (float)age_dist_test[i]/population, age_dist[i]) ;
 	}
 	fprintf(stats, "\n\n");
         fflush(stats);
@@ -334,14 +334,14 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	
 	fprintf(stats, "Household distributions \n");
 	for (i=0; i<=max_HH_size; i++) {
-		fprintf(stats, "household_size %i percent_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ; 
+		fprintf(stats, "household_size %i fraction_of_households %f num_households %i total_households %i \n", i, HH_dist_test[i]/(float)num_households, HH_dist_test[i], num_households) ;
 		fflush(stats);
 	}
         free(HH_dist_test);
 	
 	fprintf(stats, "\n\n County distribution \n");
 	for (i=0; i<21; i++) {
-		fprintf(stats, "%s county %i population %i percent %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
+		fprintf(stats, "%s county %i population %i fraction %f actual %f \n", county_names[i],i, county_size[i], county_size[i]/(float)population, county_pop[i]/tot_pop_actual)  ;
 		fflush(stats);
 	} 
 	fprintf(stats, "\n\n");
@@ -476,7 +476,7 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 	fprintf(stats, "Job Distribution \n");
 	for (j=0; j<num_counties; j++) {
 		for (i=0; i<6; i++) {
-			fprintf(stats, "job_status %i county %i percent_of_jobs_total %f num_jobs_in_county %i unemployed %i percent_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
+			fprintf(stats, "job_status %i county %i fraction_of_of_jobs_total %f num_jobs_in_county %i unemployed %i fraction_unemployed  %f \n", i, j, job_dist_test[i]/(float)population, city_dist_test[i][j], unemployed[j], (float)unemployed[j]/working_age[j]) ;
 			 
 		}
 		fprintf(stats, "\n");
@@ -1278,7 +1278,7 @@ school or workplace. */
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l];
-			fprintf(stats, "time %f county %i initial_infections %i percent %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
+			fprintf(stats, "time %f county %i initial_infections %i fraction_of_infections %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
 		}
 		fprintf(stats, "\n\n");
                 fflush(stats);
