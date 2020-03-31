@@ -138,13 +138,12 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH) {
+void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int * city_int, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *county_p_n, int **HH_to_person, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float Total_pop_dens) {
 
 	/* Initialize helpers for population density */
 	int num_km=*num_locale;
 	// FOR TEST TEXT 
 	//int num_km=63;
-	float tot_pop_density=0;
 
 	/* Initialize helpers for household distribution */
 	float lat_HH[num_households];	
@@ -197,7 +196,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 
                 tmp_lat = lat_locale[HH_count];
                 tmp_lon = lon_locale[HH_count];
-		tot_pop_density+=pop_density_init_num[HH_count];
 
 		// Determine city of each population square.  Use city data to determine which schools students attend.  Workplaces are placed by county. //
 		for (j=0; j<num_cities; j++) {
@@ -250,22 +248,21 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 /* Uncomment to test population denity WRT county. 
 	// Test population based on method vs actual population density on county level.  Lines up fairly well. //
 	for (i=0;i<21; i++) {
-		printf("counties %i %s number of locales %i calculated density %f actual density %f\n", i, county_names[i], tmp_county_count[i], tmp_county_density[i]/(float)tot_pop_density, county_pop[i]/tot_pop_actual);
+		printf("counties %i %s number of locales %i calculated density %f actual density %f\n", i, county_names[i], tmp_county_count[i], tmp_county_density[i]/(float)Total_pop_dens, county_pop[i]/tot_pop_actual);
 		fflush(stdout);	
 	}
 */
 
-	int list=1; //This keeps track of how many times we can been through the locale list.	
 	placement=0; //Keeps track of household placement after first loop of locales.
 	/* First add adult head of household to the rest of the households. */
 	while ( HH_count < num_households ) {
 		while ( age[HH_person]<20 ) {
 			HH_person++;
 		}
-		/* Place another household in locales with population density greater than 2*(households in locale). */
-		if (pop_density_init_num[placement]<=2*list) {
-				list++;	
-				placement=0; // Start over at top of list.  Remember list is sorted by biggest to smallest locales.
+		/* Place another household in locales with population density greater than 2.2*(households in locale). */
+                /* And in relation to simulated population / total population according to density */
+                if (locale_HH_count[placement]*2.2 > pop_density_init_num[placement] * tot_pop_actual / Total_pop_dens) {
+				placement++;
 		}	
 		lat_HH[HH_count]=lat_HH[placement];	
 		lon_HH[HH_count]=lon_HH[placement];
@@ -289,28 +286,62 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
 			max_HH_size=per_HH_size[HH[HH_person]];
 		}
-		placement+=1;
 		HH_person++;
 		HH_count++;
 	}
 
+        /*
+        int WW = 0;
+        for (int q = 0; q < *num_locale; q++) {
+            printf("locale %d : nHH %d : nHH*2.2 %6.1f pdin %6.1f\n", q, locale_HH_count[q], locale_HH_count[q]*2.2, pop_density_init_num[q] * tot_pop_actual / Total_pop_dens);
+            WW += locale_HH_count[q];
+        }
+        printf("WW = %d num_households = %d\n", WW, num_households);
+        */
         placement = 0;
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
-                int tmp_HH;
+                int tmp_HH, tmp_county_HH;
 		if (HH[HH_person]==-1) {
 			
 			/* Place people in random households within locale until locale is full. */
-			if (placement>=*num_locale) {
-				placement=0;
-			} else if (locale_count[placement]>=pop_density_init_num[placement]) {
-					placement=0; // Start over at top of list.  Remember list is sorted by biggest to smallest locales.
+                        if (locale_count[placement] + 1 > pop_density_init_num[placement] * tot_pop_actual / Total_pop_dens) {
+                            placement++;
 			}	
 
 			/* Pick a random household in the locale. */
-			tmp_HH=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
+                        int only_once;
+                        only_once = 0;
+			tmp_county_HH=(int)(COV_rand() * locale_HH_count[placement]);
+			tmp_HH=county_list[placement][tmp_county_HH];
                         while (per_HH_size[tmp_HH]+1 > typical_max_HH_sz) {
-                            tmp_HH=county_list[placement][(int)(COV_rand() * locale_HH_count[placement])];
+                            //printf("tmpHH %d, lHHc %d, pHHsz %d, typical %d\n", tmp_HH, locale_HH_count[placement], per_HH_size[tmp_HH], typical_max_HH_sz);
+                            tmp_county_HH++;
+                            if (tmp_county_HH >= locale_HH_count[placement]) {
+                                if (only_once) {
+                                    /*
+                                    printf("only once: locale %d, nHH %d, nPP %d, outof %f\n", placement, locale_HH_count[placement], locale_count[placement], pop_density_init_num[placement]);
+                                    for (int q = 0; q < locale_HH_count[placement]; q++) {
+                                        printf("HH %d : %d\n", q, per_HH_size[county_list[placement][q]]);
+                                    }
+                                    */
+                                    if (placement + 1 >= *num_locale) {
+                                        printf("Bailing out, no more locale to put people in\n");
+                                        printf("locale %d, nHH %d, nPP %d, outof %f\n", placement, locale_HH_count[placement], locale_count[placement], pop_density_init_num[placement]);
+                                        for (int q = 0; q < locale_HH_count[placement]; q++) {
+                                            printf("HH %d : %d\n", q, per_HH_size[county_list[placement][q]]);
+                                        }
+                                    }
+                                    placement++;
+                                    tmp_county_HH=(int)(COV_rand() * locale_HH_count[placement]);
+                                    //printf("Continuing with next locale\n");
+                                    only_once = 0;
+                                } else {
+                                    tmp_county_HH = 0;
+                                    only_once = 1;
+                                }
+                            }
+                            tmp_HH=county_list[placement][tmp_county_HH];
                         }
 			HH[HH_person]=tmp_HH;
 		//	printf("HH %i %i %i %f \n", HH[HH_person], placement, locale_HH_count[placement], HH_person);
@@ -325,7 +356,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
                                 max_HH_size=per_HH_size[HH[HH_person]];
                         }
-			placement+=1;
 		}
 	}
 
@@ -968,7 +998,7 @@ int main (int argc, char *argv[]) {
         int **HH_to_person;
         HH_to_person = (int **)malloc(num_households * sizeof(int *));
         for (i = 0; i < num_households; i++) {
-            HH_to_person[i] = (int *)calloc(typical_max_HH_sz, sizeof(int));
+            HH_to_person[i] = (int *)calloc(typical_max_HH_sz+1, sizeof(int));
         }
 
 	/* Population information */
@@ -1236,6 +1266,7 @@ school or workplace. */
 
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
+        float Total_pop_dens = 0;
         int num_locale = 0, max_locale = 0;
         float tmp_lat, tmp_lon, pop_den;
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
@@ -1249,6 +1280,7 @@ school or workplace. */
             lat_locale[num_locale] = tmp_lat;
             lon_locale[num_locale] = tmp_lon;
             pop_density_init_num[num_locale++] = pop_den;
+            Total_pop_dens += pop_den;
         }
         fclose(lat_long);
         int **locale_to_HH;
@@ -1262,7 +1294,7 @@ school or workplace. */
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, city_int, county_name, pop_county, tot_pop, stats, county_p, county_p_n, HH_to_person, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, Total_pop_dens) ;
 
         /* HH_to_person no longer needed */
         for (i = 0; i < num_households; i++) {
