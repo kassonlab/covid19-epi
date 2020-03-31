@@ -233,7 +233,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		county[HH_person]=county_HH[HH_count];
                 county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
-		county_size[county[HH_person]]++;
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -277,7 +276,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		county[HH_person]=county_HH[HH_count];	
                 county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 		city_size[city[HH_person]]++;
-		county_size[county[HH_person]]++;
 		locale_count[placement]+=1;
 		per_HH_size[HH[HH_person]]++;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -347,7 +345,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 			county[HH_person]=county_HH[HH[HH_person]];	
                         county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
 			city_size[city[HH_person]]++;
-			county_size[county[HH_person]]++;
 			locale_count[placement]+=1;
                         per_HH_size[HH[HH_person]]++;
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
