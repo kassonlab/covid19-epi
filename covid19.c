@@ -155,7 +155,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	int city_num;	
 	
 	float dist1;
-	int tmp_city;	
 	float min_dist=1000000;
 	int placement;
         int i, j;
@@ -190,7 +189,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	locale_HH_count = (int*)calloc(*num_locale,sizeof(int));
 	
 
-        tmp_city = -1;
+        city_num = -1;
 	while (( HH_count < num_households ) && (HH_count < num_km)) {
                 float tmp_lat, tmp_lon;
 		min_dist=1000000;
@@ -204,16 +203,15 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 			dist1=distance(tmp_lat, tmp_lon, lat_city[j], long_city[j], 'K');	
 			if (dist1<min_dist) {
 				min_dist=dist1;
-				tmp_city=j;
+				city_num=j;
 			} 
 		}
-                if (tmp_city < 0) {
-                    fprintf(stderr, "Error in household_lat_long: tmp_city < 0\n");
+                if (city_num < 0) {
+                    fprintf(stderr, "Error in household_lat_long: city_num < 0\n");
                     exit(0);
                 }
 
-		city_num=tmp_city;
-		county_num=city_county[tmp_city];
+		county_num=city_county[city_num];
 		tmp_county_count[county_num]++; 
 		tmp_county_density[county_num]+=pop_density_init_num[HH_count]; 
 
