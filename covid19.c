@@ -1235,9 +1235,6 @@ school or workplace. */
         float tmp_lat, tmp_lon, pop_den, land_pop_total_density;
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
-	    if (pop_den < 10000000/population ) {
-		break;
-	} else {
             if (num_locale + 1 > max_locale) {
                 max_locale += 10;
                 lat_locale = (float *)realloc(lat_locale, max_locale * sizeof(float));
@@ -1248,8 +1245,7 @@ school or workplace. */
             lon_locale[num_locale] = tmp_lon;
             pop_density_init_num[num_locale++] = pop_den;
             land_pop_total_density += pop_den;
-       }
-		 }
+	}
         fclose(lat_long);
         int **locale_to_HH;
         int *locale_to_HH_n;
