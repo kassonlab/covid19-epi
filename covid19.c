@@ -60,7 +60,10 @@ double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
   }
   else {
     theta = lon1 - lon2;
-    dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * cos(deg2rad(theta));
+    double ang1,ang2;
+    ang1 = deg2rad(lat1);
+    ang2 = deg2rad(lat2);
+    dist = cos(ang1) * cos(ang2) * ( 1.0 + cos(deg2rad(theta)) ) - cos(ang1 + ang2);
     dist = acos(dist);
     dist = rad2deg(dist);
     dist = dist * 60 * 1.1515;
