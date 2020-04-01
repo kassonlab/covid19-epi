@@ -23,9 +23,9 @@ void COV_init_rand() {
         srand48(555L);
     } else {
 #if defined(USE_GETRANDOM)
-        ret = getrandom(((void *)sv, sizeof(sv), 0);
+        ret = getrandom((void *)sv, sizeof(sv), 0);
         while (ret != sizeof(sv) && (errno == EAGAIN || errno == EINTR)) {
-            ret = getrandom(((void *)sv, sizeof(sv), 0);
+            ret = getrandom((void *)sv, sizeof(sv), 0);
         }
         seed48(sv);
 #else
