@@ -17,6 +17,7 @@ int full_fd = 0, full_kappa = 0;
 
 float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0;
 
+
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 /*::                                                                         :*/
@@ -46,6 +47,12 @@ float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0;
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 
 #define pi 3.14159265358979323846
+/* Explicit computation of pi/180 */ 
+#define pirad 0.017453292519943295769
+/* Explicit computation of 180/pi */ 
+#define radpi 57.295779513082320876798
+/* Explicit computation of 1.8*sqrt(2*pi) */
+#define conskappa 4.51193089433580090434837
 
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 /*::  Function prototypes                                           :*/
@@ -60,7 +67,10 @@ double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
   }
   else {
     theta = lon1 - lon2;
-    dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * cos(deg2rad(theta));
+    double ang1,ang2;
+    ang1 = deg2rad(lat1);
+    ang2 = deg2rad(lat2);
+    dist = cos(ang1) * cos(ang2) * ( 1.0 + cos(deg2rad(theta)) ) - cos(ang1 + ang2);
     dist = acos(dist);
     dist = rad2deg(dist);
     dist = dist * 60 * 1.1515;
@@ -82,14 +92,14 @@ double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
 /*::  This function converts decimal degrees to radians             :*/
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 double deg2rad(double deg) {
-  return (deg * pi / 180);
+  return (deg * pirad);
 }
 
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 /*::  This function converts radians to decimal degrees             :*/
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 double rad2deg(double rad) {
-  return (rad * 180 / pi);
+  return (rad * radpi);
 }
 /// End of code from GEODATASOURCE
 
@@ -625,7 +635,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
                 if (full_kappa) {
                     t1=(log(t-tau-4.6)+0.72)/1.8;
-                    kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
+                    kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*conskappa);
                 } else {
                     t2=(t-tau)/dt;
                     kappa=kappa_vals[t2];
