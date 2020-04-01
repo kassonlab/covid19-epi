@@ -1176,14 +1176,6 @@ school or workplace. */
 	tauI[5]=0.0;
 	personinter[5]=0;
 
-	/* Intervention 5: social distancing.  workplace contact reduces 25%, household contact increases 25%, community contact reduces 75%. For whole community or subset. 90% comply
-	interIc[5]=0.25;
-	float interIw5[6]={0, 1.00, 1.00, 1.00, 0.75, Ihosp};
-	interIh[5]=1.50;
-	complyI[5]=0.90;
-	tauI[5]=0;
-	personinter[5]=1;
-*/
 	/* Intervention 6: social distancing with school closure.  Community contacts decrease by 75%, household comntact increase by 25%, 70% compliance.  essential buisnesses stay open, 75% reduction in workplace transmission. NOTE: similar to below except with minimized social interaction. */
 	interIc[6]=0.25;
 	float interIw6[6]={0,0,0,0,0.25, Ihosp};
@@ -1314,10 +1306,6 @@ school or workplace. */
         fflush(stats);
         printf("All infections initialized\n");
         fflush(stdout);
-
-	// Uncomment to see initial distribution of infections by county.
-	for (i=0; i<num_counties; i++) {
-	}
 
 
 
@@ -1517,9 +1505,6 @@ school or workplace. */
 			Ic=interIc[7];
 			Ih=interIh[7];
 			Iw=interIw[7];
-	//		for ( i=0; i<population; i++ ) {
-	//			intervene[i]=1;	
-	//		}
 		} else if (interventions == 5 && t >= tauI_onset && t <= tauI_onset+dt) {
 			/* if not complying, have same interactions as type 7 */
 			Ic=interIc[7];
@@ -1583,13 +1568,14 @@ school or workplace. */
 
 					// Workplace/School transmission: People must be in same workplace and job type. // 
 					if ((workplace[sus_person]==workplace[infec_person]) && (job_status[sus_person]==job_status[infec_person]) && (job_status[sus_person]>0) && tIw[job_status[sus_person]]>0) {
-						infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 						if (job_status[sus_person]<4) {
+							infect+=0.25*calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 							contact_school++;
 							if (class[sus_person]==class[infec_person]) {
-								infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, 15.00, severe[infec_person], tIw) ;
+								infect+=0.75*calc_workplace_infect(job_status[sus_person], kappa, omega, 19.00, severe[infec_person], tIw) ;
 							}
 						} else {
+							infect+=calc_workplace_infect(job_status[sus_person], kappa, omega, workplace_size[(job_status[sus_person])][(workplace[sus_person])], severe[infec_person], tIw) ;
 							contact_work++;
 						}
 					}
@@ -1688,7 +1674,7 @@ school or workplace. */
 		for (i=0; i<num_infectious; i++) {
                         int infec_person;
 			infec_person=infectious[i];
-			if ((tau[infec_person]>t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
+			if ((tau[infec_person]<(t-11)+dt) && (tau[infec_person]>=t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
 				recovered[infec_person]=1;
 				num_recovered++;
 				num_recovered_county[county[infec_person]]++;
