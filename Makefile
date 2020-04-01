@@ -8,8 +8,8 @@ CC := icc
 LD := $(CC)
 
 OMP = -qopenmp
-#OPT = -O3 -xHost
-DEBUG = -O0 -g
+OPT = -O3 -xHost
+#DEBUG = -O0 -g
 CPPFLAGS = 
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -lm

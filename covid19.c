@@ -51,7 +51,7 @@ float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0;
 #define pirad 0.017453292519943295769
 /* Explicit computation of 180/pi */ 
 #define radpi 57.295779513082320876798
-
+/* Explicit computation of 1.8*sqrt(2*pi) */
 #define conskappa 4.51193089433580090434837
 
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
