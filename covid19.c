@@ -1406,10 +1406,11 @@ school or workplace. */
 		for (j=i+1; j<num_locale; j++) {
                         double d;
                         double tmp_fd;
+                        int nn;
                         int npj; /* number of persons in locale j */
                         npj = 0;
-                        for (hh = 0; hh < locale_to_HH_n[j]; hh++) {
-                            npj += per_HH_size[locale_to_HH[j][hh]];
+                        for (nn = 0; nn < locale_to_HH_n[j]; nn++) {
+                            npj += per_HH_size[locale_to_HH[j][nn]];
                         }
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
 
