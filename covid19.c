@@ -1698,6 +1698,9 @@ school or workplace. */
 				num_infect++;
 				num_infect_county[county[sus_person]]++;
 				num_infect_age[(int)floor(age[sus_person]/5)]++;
+				if (job_status[sus_person]==5) {
+					num_infect_HCW++;
+				}
 				/* Determine if following interventions only for interventions that effect individuals.*/
 				if ( interventions > 0 && COV_rand() < complyI[3] ) {
 					if ( interventions == 2 && intervene[sus_person] == 4 ) {
