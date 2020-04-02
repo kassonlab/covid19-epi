@@ -707,7 +707,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 			tmp_lon[*num_infect]=lon_locale[locale_HH[HH[person_infected]]];
 			*num_infect=*num_infect+1;
 			num_infect_county[i]++;
-			num_infect_age[(int)(floor(age[i]/5))]++;
+			num_infect_age[(int)(floor(age[person_infected]/5))]++;
 			tmp_infect++;
 		}
 			
