@@ -883,7 +883,7 @@ void hosp_release(float t, int num_hosp, int * hosp_list, float * tau, int * rec
 int death(float t, int num_infectious, int * infectious, float * tau, int * dead, int * icu_pop, int * hosp_pop, int * symptomatic, int num_dead, float * age, float dt, int * num_dead_county, int * num_dead_age, int * county, int * num_dead_HCW, int * job_status) {
 
 	float fatal_in_icu=0.5;
-	float fatal_symptomatic[]={0.00002, 0.00006, 0.0003, 0.0008, 0.0015, 0.006, 0.022, 0.051, 0.093};
+	float fatal_symptomatic[]={0.0000161, 0.0000695, 0.000309, 0.000844, 0.00161, 0.00595, 0.0193, 0.0428, 0.078};
 	int age_group;
 	int infec_person;
 	int i;
