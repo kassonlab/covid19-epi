@@ -1503,7 +1503,6 @@ school or workplace. */
         ret = clock_gettime(CLOCK_MONOTONIC, &T1);
 	for (time_step=0; time_step<(tot_time/dt); time_step++) {
                 ret = clock_gettime(CLOCK_MONOTONIC, &t1);
-		t=t+dt;
                 printf("Timestep %5.2f ", t);
                 fflush(stdout);
 
@@ -1778,6 +1777,7 @@ school or workplace. */
 		fflush(age_files[file_count/5]);
 	}
 
+		t=t+dt;
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
