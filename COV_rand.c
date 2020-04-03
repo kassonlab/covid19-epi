@@ -16,8 +16,10 @@ int use_fixed_seed = 0;
 void COV_init_rand() {
 #if defined(USE_GETRANDOM)
     unsigned short sv[3];
-    int ret;
+#else
+    struct timespec t;
 #endif
+    int ret;
 
     if (use_fixed_seed) {
         srand48(555L);
@@ -29,7 +31,8 @@ void COV_init_rand() {
         }
         seed48(sv);
 #else
-        srand48(time(NULL));
+        ret = clock_gettime(CLOCK_MONOTONIC, &t);
+        srand48(t.tv_sec * t.tv_nsec);
 #endif
     }
 }
