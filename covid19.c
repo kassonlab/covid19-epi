@@ -947,6 +947,7 @@ int main (int argc, char *argv[]) {
 	int print_lat_lon=0; // Choose whether to print latitude and longitude data of infected individuals for each time step. 
         int ret;
         int i, j;
+        char *initial_infect_filename = NULL;
 
         /* Timing variables */
         struct timespec T1, T2, t1, t2, t3, t4;
@@ -969,6 +970,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-full_fd")) full_fd = 1;
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
+    		else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
   	}
 
 	/* print out population statistics to file */
@@ -1304,10 +1306,18 @@ school or workplace. */
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
 //	float initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/21 ******/
-	float initialize[15]={3955, 4068, 5198, 3955, 3616, 4633, 4633, 4859, 5085, 3051, 1921, 2712, 1469, 1695, 452};
-	/**** TMP INTIALIZATION ARRAY ***/
-//	float initialize[15]={100, 50, 40, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+	float initialize_base[15]={3955, 4068, 5198, 3955, 3616, 4633, 4633, 4859, 5085, 3051, 1921, 2712, 1469, 1695, 452};
+        float *initialize = initialize_base;
 	float tmp_t;
+
+        if (initial_infect_filename != NULL) {
+            initialize = (float *)calloc(15, sizeof(float));
+            FILE *iif = fopen(initial_infect_filename, "r");
+            for (i = 0; i < 15; i++) {
+                fscanf(iif, "%f", &initialize[i]);
+            }
+            fclose(iif);
+        }
 	fprintf(stats, "Initial Infections by county \n");
         fflush(stats);
 	for ( tmp_t=-14; tmp_t<=0; tmp_t++ ) {
