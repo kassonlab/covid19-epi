@@ -15,7 +15,7 @@ int typical_max_HH_sz = 7;
 
 int full_fd = 0, full_kappa = 0;
 
-float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0;
+float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=1.0;
 
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -638,7 +638,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	if (symptomatic==0) {
 		kappa=kappa*0.5;
 	}
-	return(kappa);
+	return(kappa*R0_scale);
 }
 
 void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat_locale, float * lon_locale, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_size, int *locale_HH, int *HH) {
@@ -660,7 +660,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
                         county_person_inf = (int)(COV_rand() * county_size[i]);
                         person_infected=county_p[i][county_person_inf];
-			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || diff_lat_lon>1.0) && tmp_j<population) {
+			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || min_diff>0.5) && tmp_j<population) {
                                 /* pick first available person in the county to infect if the randomly choosen aren't free to pick */
                                 county_person_inf++;
                                 if (county_person_inf >= county_size[i]) {
@@ -671,7 +671,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
                                     fprintf(stderr, "Error: random person is not in expected county %d, is in %d\n", i, county[person_infected]);
                                 }
 				min_diff=1000;
-				if (t<-10 || num_infect_county[i]==0 ) {
+				if (t<-13 || num_infect_county[i]==0 ) {
 					diff_lat_lon=0;
 				} else {
 					for (j=0; j<*num_infect; j++) {
@@ -683,7 +683,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 				}
 				tmp_j++;
 			}
-			if (diff_lat_lon>1) {
+			if (min_diff>1) {
 				while ((county[person_infected]!=i) || (infected[person_infected]!=0)) {
                                         county_person_inf++;
                                         if (county_person_inf >= county_size[i]) {
@@ -702,13 +702,12 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 			if (COV_rand() < symptomatic_per) {
 				symptomatic[person_infected]=1;
 			}
-	//		tau[person_infected]=-COV_rand() * 5;
 			tau[person_infected]=t;
 			tmp_lat[*num_infect]=lat_locale[locale_HH[HH[person_infected]]];
 			tmp_lon[*num_infect]=lon_locale[locale_HH[HH[person_infected]]];
 			*num_infect=*num_infect+1;
 			num_infect_county[i]++;
-			num_infect_age[(int)(floor(age[i]/5))]++;
+			num_infect_age[(int)(floor(age[person_infected]/5))]++;
 			tmp_infect++;
 		}
 			
@@ -884,7 +883,7 @@ void hosp_release(float t, int num_hosp, int * hosp_list, float * tau, int * rec
 int death(float t, int num_infectious, int * infectious, float * tau, int * dead, int * icu_pop, int * hosp_pop, int * symptomatic, int num_dead, float * age, float dt, int * num_dead_county, int * num_dead_age, int * county, int * num_dead_HCW, int * job_status) {
 
 	float fatal_in_icu=0.5;
-	float fatal_symptomatic[]={0.00002, 0.00006, 0.0003, 0.0008, 0.0015, 0.006, 0.022, 0.051, 0.093};
+	float fatal_symptomatic[]={0.0000161, 0.0000695, 0.000309, 0.000844, 0.00161, 0.00595, 0.0193, 0.0428, 0.078};
 	int age_group;
 	int infec_person;
 	int i;
@@ -965,6 +964,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-betac")) betac_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-betah")) betah_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-betaw")) betaw_scale=atof(argv[++i]);
+    		else if (!strcmp(argv[i],"-R0")) R0_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-full_fd")) full_fd = 1;
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
