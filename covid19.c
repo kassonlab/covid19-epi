@@ -673,7 +673,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
                                 }
 				min_diff=1000;
 				if (t<-13 || num_infect_county[i]==0 ) {
-					diff_lat_lon=0;
+					min_diff=0;
 				} else {
 					for (j=0; j<*num_infect; j++) {
 						diff_lat_lon=(fabsf(tmp_lat[j]-lat_locale[locale_HH[HH[person_infected]]])+fabsf(tmp_lon[j]-lon_locale[locale_HH[HH[person_infected]]]));
