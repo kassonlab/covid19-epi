@@ -11,6 +11,7 @@
 
 /* Include files */
 #include "COV_rand.h"
+#include "covid19.h"
 #include "prop_distribution.h"
 #include "distance.h"
 
