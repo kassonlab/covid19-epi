@@ -11,6 +11,9 @@
 
 #include "common.h"
 
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
+
 int typical_max_HH_sz = 7;
 
 int full_fd = 0, full_kappa = 0;
@@ -232,7 +235,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];
 		county[HH_person]=county_HH[HH_count];
-                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
+		county_size[county[HH_person]]++;
+		arrput(county_p[county[HH_person]], HH_person);
 		city_size[city[HH_person]]++;
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
@@ -273,8 +277,9 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		/* Set up head of household. */
 		HH[HH_person]=HH_count;
 		city[HH_person]=city_HH[HH_count];	
-		county[HH_person]=county_HH[HH_count];	
-                county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
+		county[HH_person]=county_HH[HH_count];
+		county_size[county[HH_person]]++;
+		arrput(county_p[county[HH_person]], HH_person);
 		city_size[city[HH_person]]++;
 		locale_count[placement]+=1;
 		per_HH_size[HH[HH_person]]++;
@@ -324,8 +329,9 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 			HH[HH_person]=tmp_HH;
 		//	printf("HH %i %i %i %f \n", HH[HH_person], placement, locale_HH_count[placement], HH_person);
 			city[HH_person]=city_HH[HH[HH_person]];	
-			county[HH_person]=county_HH[HH[HH_person]];	
-                        county_p[county[HH_person]][county_size[county[HH_person]]++] = HH_person;
+			county[HH_person]=county_HH[HH[HH_person]];
+			county_size[county[HH_person]]++;
+			arrput(county_p[county[HH_person]], HH_person);
 			city_size[city[HH_person]]++;
 			locale_count[placement]+=1;
                         per_HH_size[HH[HH_person]]++;
@@ -1028,10 +1034,7 @@ int main (int argc, char *argv[]) {
 	int * county;  // County of each inhabitant
 	county = (int*)calloc(population,sizeof(int));
         int **county_p; /* List of persons per county */
-        county_p = (int **)malloc(num_counties * sizeof(int *));
-        for(i=0; i < num_counties; i++) {
-            county_p[i] = (int *) malloc(population * sizeof(int)); /* AS: can be reduced to max number of persons in the most populated county */
-        }
+        county_p = (int **)calloc(num_counties, sizeof(int *));
 	int * job_status; // Type of job each person holds: 0-5 for no job, preschool, elementary school, highschool/college, job, and hospital, respectively. 	
 	job_status = (int*)calloc(population,sizeof(int));
 	int * workplace; // Workplace of each person.
@@ -1335,7 +1338,11 @@ school or workplace. */
         printf("All infections initialized\n");
         fflush(stdout);
 
-
+	for (size_t i = 0; i < num_counties; ++i) {
+		arrfree(county_p[i]);
+	}
+	free(county_p);
+	county_p = NULL;
 
 	int ** job_status_county; // Jobs per county, or city for schools
 	job_status_county = (int**)calloc(6,sizeof(int*));
