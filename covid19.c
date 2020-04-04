@@ -151,10 +151,10 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	float tot_pop_density=0;
 
 	/* Initialize helpers for household distribution */
-	float lat_HH[num_households];	
-	float lon_HH[num_households];	
-	int city_HH[num_households];	
-	int county_HH[num_households];	
+	float* lat_HH = malloc(num_households * sizeof(float));
+	float* lon_HH = malloc(num_households * sizeof(float));
+	int* city_HH = malloc(num_households * sizeof(int));
+	int* county_HH = malloc(num_households * sizeof(int));
 	int county_num;	
 	int city_num;	
 	
@@ -379,6 +379,11 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	free(county_list);
 	free(locale_count);
 	free(locale_HH_count);
+
+	free(lat_HH);
+	free(lon_HH);
+	free(city_HH);
+	free(county_HH);
 }
 
 void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * county, char ** county_names, int num_county) {
