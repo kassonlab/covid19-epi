@@ -100,6 +100,7 @@ struct locale {
     */
 };
 
-struct locale *locale_list;
+extern int num_locale;
+extern struct locale *locale_list;
 
 #endif /* __COVID19_H__ */
