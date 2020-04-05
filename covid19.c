@@ -1454,6 +1454,7 @@ school or workplace. */
 			fd_tot[j] += tmp_fd * npi;
 			if (i<num_precalc && j<num_precalc) {
 				fd_precalc[i][j]=tmp_fd;
+				fd_precalc[j][i]=tmp_fd;
 			}
 		}
                 fd_tot[i] += itmp_fd + npi - 1;
