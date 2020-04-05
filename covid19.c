@@ -642,17 +642,17 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	return(kappa*R0_scale);
 }
 
-void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat_locale, float * lon_locale, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_size, int *locale_HH, int *HH) {
+void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat_locale, float * lon_locale, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_size, int *locale_HH, int *HH, float *tmp_lat, float *tmp_lon) {
 
 	int person_infected=0, county_person_inf = 0;
 	int tmp_infect=0;
 	float min_diff=1000;
 	float diff_lat_lon=10;
-        float *tmp_lat, *tmp_lon;
+        //float *tmp_lat, *tmp_lon;
         int i, j;
 
-        tmp_lat = (float*)calloc(population,sizeof(float));
-        tmp_lon = (float*)calloc(population,sizeof(float));
+        //tmp_lat = (float*)calloc(population,sizeof(float));
+        //tmp_lon = (float*)calloc(population,sizeof(float));
 	
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
@@ -661,7 +661,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 			// Test up to population to see if we can find someone who fits a perviously determined cluster.  If not, leave this loop and pick a random person.
                         county_person_inf = (int)(COV_rand() * county_size[i]);
                         person_infected=county_p[i][county_person_inf];
-			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || min_diff>0.5) && tmp_j<population) {
+			while (((county[person_infected]!=i) || (infected[person_infected]!=0) || min_diff>0.5) && tmp_j<county_size[i]) {
                                 /* pick first available person in the county to infect if the randomly choosen aren't free to pick */
                                 county_person_inf++;
                                 if (county_person_inf >= county_size[i]) {
@@ -713,8 +713,8 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 		}
 			
 	}
-        free(tmp_lat);
-        free(tmp_lon);
+        //free(tmp_lat);
+        //free(tmp_lon);
 }
 
 
@@ -1320,6 +1320,8 @@ school or workplace. */
         }
 	fprintf(stats, "Initial Infections by county \n");
         fflush(stats);
+        float *tmp_lat_v = (float*)calloc(population,sizeof(float));
+        float *tmp_lon_v = (float*)calloc(population,sizeof(float));
 	for ( tmp_t=-14; tmp_t<=0; tmp_t++ ) {
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
@@ -1329,8 +1331,10 @@ school or workplace. */
 		fprintf(stats, "\n\n");
                 fflush(stats);
                 /* Randomly assign initial infections */
-                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_size, locale_HH, HH) ;
+                initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_size, locale_HH, HH, tmp_lat_v, tmp_lon_v) ;
 	}
+        free(tmp_lat_v);
+        free(tmp_lon_v);
         fflush(stats);
         printf("All infections initialized\n");
         fflush(stdout);
