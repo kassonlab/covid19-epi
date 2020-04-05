@@ -15,7 +15,7 @@ int typical_max_HH_sz = 7;
 
 int full_fd = 0, full_kappa = 0;
 
-float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=1.0;
+float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
 
 //Taken from geodatasource.com //
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -800,18 +800,22 @@ float calc_workplace_infect(int job_status, float kappa, float omega, int workpl
 	return(betaw_scale*Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
-float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, double * fd_vals) {
+float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, double * fd_vals, double tmp_fd) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
 	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
 	float fd, fd1;
 	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
-        if (full_fd) {
-            fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-        } else {
-            fd=fd_vals[(int)(d*10)];
-        }
+	if (d==-1) {
+		fd=tmp_fd;
+	} else {
+		if (full_fd) {
+		    fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
+		} else {
+		    fd=fd_vals[(int)(d*10)];
+		}
+	}
 	return(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
@@ -1404,6 +1408,15 @@ school or workplace. */
 
         printf("Starting density kernel calculations\n");
         fflush(stdout);
+	
+	/* Save array for first 8000 locales with fd precalculated.  This accounts for 50% of the population. */
+	double ** fd_precalc;
+	int num_precalc = 20000;
+        fd_precalc = (double **)malloc(num_precalc * sizeof(double *));
+        for(i=0; i < num_precalc; i++) {
+            fd_precalc[i] = (double *) malloc(num_precalc * sizeof(double)); /* JMG: Could be turned into triangular matrix, fd[i][j]==fd[j][i] */
+        }
+	
         ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<num_locale; i++) {
@@ -1415,6 +1428,9 @@ school or workplace. */
                 for (hh = 0; hh < locale_to_HH_n[i]; hh++) {
                     npi += per_HH_size[locale_to_HH[i][hh]];
                 }
+		if (i<num_precalc) {
+			fd_precalc[i][i]=1;	
+		}
 #ifdef _OPENMP
 #pragma omp parallel for private(j) reduction(+:itmp_fd)
 #endif
@@ -1436,6 +1452,9 @@ school or workplace. */
                         }
                         itmp_fd += tmp_fd * npj;
 			fd_tot[j] += tmp_fd * npi;
+			if (i<num_precalc && j<num_precalc) {
+				fd_precalc[i][j]=tmp_fd;
+			}
 		}
                 fd_tot[i] += itmp_fd + npi - 1;
 	}
@@ -1633,6 +1652,7 @@ school or workplace. */
 				
 				if (hosp_pop[infec_person]==0) {
                                         float d; //distance between people.
+					double tmp_fd;
 					if (HH[sus_person]==HH[infec_person]) {
 						// Household transmission //
 						infect+=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[sus_person]], alpha, severe[infec_person]); 
@@ -1654,8 +1674,14 @@ school or workplace. */
 					}
 
 					// Community transmission // 
-                                        d=distance(lat_locale[locale_HH[HH[sus_person]]], lon_locale[locale_HH[HH[sus_person]]], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
-					community_nom+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc);
+       
+					if (locale_HH[HH[sus_person]]<num_precalc && locale_HH[HH[infec_person]]<num_precalc) {
+						tmp_fd = fd_precalc[locale_HH[HH[sus_person]]][locale_HH[HH[infec_person]]];
+						d=-1;
+					} else {
+                                        	d=distance(lat_locale[locale_HH[HH[sus_person]]], lon_locale[locale_HH[HH[sus_person]]], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
+					}
+					community_nom+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc, tmp_fd);
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
 					// Workplace/School transmission: People must be in same workplace and job type. // 
