@@ -12,7 +12,8 @@
 /* Include files */
 #include "COV_rand.h"
 #include "covid19.h"
-#include "prop_distribution.h"
 #include "distance.h"
+#include "locale.h"
+#include "prop_distribution.h"
 
 #endif /* __COMMON_H__ */

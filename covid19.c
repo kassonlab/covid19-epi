@@ -592,7 +592,7 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
                                 }
 				min_diff=1000;
 				if (t<-13 || num_infect_county[i]==0 ) {
-					diff_lat_lon=0;
+					min_diff=0;
 				} else {
 					for (j=0; j<*num_infect; j++) {
 						diff_lat_lon=(fabsf(tmp_lat[j]-lat_locale[locale_HH[HH[person_infected]]])+fabsf(tmp_lon[j]-lon_locale[locale_HH[HH[person_infected]]]));
@@ -719,11 +719,11 @@ float calc_workplace_infect(int job_status, float kappa, float omega, int workpl
 	return(betaw_scale*Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
-float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, double * fd_vals) {
+float calc_community_infect(int age_group, float kappa, float omega, int severe, double d, double * fd_vals) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
 	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
-	float fd, fd1;
+	double fd;
 	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
         if (full_fd) {
@@ -731,7 +731,7 @@ float calc_community_infect(int age_group, float kappa, float omega, int severe,
         } else {
             fd=fd_vals[(int)(d*10)];
         }
-	return(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
+	return (float)(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
 
@@ -1042,8 +1042,7 @@ int main (int argc, char *argv[]) {
 	workplace_tmp = (int*)calloc(population,sizeof(int));
 
 	float infect_prob=0; // Infectious probability
-	float community_nom=0; // For adding community infection.
-	float community_den=0; // For adding community infection.
+	double community_nom=0; // For adding community infection.
 	float infect=0; //Infectiousness
 	int file_count;
 
@@ -1157,22 +1156,26 @@ school or workplace. */
 
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
-        int num_locale = 0, max_locale = 0;
+        //int num_locale = 0, max_locale = 0;
         float tmp_lat, tmp_lon, pop_den, land_pop_total_density;
+
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
             if (num_locale + 1 > max_locale) {
-                max_locale += 10;
-                lat_locale = (float *)realloc(lat_locale, max_locale * sizeof(float));
-                lon_locale = (float *)realloc(lon_locale, max_locale * sizeof(float));
-                pop_density_init_num = (float *)realloc(pop_density_init_num, max_locale * sizeof(float));
+                //max_locale += 10;
+                 lat_locale = (float *)realloc(lat_locale, (max_locale+10) * sizeof(float));
+                 lon_locale = (float *)realloc(lon_locale, (max_locale+10) * sizeof(float));
+                 pop_density_init_num = (float *)realloc(pop_density_init_num, (max_locale+10) * sizeof(float));
             }
             lat_locale[num_locale] = tmp_lat;
             lon_locale[num_locale] = tmp_lon;
-            pop_density_init_num[num_locale++] = pop_den;
+            pop_density_init_num[num_locale] = pop_den;
+            add_locale(tmp_lat, tmp_lon, pop_den);
             land_pop_total_density += pop_den;
+            num_locale++;
 	}
         fclose(lat_long);
+
         int **locale_to_HH;
         int *locale_to_HH_n;
         int *locale_HH;
@@ -1309,7 +1312,7 @@ school or workplace. */
 	}
         fclose(stats);
 
-	
+
 	double fd_calc[22000];
 	/*Precalculate density kernel */
 	for (i=0; i<22000; i++) {
@@ -1322,7 +1325,7 @@ school or workplace. */
         ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<num_locale; i++) {
-                float itmp_fd;
+                double itmp_fd;
                 int npi; /* number of persons in locale i */
                 int hh;
                 itmp_fd = 0;
@@ -1342,7 +1345,11 @@ school or workplace. */
                         for (nn = 0; nn < locale_to_HH_n[j]; nn++) {
                             npj += per_HH_size[locale_to_HH[j][nn]];
                         }
+#if !defined(USE_LOCALE_DISTANCE)
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
+#else
+                        d = locale_distance(locale_list[i], locale_list[j]);
+#endif
 
                         if (full_fd) {
                             tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
@@ -1512,7 +1519,6 @@ school or workplace. */
                         int age_group;
 			sus_person=sus_list[i];
 			community_nom=0;
-			community_den=0;
 			infect = 0;
 			
 			contact_work=0;
@@ -1569,7 +1575,11 @@ school or workplace. */
 					}
 
 					// Community transmission // 
+#if !defined(USE_LOCALE_DISTANCE)
                                         d=distance(lat_locale[locale_HH[HH[sus_person]]], lon_locale[locale_HH[HH[sus_person]]], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
+#else
+                                        d=locale_distance(locale_list[locale_HH[HH[sus_person]]], locale_list[locale_HH[HH[infec_person]]]);
+#endif
 					community_nom+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc);
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */

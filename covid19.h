@@ -83,24 +83,4 @@ struct infected {
 };
 */
 
-struct locale {
-    int locale_idx; // Self index
-    /* Latitude and longitude */
-    float lat, lon;
-    /* position in km from locale 0, Smygehuk, converted from lat/lon */
-    float x, y;
-    float pop_density; // Population density of this locale
-    /* Things we might have a use for */
-    /*
-    struct county *; // Which county is this locale in
-    int nPersons;
-    struct person **; // Which persons are in this locale
-    int nHH; // Number of households in this locale
-    struct household **; // Which households are in this locale
-    */
-};
-
-extern int num_locale;
-extern struct locale *locale_list;
-
 #endif /* __COVID19_H__ */

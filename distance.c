@@ -28,20 +28,6 @@
 /*::                                                                         :*/
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  This function converts decimal degrees to radians             :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double deg2rad(double deg) {
-  return (deg * M_PI / 180);
-}
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  This function converts radians to decimal degrees             :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double rad2deg(double rad) {
-  return (rad * 180 / M_PI);
-}
-
 double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
   double theta, dist;
   if ((lat1 == lat2) && (lon1 == lon2)) {
