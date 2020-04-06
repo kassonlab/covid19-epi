@@ -1,4 +1,4 @@
-SOURCES := covid19.c COV_rand.c prop_distribution.c
+SOURCES := covid19.c COV_rand.c prop_distribution.c distance.c locale.c
 
 OBJECTS := $(SOURCES:%.c=%.o)
 
@@ -12,7 +12,7 @@ OPT = -O3 -xHost
 #DEBUG = -O0 -g
 CPPFLAGS = 
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
-LIBS := -lm
+LIBS := -limf
 
 all: $(PROGRAM)
 

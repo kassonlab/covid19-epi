@@ -17,87 +17,6 @@ int full_fd = 0, full_kappa = 0;
 
 float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
 
-//Taken from geodatasource.com //
-/*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::                                                                         :*/
-/*::  This routine calculates the distance between two points (given the     :*/
-/*::  latitude/longitude of those points). It is being used to calculate     :*/
-/*::  the distance between two locations using GeoDataSource(TM) products.   :*/
-/*::                                                                         :*/
-/*::  Definitions:                                                           :*/
-/*::    South latitudes are negative, east longitudes are positive           :*/
-/*::                                                                         :*/
-/*::  Passed to function:                                                    :*/
-/*::    lat1, lon1 = Latitude and Longitude of point 1 (in decimal degrees)  :*/
-/*::    lat2, lon2 = Latitude and Longitude of point 2 (in decimal degrees)  :*/
-/*::    unit = the unit you desire for results                               :*/
-/*::           where: 'M' is statute miles (default)                         :*/
-/*::                  'K' is kilometers                                      :*/
-/*::                  'N' is nautical miles                                  :*/
-/*::  Worldwide cities and other features databases with latitude longitude  :*/
-/*::  are available at https://www.geodatasource.com                         :*/
-/*::                                                                         :*/
-/*::  For enquiries, please contact sales@geodatasource.com                  :*/
-/*::                                                                         :*/
-/*::  Official Web site: https://www.geodatasource.com                       :*/
-/*::                                                                         :*/
-/*::           GeoDataSource.com (C) All Rights Reserved 2018                :*/
-/*::                                                                         :*/
-/*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-
-#define pi 3.14159265358979323846
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  Function prototypes                                           :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double deg2rad(double);
-double rad2deg(double);
-
-double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
-  double theta, dist;
-  if ((lat1 == lat2) && (lon1 == lon2)) {
-    return 0;
-  }
-  else {
-    theta = lon1 - lon2;
-//    dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * cos(deg2rad(theta));
-    double ang1,ang2;
-    ang1 = deg2rad(lat1);
-    ang2 = deg2rad(lat2);
-    dist = cos(ang1) * cos(ang2) * ( 1.0 + cos(deg2rad(theta)) ) - cos(ang1 + ang2);
-    dist = acos(dist);
-    dist = rad2deg(dist);
-    dist = dist * 60 * 1.1515;
-    switch(unit) {
-      case 'M':
-        break;
-      case 'K':
-        dist = dist * 1.609344;
-        break;
-      case 'N':
-        dist = dist * 0.8684;
-        break;
-    }
-    return (dist);
-  }
-}
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  This function converts decimal degrees to radians             :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double deg2rad(double deg) {
-  return (deg * pi / 180);
-}
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  This function converts radians to decimal degrees             :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double rad2deg(double rad) {
-  return (rad * 180 / pi);
-}
-/// End of code from GEODATASOURCE
-
-
 void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 	int i; // Counter
@@ -630,7 +549,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
                 if (full_kappa) {
                     t1=(log(t-tau-4.6)+0.72)/1.8;
-                    kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*pi));
+                    kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*M_PI));
                 } else {
                     t2=(t-tau)/dt;
                     kappa=kappa_vals[t2];
@@ -800,11 +719,11 @@ float calc_workplace_infect(int job_status, float kappa, float omega, int workpl
 	return(betaw_scale*Iw[job_status]*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
-float calc_community_infect(int age_group, float kappa, float omega, int severe, float d, double * fd_vals, double tmp_fd) {
+float calc_community_infect(int age_group, float kappa, float omega, int severe, double d, double * fd_vals, double tmp_fd) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
 	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
-	float fd, fd1;
+	double fd;
 	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
 	if (d==-1) {
@@ -816,7 +735,7 @@ float calc_community_infect(int age_group, float kappa, float omega, int severe,
 		    fd=fd_vals[(int)(d*10)];
 		}
 	}
-	return(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
+	return (float)(betac_scale*zeta[age_group]*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
 
@@ -1127,8 +1046,7 @@ int main (int argc, char *argv[]) {
 	workplace_tmp = (int*)calloc(population,sizeof(int));
 
 	float infect_prob=0; // Infectious probability
-	float community_nom=0; // For adding community infection.
-	float community_den=0; // For adding community infection.
+	double community_nom=0; // For adding community infection.
 	float infect=0; //Infectiousness
 	int file_count;
 
@@ -1242,22 +1160,26 @@ school or workplace. */
 
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
-        int num_locale = 0, max_locale = 0;
+        //int num_locale = 0, max_locale = 0;
         float tmp_lat, tmp_lon, pop_den, land_pop_total_density;
+
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
             if (num_locale + 1 > max_locale) {
-                max_locale += 10;
-                lat_locale = (float *)realloc(lat_locale, max_locale * sizeof(float));
-                lon_locale = (float *)realloc(lon_locale, max_locale * sizeof(float));
-                pop_density_init_num = (float *)realloc(pop_density_init_num, max_locale * sizeof(float));
+                //max_locale += 10;
+                 lat_locale = (float *)realloc(lat_locale, (max_locale+10) * sizeof(float));
+                 lon_locale = (float *)realloc(lon_locale, (max_locale+10) * sizeof(float));
+                 pop_density_init_num = (float *)realloc(pop_density_init_num, (max_locale+10) * sizeof(float));
             }
             lat_locale[num_locale] = tmp_lat;
             lon_locale[num_locale] = tmp_lon;
-            pop_density_init_num[num_locale++] = pop_den;
+            pop_density_init_num[num_locale] = pop_den;
+            add_locale(tmp_lat, tmp_lon, pop_den);
             land_pop_total_density += pop_den;
+            num_locale++;
 	}
         fclose(lat_long);
+
         int **locale_to_HH;
         int *locale_to_HH_n;
         int *locale_HH;
@@ -1398,7 +1320,7 @@ school or workplace. */
 	}
         fclose(stats);
 
-	
+
 	double fd_calc[22000];
 	/*Precalculate density kernel */
 	for (i=0; i<22000; i++) {
@@ -1420,7 +1342,7 @@ school or workplace. */
         ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<num_locale; i++) {
-                float itmp_fd;
+                double itmp_fd;
                 int npi; /* number of persons in locale i */
                 int hh;
                 itmp_fd = 0;
@@ -1443,7 +1365,11 @@ school or workplace. */
                         for (nn = 0; nn < locale_to_HH_n[j]; nn++) {
                             npj += per_HH_size[locale_to_HH[j][nn]];
                         }
+#if !defined(USE_LOCALE_DISTANCE)
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
+#else
+                        d = locale_distance(locale_list[i], locale_list[j]);
+#endif
 
                         if (full_fd) {
                             tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
@@ -1485,7 +1411,7 @@ school or workplace. */
                     kappa_vals[i] = 0;
                 } else {
                     tmp_t=(log(kappa_t)+0.72)/1.8;
-                    kappa_vals[i]=exp(-0.5*pow(tmp_t,2))/((kappa_t)*1.8*sqrt(2*pi));
+                    kappa_vals[i]=exp(-0.5*pow(tmp_t,2))/((kappa_t)*1.8*sqrt(2*M_PI));
                 }
 	}
 
@@ -1617,7 +1543,6 @@ school or workplace. */
                         int age_group;
 			sus_person=sus_list[i];
 			community_nom=0;
-			community_den=0;
 			infect = 0;
 			
 			contact_work=0;
@@ -1675,12 +1600,15 @@ school or workplace. */
 					}
 
 					// Community transmission // 
-       
 					if (locale_HH[HH[sus_person]]<num_precalc && locale_HH[HH[infec_person]]<num_precalc) {
 						tmp_fd = fd_precalc[locale_HH[HH[sus_person]]][locale_HH[HH[infec_person]]];
 						d=-1;
 					} else {
-                                        	d=distance(lat_locale[locale_HH[HH[sus_person]]], lon_locale[locale_HH[HH[sus_person]]], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
+#if !defined(USE_LOCALE_DISTANCE)
+                                                d=distance(lat_locale[locale_HH[HH[sus_person]]], lon_locale[locale_HH[HH[sus_person]]], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
+#else
+                                                d=locale_distance(locale_list[locale_HH[HH[sus_person]]], locale_list[locale_HH[HH[infec_person]]]);
+#endif
 					}
 					community_nom+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc, tmp_fd);
 				} else {
