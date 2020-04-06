@@ -146,7 +146,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		county_HH[HH_count]=county_num;
 		county_list[HH_count][locale_count[HH_count]]=HH_count;
                 locale_HH[HH_count] = HH_count;
-                locale_to_HH[HH_count][locale_to_HH_n[HH_count]++] = HH_count;
+                arrput(locale_to_HH[HH_count], HH_count);
+                locale_to_HH_n[HH_count]++;
 		locale_HH_count[HH_count]+=1;
 
                 /* Allocate an adult to the household */
@@ -193,7 +194,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		county_HH[HH_count]=county_HH[placement];
 		county_list[placement][locale_count[placement]]=HH_count;
                 locale_HH[HH_count] = placement;
-                locale_to_HH[placement][locale_to_HH_n[placement]++] = HH_count;
+                arrput(locale_to_HH[placement], HH_count);
+                locale_to_HH_n[placement]++;
 		locale_HH_count[placement]+=1;
 
 		/* Set up head of household. */
@@ -1181,13 +1183,12 @@ school or workplace. */
 	}
 //	}
         fclose(lat_long);
+
+        int original_num_locale = num_locale;
         int **locale_to_HH;
         int *locale_to_HH_n;
         int *locale_HH;
-        locale_to_HH = (int **) malloc(num_locale * sizeof(int *));
-        for (i = 0; i < num_locale; i++) {
-            locale_to_HH[i] = (int *)calloc(num_households, sizeof(int));
-        }
+        locale_to_HH = (int **)calloc(num_locale, sizeof(int *));
         locale_to_HH_n = (int *)calloc(num_locale, sizeof(int));
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
@@ -1394,6 +1395,11 @@ school or workplace. */
         tt = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
         printf("Done with density kernel calculations in %5.2f\n", tt);
         fflush(stdout);
+
+        for (size_t i = 0; i < original_num_locale; ++i) {
+            arrfree(locale_to_HH[i]);
+        }
+        free(locale_to_HH);
 
 	/* Initialization complete... start simulation */
 
