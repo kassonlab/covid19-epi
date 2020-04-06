@@ -1,4 +1,4 @@
-SOURCES := covid19.c COV_rand.c prop_distribution.c distance.c locale.c
+SOURCES := covid19_splitloop.c COV_rand.c prop_distribution.c distance.c locale.c
 
 OBJECTS := $(SOURCES:%.c=%.o)
 
@@ -10,7 +10,7 @@ LD := $(CC)
 OMP = -qopenmp
 OPT = -O3 -xHost
 #DEBUG = -O0 -g
-CPPFLAGS = -DUSE_LOCALE_DISTANCE # -DUSE_FD_PRECALC
+CPPFLAGS = #-DUSE_LOCALE_DISTANCE # -DUSE_FD_PRECALC
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -limf
 
