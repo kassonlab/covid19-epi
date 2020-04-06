@@ -101,7 +101,6 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
         int original_num_locale = *num_locale;
 	int ** county_list;
         county_list = (int**)calloc(*num_locale,sizeof(int*));
-	for (i=0;i<*num_locale;i++) county_list[i] = (int*)calloc(num_households,sizeof(int));
 	int * locale_count;
 	locale_count = (int*)calloc(*num_locale,sizeof(int));
 	int * locale_HH_count;
@@ -144,7 +143,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		lon_HH[HH_count]=tmp_lon;
 		city_HH[HH_count]=city_num;
 		county_HH[HH_count]=county_num;
-		county_list[HH_count][locale_count[HH_count]]=HH_count;
+		arrput(county_list[HH_count], HH_count);
                 locale_HH[HH_count] = HH_count;
                 arrput(locale_to_HH[HH_count], HH_count);
                 locale_to_HH_n[HH_count]++;
@@ -192,7 +191,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		lon_HH[HH_count]=lon_HH[placement];
 		city_HH[HH_count]=city_HH[placement];
 		county_HH[HH_count]=county_HH[placement];
-		county_list[placement][locale_count[placement]]=HH_count;
+		arrput(county_list[placement], HH_count);
                 locale_HH[HH_count] = placement;
                 arrput(locale_to_HH[placement], HH_count);
                 locale_to_HH_n[placement]++;
@@ -297,7 +296,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
         free(HH_county_test);
 
         for (i = 0; i < original_num_locale; i++) {
-            free(county_list[i]);
+            arrfree(county_list[i]);
         }
 	free(county_list);
 	free(locale_count);
