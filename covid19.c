@@ -1600,16 +1600,20 @@ school or workplace. */
 					}
 
 					// Community transmission // 
+#if defined(USE_FD_PRECALC)
 					if (locale_HH[HH[sus_person]]<num_precalc && locale_HH[HH[infec_person]]<num_precalc) {
 						tmp_fd = fd_precalc[locale_HH[HH[sus_person]]][locale_HH[HH[infec_person]]];
 						d=-1;
 					} else {
+#endif
 #if !defined(USE_LOCALE_DISTANCE)
                                                 d=distance(lat_locale[locale_HH[HH[sus_person]]], lon_locale[locale_HH[HH[sus_person]]], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
 #else
                                                 d=locale_distance(locale_list[locale_HH[HH[sus_person]]], locale_list[locale_HH[HH[infec_person]]]);
 #endif
+#if defined(USE_FD_PRECALC)
 					}
+#endif
 					community_nom+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d, fd_calc, tmp_fd);
 				} else {
 					/* In hospital, only have interaction with hospital workers and half interaction with family (household). */

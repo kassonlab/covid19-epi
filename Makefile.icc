@@ -10,7 +10,7 @@ LD := $(CC)
 OMP = -qopenmp
 OPT = -O3 -xHost
 #DEBUG = -O0 -g
-CPPFLAGS = 
+CPPFLAGS = -DUSE_LOCALE_DISTANCE # -DUSE_FD_PRECALC
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -limf
 
