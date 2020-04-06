@@ -723,7 +723,7 @@ float calc_workplace_infect(int job_status, float kappa, float omega, int workpl
 	return(betaw_scale*Iw*betap[job_status]*kappa*(1+(float)severe*(omega*psi[job_status]-1))/((float)workplace_size));
 }
 
-double calc_community_infect(int age_group, float kappa, float omega, int severe, float d) {
+double calc_community_infect(float kappa, float omega, int severe, double d) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
 	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
@@ -731,7 +731,7 @@ double calc_community_infect(int age_group, float kappa, float omega, int severe
 	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
 	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-	return(betac_scale*betac*kappa*fd*(1+severe*(omega-1)));
+	return (betac_scale*betac*kappa*fd*(1+severe*(omega-1)));
 }
 
 
@@ -1442,12 +1442,9 @@ school or workplace. */
 		num_recovered_icu_age[i]=0;
 	}
 	
-	double commun_nom1[num_locale];
-	memset(commun_nom1, 0, num_locale*sizeof(double));
+	double *commun_nom1 = (double*)malloc(num_locale * sizeof(double));
 	double work_infect[6][max_num_WP];
-	memset(work_infect, 0, 6*max_num_WP*sizeof(double));
-	double house_infect[num_households];
-	memset(house_infect, 0, num_households*sizeof(double));
+	double *house_infect = (double *)malloc(num_households * sizeof(double));
 
 	
 	/* NEED TO INITIALIZE PREVIOUS INFECTIONS TO RECOVERED HOSP AND ICU */
@@ -1588,8 +1585,6 @@ school or workplace. */
 				int infec_person; //Counter for infected person.
 				float kappa; // #Infectiousness
 				float tIc;
-				int age_group=0;
-				int k;
 				infec_person=infectious[i];
 				tIc = Ic;
 				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
@@ -1601,7 +1596,7 @@ school or workplace. */
 					float d; //distance between people.
 					// Community transmission //
 					d=distance(lat_locale[j], lon_locale[j], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
-					tmp_comm_inf+=tIc*calc_community_infect( age_group, kappa, omega, severe[infec_person], d);
+					tmp_comm_inf+=tIc*calc_community_infect( kappa, omega, severe[infec_person], d);
 				}
 			}
 		commun_nom1[j]=tmp_comm_inf/fd_tot[j];
@@ -1609,15 +1604,12 @@ school or workplace. */
 	
 		}	
 
-//#ifdef _OPENMP
-//#pragma omp parallel for private(i) default(shared)
-//#endif
 		for (i=0; i<num_infectious; i++) {
 			int infec_person; //Counter for infected person.
 			float kappa; // #Infectiousness
 			float tIw, tIh;
 			int age_group=0;
-			int k, tmp_job_stat=0;
+			int tmp_job_stat=0;
 			double tmp_work_inf=0, tmp_house_inf=0;
 			infec_person=infectious[i];
 			tIh = Ih;
@@ -1628,36 +1620,28 @@ school or workplace. */
 			} 
 			kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals);
 			
+                        tmp_work_inf=0;
 			if (hosp_pop[infec_person]==0) {
 				if (tIw>0) {
 				       tmp_work_inf=calc_workplace_infect(job_status[infec_person], kappa, omega, workplace_size[job_status[infec_person]][workplace[infec_person]], severe[infec_person], tIw) ;
-				} else {
-					tmp_work_inf=0;
 				}
 				tmp_job_stat=job_status[infec_person];
 				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
 			} else {
-				tIw = Iw[5];
+				tmp_job_stat=5;
+				tIw = Iw[tmp_job_stat];
 				tIh=0.25;
 				/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
 				// Workplace/School transmission: People must be in same workplace and job type. // 
-				tmp_work_inf=calc_workplace_infect(5, kappa, omega, workplace_size[5][workplace_tmp[infec_person]], severe[infec_person], tIw) ;
-				tmp_job_stat=5;
+				tmp_work_inf=calc_workplace_infect(5, kappa, omega, workplace_size[tmp_job_stat][workplace_tmp[infec_person]], severe[infec_person], tIw) ;
 				// Household transmission //
 				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
-		}
-//		printf("infec_person %i %i %i %f %f %f \n", infec_person, i, num_infectious, house_infect[HH[infec_person]], work_infect[job_status[infec_person]][workplace[infec_person]], commun_nom1[0]);
-//			#pragma omp critical
-//			{
+                        }
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
 			house_infect[HH[infec_person]]+=tmp_house_inf;
-//			} 
 		}
 
 
-//#ifdef _OPENMP
-//#pragma omp parallel for private(i) default(shared) reduction(+:infect) reduction(+:community_nom) reduction(+:num_contact_commun) reduction(+:num_contact_work) reduction(+:num_contact_house) reduction(+:num_contact_school)
-//#endif
 		//#### Only Susceptible people can get the virus and infected people spread it.
 		for (i=0; i<num_sus; i++) {
                         int sus_person; //Counter for susceptible person.
@@ -1670,8 +1654,9 @@ school or workplace. */
 			
                         age_group=floor(age[sus_person]/5);
 			float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
-//                        infect+=zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]]/fd_tot[locale_HH[HH[sus_person]]]; // Community spread is additive nominator and denominator.  Must be outside of infectious persons loop.
-			infect=house_infect[HH[sus_person]]+work_infect[job_status[sus_person]][workplace[sus_person]]+zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]];
+			infect = house_infect[HH[sus_person]];
+                        infect += work_infect[job_status[sus_person]][workplace[sus_person]];
+                        infect += zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]];
 			
 			//### Probability of being infected ####
 			infect_prob=(1-exp(-infect*dt));
@@ -1801,6 +1786,8 @@ school or workplace. */
         printf("Total simulation time %8.3f\n", step_time);
 
 
+        free(commun_nom1);
+        free(house_infect);
 	free(HH);
 	free(per_HH_size);
 	free(lat_city);
