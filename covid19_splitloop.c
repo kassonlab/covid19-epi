@@ -1364,7 +1364,11 @@ school or workplace. */
                         for (nn = 0; nn < locale_to_HH_n[j]; nn++) {
                             npj += per_HH_size[locale_to_HH[j][nn]];
                         }
+#if !defined(USE_LOCALE_DISTANCE)
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
+#else
+                        d = locale_distance(locale_list[i], locale_list[j]);
+#endif
 
                         if (full_fd) {
                             tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
@@ -1595,7 +1599,11 @@ school or workplace. */
 				if (hosp_pop[infec_person]==0) {
 					float d; //distance between people.
 					// Community transmission //
+#if !defined(USE_LOCALE_DISTANCE)
 					d=distance(lat_locale[j], lon_locale[j], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
+#else
+                                        d=locale_distance(locale_list[j], locale_list[locale_HH[HH[infec_person]]]);
+#endif
 					tmp_comm_inf+=tIc*calc_community_infect( kappa, omega, severe[infec_person], d);
 				}
 			}

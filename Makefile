@@ -10,7 +10,7 @@ LD := $(CC)
 OMP = -fopenmp
 OPT = -O3 -march=native -mtune=native
 #DEBUG = -O0 -g
-CPPFLAGS = #-DUSE_LOCALE_DISTANCE # -DUSE_FD_PRECALC
+CPPFLAGS = -DUSE_LOCALE_DISTANCE
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -lm
 
