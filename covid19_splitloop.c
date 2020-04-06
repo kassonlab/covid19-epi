@@ -1050,9 +1050,7 @@ int main (int argc, char *argv[]) {
 	int * workplace_tmp; // Hospital location when people go into hospital.
 	workplace_tmp = (int*)calloc(population,sizeof(int));
 
-	float infect_prob=0; // Infectious probability	
 	double community_nom=0; // For adding community infection.
-	float infect=0; //Infectiousness
 	int file_count;
 
 	int num_I=9;
@@ -1671,6 +1669,8 @@ school or workplace. */
 		for (i=0; i<num_sus; i++) {
                         int sus_person; //Counter for susceptible person.
                         int age_group;
+                        float infect; //Infectiousness
+                        float infect_prob; // Infectious probability
 			sus_person=sus_list[i];
 			int contact_work=0;
 			int contact_commun=0;
