@@ -17,86 +17,7 @@ int full_fd = 0, full_kappa = 0;
 
 float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
 
-//Taken from geodatasource.com //
-/*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::                                                                         :*/
-/*::  This routine calculates the distance between two points (given the     :*/
-/*::  latitude/longitude of those points). It is being used to calculate     :*/
-/*::  the distance between two locations using GeoDataSource(TM) products.   :*/
-/*::                                                                         :*/
-/*::  Definitions:                                                           :*/
-/*::    South latitudes are negative, east longitudes are positive           :*/
-/*::                                                                         :*/
-/*::  Passed to function:                                                    :*/
-/*::    lat1, lon1 = Latitude and Longitude of point 1 (in decimal degrees)  :*/
-/*::    lat2, lon2 = Latitude and Longitude of point 2 (in decimal degrees)  :*/
-/*::    unit = the unit you desire for results                               :*/
-/*::           where: 'M' is statute miles (default)                         :*/
-/*::                  'K' is kilometers                                      :*/
-/*::                  'N' is nautical miles                                  :*/
-/*::  Worldwide cities and other features databases with latitude longitude  :*/
-/*::  are available at https://www.geodatasource.com                         :*/
-/*::                                                                         :*/
-/*::  For enquiries, please contact sales@geodatasource.com                  :*/
-/*::                                                                         :*/
-/*::  Official Web site: https://www.geodatasource.com                       :*/
-/*::                                                                         :*/
-/*::           GeoDataSource.com (C) All Rights Reserved 2018                :*/
-/*::                                                                         :*/
-/*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-
 #define pi 3.14159265358979323846
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  Function prototypes                                           :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double deg2rad(double);
-double rad2deg(double);
-
-double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
-  double theta, dist;
-  if ((lat1 == lat2) && (lon1 == lon2)) {
-    return 0;
-  }
-  else {
-    theta = lon1 - lon2;
-//    dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * cos(deg2rad(theta));
-    double ang1,ang2;
-    ang1 = deg2rad(lat1);
-    ang2 = deg2rad(lat2);
-    dist = cos(ang1) * cos(ang2) * ( 1.0 + cos(deg2rad(theta)) ) - cos(ang1 + ang2);
-    dist = acos(dist);
-    dist = rad2deg(dist);
-    dist = dist * 60 * 1.1515;
-    switch(unit) {
-      case 'M':
-        break;
-      case 'K':
-        dist = dist * 1.609344;
-        break;
-      case 'N':
-        dist = dist * 0.8684;
-        break;
-    }
-    return (dist);
-  }
-}
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  This function converts decimal degrees to radians             :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double deg2rad(double deg) {
-  return (deg * pi / 180);
-}
-
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-/*::  This function converts radians to decimal degrees             :*/
-/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-double rad2deg(double rad) {
-  return (rad * 180 / pi);
-}
-/// End of code from GEODATASOURCE
-
 
 void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
@@ -184,6 +105,8 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	locale_HH_count = (int*)calloc(*num_locale,sizeof(int));
 	
 
+	printf("debug 1");
+	fflush(stdout);
         city_num = -1;
 	while (( HH_count < num_households ) && (HH_count < *num_locale)) {
                 float tmp_lat, tmp_lon;
@@ -251,6 +174,9 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 	}
 */
 
+		
+	printf("debug 2");
+	fflush(stdout);
 	placement=0; //Keeps track of household placement after first loop of locales.
 	/* First add adult head of household to the rest of the households. */
 	while ( HH_count < num_households ) {
@@ -284,6 +210,9 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 		HH_person++;
 		HH_count++;
 	}
+		
+	printf("debug 3");
+	fflush(stdout);
         placement = 0;
 	/* Distribute remaining people randomly.  This could be changed to a distribution to more realistically reflect household size in the future. */
 	for ( HH_person=0; HH_person<population ; HH_person++) {
@@ -829,7 +758,7 @@ double calc_community_infect(int age_group, float kappa, float omega, int severe
 
 	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
 	return(betac_scale*betac*kappa*fd*(1+severe*(omega-1)));
-
+}
 
 
 void hosp_entry(float t, int num_infectious, int * infectious, float * age, int * icu_pop, int * hosp_pop, int * symptomatic, float * tau, int * workplace_tmp, int * workplace_num, int * county, float dt) {
@@ -1138,7 +1067,7 @@ int main (int argc, char *argv[]) {
 	int * workplace_tmp; // Hospital location when people go into hospital.
 	workplace_tmp = (int*)calloc(population,sizeof(int));
 
-	float infect_prob=0; // Infectious probability	double community_nom=0; // For adding community infection.
+	float infect_prob=0; // Infectious probability	
 	double community_nom=0; // For adding community infection.
 	float infect=0; //Infectiousness
 	int file_count;
@@ -1250,6 +1179,8 @@ school or workplace. */
 //		printf("cities %i %i %i lat %f lon %f \n", i, city_county[i], num_cities, lat_city[i], long_city[i]);
 	}
 
+	printf("debug 5");
+	fflush(stdout);
 
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
@@ -1274,6 +1205,8 @@ school or workplace. */
             num_locale++;
 	}
 //	}
+	printf("debug 4");
+	fflush(stdout);
         fclose(lat_long);
         int **locale_to_HH;
         int *locale_to_HH_n;
@@ -1655,8 +1588,6 @@ school or workplace. */
 				int k;
 				infec_person=infectious[i];
 				tIc = Ic;
-				tIh = Ih;
-				tIw = Iw[job_status[infec_person]];
 				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
 					tIc=interIc[intervene[infec_person]];
 				} 
@@ -1752,7 +1683,7 @@ school or workplace. */
 					num_contact_work_county[county[sus_person]]++;
 					num_contact_work_age[(int)floor(age[sus_person]/5)]++;
 				} 
-				if (contact_work+contact_house+contact_school==0) {
+				if (contact_commun>0) {
 					num_contact_commun++;
 					if (job_status[sus_person]==5) {
 						num_contact_commun_HCW++;
