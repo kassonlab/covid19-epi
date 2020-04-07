@@ -1665,7 +1665,9 @@ school or workplace. */
 				// Household transmission //
 				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
                         }
-			#pragma omp critical 
+#ifdef _OPENMP
+#pragma omp critical
+#endif
 			{
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
 			house_infect[HH[infec_person]]+=tmp_house_inf;
