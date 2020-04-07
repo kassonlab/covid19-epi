@@ -8,13 +8,11 @@ CC := icc
 LD := $(CC)
 
 OMP = -qopenmp
-# Use this for Abisko
-#OPT = -O3 -mavx
-# And this for everything else
-OPT = -O3 -xHost
+OPT = -O3 -xHost -ipo
 #DEBUG = -O0 -g
 CPPFLAGS = -DUSE_LOCALE_DISTANCE
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
+LDFLAGS = -ipo
 LIBS := -limf
 
 all: $(PROGRAM)
