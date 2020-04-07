@@ -1627,9 +1627,11 @@ school or workplace. */
 	
 		}	
 
+/* Would be nice to have a omp par for here but something is currently not right when turning it on
 #ifdef _OPENMP
 #pragma omp parallel for private(i) default(shared) 
 #endif
+*/
 		for (i=0; i<num_infectious; i++) {
 			int infec_person; //Counter for infected person.
 			float kappa; // #Infectiousness
@@ -1665,9 +1667,11 @@ school or workplace. */
 				// Household transmission //
 				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
                         }
+/* Would be nice to have a omp par for here but something is currently not right when turning it on
 #ifdef _OPENMP
 #pragma omp critical
 #endif
+*/
 			{
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
 			house_infect[HH[infec_person]]+=tmp_house_inf;
