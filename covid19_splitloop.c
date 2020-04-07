@@ -550,7 +550,7 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 
 }
 
-float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_vals) {
+float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_vals, int hosp, int icu) {
 
 	float kappa;
 	float t1;
@@ -559,7 +559,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 	// Kappa is a log normal function with mean of -0.72 and standard deviation of 1.8.  From Ferguson Nature 2005
 	if (t-tau <= 4.6) {
 		kappa=0.;
-	} else if (t-tau>11.1) {
+	} else if (t-tau>11.1 && hosp==0 && icu==0) {
 		kappa=0.; //# Recovered or dead
 	} else {
 		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
@@ -1108,7 +1108,7 @@ school or workplace. */
 	float interIw4[6]={0,0,0,0,0, Ihosp};
 	interIh[4]=1.5;
 	complyI[4]=0.7;
-	tauI[4]=6.1;
+	tauI[4]=0.0;
 	personinter[4]=0;
 
 	/* Intervention 5: Case isolation of entire household if one member becomes sick.  This adds for the case of a quarantined household member getting ill.  tauI=0 */
@@ -1123,7 +1123,7 @@ school or workplace. */
 	interIc[6]=0.25;
 	float interIw6[6]={0,0,0,0,0.25, Ihosp};
 	interIh[6]=1.50;
-	complyI[6]=0.9;
+	complyI[6]=1.0;
 	tauI[6]=0;
 	personinter[6]=1;
 
@@ -1389,8 +1389,7 @@ school or workplace. */
 			fd_tot[j] += tmp_fd * npi;
 			if (i<num_precalc && j<num_precalc) {
 				fd_precalc[i][j]=tmp_fd;
-			}
-		}
+			}		}
                 fd_tot[i] += itmp_fd + npi - 1;
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -1413,7 +1412,7 @@ school or workplace. */
 	// #Leaving out rho from Ferguson 2006.  This is a measure of how infectious person is.  For now, we will assume all people are the same.
 
 	/* precalculate kappa */
-	int count_kappa_vals=ceil(26/dt);
+	int count_kappa_vals=ceil(30/dt);
 	float kappa_t=0;
 	float * kappa_vals;
 	float tau1=0;	
@@ -1492,7 +1491,7 @@ school or workplace. */
 	for (i=0; i<num_infectious; i++) {
 		int infec_person;
 		infec_person=infectious[i];
-		if ((tau[infec_person]<(t-11)+dt) && (tau[infec_person]>=t-11) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
+		if ((tau[infec_person]<(t-11)+dt) && (hosp_pop[infec_person]==0) && (icu_pop[infec_person]==0)) {
 			recovered[infec_person]=1;
 			num_recovered++;
 			if (job_status[infec_person]==5) {
@@ -1504,6 +1503,22 @@ school or workplace. */
 		}
 	}
 
+	/* Introduce overall community interventions. */
+	if ( interventions == 0 ) {
+		Ic=interIc[interventions];
+		Ih=interIh[interventions];
+		Iw=interIw[interventions];
+	} else if ( interventions > 0 )  {
+		for (i=0; i<population; i++) {
+			/* high school and university closures */
+			if (age[i]>=15 && age[i]<22) {
+				intervene[i]=1;	
+			} else if ( age[i]>=70 && COV_rand()<complyI[8] ) {
+				intervene[i]=8;	
+			} 
+		}
+	}
+ 
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         tt = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
         printf("Total initialization time %5.2f\n", tt);
@@ -1547,22 +1562,7 @@ school or workplace. */
 			num_icu_age[i]=0;
 			num_infectious_age[i]=0;
 		}
-		/* Introduce overall community interventions. */
-		if ( interventions == 0 ) {
-			Ic=interIc[interventions];
-			Ih=interIh[interventions];
-			Iw=interIw[interventions];
-		} else if ( interventions > 0 )  {
-			for (i=0; i<population; i++) {
-				/* high school and university closures */
-				if (age[i]>=15 && age[i]<22) {
-					intervene[i]=1;	
-				} else if ( age[i]>=70 && COV_rand()<complyI[8] ) {
-					intervene[i]=8;	
-				} 
-			}
-		}
-	 
+
 		if (interventions == 3 && t >= tauI_onset && t <= tauI_onset+dt) {
 			for ( i=0; i<population; i++ ) {
 				if (age[i]>1 && age[i]<15) {
@@ -1608,8 +1608,8 @@ school or workplace. */
 				tIc = Ic;
 				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
 					tIc=interIc[intervene[infec_person]];
-				} 
-				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals);
+				}
+				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
 			
 				if (hosp_pop[infec_person]==0) {
 					float d; //distance between people.
@@ -1627,21 +1627,26 @@ school or workplace. */
 	
 		}	
 
+#ifdef _OPENMP
+#pragma omp parallel for private(i) default(shared) 
+#endif
 		for (i=0; i<num_infectious; i++) {
 			int infec_person; //Counter for infected person.
 			float kappa; // #Infectiousness
-			float tIw, tIh;
+			float tIw, tIh, tIc;
 			int age_group=0;
 			int tmp_job_stat=0;
 			double tmp_work_inf=0, tmp_house_inf=0;
 			infec_person=infectious[i];
 			tIh = Ih;
+			tIc=Ic;
 			tIw = Iw[job_status[infec_person]];
 			if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
 				tIw=interIw[intervene[infec_person]][job_status[infec_person]];
 				tIh=interIh[intervene[infec_person]];
+					tIc=interIc[intervene[infec_person]];
 			} 
-			kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals);
+			kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
 			
                         tmp_work_inf=0;
 			if (hosp_pop[infec_person]==0) {
@@ -1660,8 +1665,11 @@ school or workplace. */
 				// Household transmission //
 				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
                         }
+			#pragma omp critical 
+			{
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
 			house_infect[HH[infec_person]]+=tmp_house_inf;
+			}
 		}
 
 
@@ -1671,17 +1679,26 @@ school or workplace. */
                         int age_group;
                         float infect; //Infectiousness
                         float infect_prob; // Infectious probability
+			float tIw, tIh, tIc;
 			sus_person=sus_list[i];
 			int contact_work=0;
 			int contact_commun=0;
 			int contact_house=0;
 			int contact_school=0;
 			
+			tIh = Ih;
+			tIc=Ic;
+			tIw = Iw[job_status[sus_person]];
+			if ( intervene[sus_person] > 0 && t>tau[sus_person]+tauI[intervene[sus_person]]) {
+				tIw=interIw[intervene[sus_person]][job_status[sus_person]];
+				tIh=interIh[intervene[sus_person]];
+				tIc=interIc[intervene[sus_person]];
+			} 
                         age_group=floor(age[sus_person]/5);
 			float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
-			infect = house_infect[HH[sus_person]];
-                        infect += work_infect[job_status[sus_person]][workplace[sus_person]];
-                        infect += zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]];
+			infect = tIh*house_infect[HH[sus_person]];
+                        infect += tIw*work_infect[job_status[sus_person]][workplace[sus_person]];
+                        infect += tIc*zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]];
 			
 			//### Probability of being infected ####
 			infect_prob=(1-exp(-infect*dt));
