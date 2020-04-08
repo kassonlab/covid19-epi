@@ -1594,12 +1594,11 @@ school or workplace. */
 		memset(house_infect, 0, num_households*sizeof(double));
 
 
-		for (j=0; j<num_locale; j++) {
-
-			double tmp_comm_inf=0;
 #ifdef _OPENMP
-#pragma omp parallel for private(i) default(shared) reduction(+:tmp_comm_inf) 
+#pragma omp parallel for private(j, i) default(shared)
 #endif
+		for (j=0; j<num_locale; j++) {
+			double tmp_comm_inf=0;
 			for (i=0; i<num_infectious; i++) {
 				int infec_person; //Counter for infected person.
 				float kappa; // #Infectiousness
@@ -1622,9 +1621,8 @@ school or workplace. */
 					tmp_comm_inf+=tIc*calc_community_infect( kappa, omega, severe[infec_person], d);
 				}
 			}
-		commun_nom1[j]=tmp_comm_inf/fd_tot[j];
+                        commun_nom1[j]=tmp_comm_inf/fd_tot[j];
 //		printf("infec_person locale %i j %i num_infectious %i tmp %f actual %f %f \n", num_locale, j, num_infectious, tmp_comm_inf, commun_nom1[j], commun_nom1[j]/fd_tot[j]);
-	
 		}	
 
 /* Would be nice to have a omp par for here but something is currently not right when turning it on
