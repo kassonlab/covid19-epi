@@ -13,7 +13,8 @@ add_executable(covid19-gpu covid19_splitloop.c ${COMMON_SOURCES} COV_gpu.cu)
 
 target_compile_options(covid19 PRIVATE "-march=native" "-mtune=native")
 
-target_compile_definitions(covid19-gpu PRIVATE COV_GPU)
+target_compile_definitions(covid19 PRIVATE USE_LOCALE_DISTANCE)
+target_compile_definitions(covid19-gpu PRIVATE COV_GPU USE_LOCALE_DISTANCE)
 
 target_link_libraries(covid19 PRIVATE OpenMP::OpenMP_C Threads::Threads)
 target_link_libraries(covid19-gpu PRIVATE OpenMP::OpenMP_C Threads::Threads)

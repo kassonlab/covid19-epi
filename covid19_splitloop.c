@@ -881,11 +881,11 @@ int death(float t, int num_infectious, int * infectious, float * tau, int * dead
 
 #if COV_GPU
 
-extern void locale_infectious_step(int j, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, double* out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale);
+void locale_infectious_loop(int num_locale, int population, int j, int num_households, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, int full_kappa, float R0_scale, float betac_scale, double* commun_nom1, double* fd_tot);
 
 #else
 
-void locale_infectious_step(int j, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, double* out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale) {
+void locale_infectious_step(int population, int j, int num_households, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, double* out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale) {
 	double tmp_comm_inf = 0.0;
 	int i;
 #ifdef _OPENMP
@@ -915,6 +915,22 @@ void locale_infectious_step(int j, int num_infectious, int* infectious, float Ic
 	}
 
 	*out_tmp_comm_inf = tmp_comm_inf;
+}
+
+void locale_infectious_loop(int num_locale, int population, int j, int num_households, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, int full_kappa, float R0_scale, float betac_scale, double* commun_nom1, double* fd_tot) {
+	rmt_BeginCPUSample(LocaleLoop, 0);
+	for (j=0; j<num_locale; j++) {
+		double tmp_comm_inf = 0.0;
+
+		rmt_BeginCPUSample(LocaleInfectiousLoop, RMTSF_Aggregate);
+
+		locale_infectious_step(population, j, num_households, num_infectious, infectious, Ic, intervene, t, tau, tauI, interIc, symptomatic, dt, kappa_vals, count_kappa_vals, hosp_pop, icu_pop, lat_locale, lon_locale, locale_HH, HH, locale_list, omega, severe, &tmp_comm_inf, full_kappa, R0_scale, betac_scale);
+
+		commun_nom1[j] = tmp_comm_inf / fd_tot[j];
+//		printf("infec_person locale %i j %i num_infectious %i tmp %f actual %f %f \n", num_locale, j, num_infectious, tmp_comm_inf, commun_nom1[j], commun_nom1[j]/fd_tot[j]);
+		rmt_EndCPUSample(); // LocaleInfectiousLoop	
+	}
+	rmt_EndCPUSample(); // LocaleLoop
 }
 
 #endif
@@ -1671,20 +1687,7 @@ school or workplace. */
 		memset(work_infect, 0, 6*max_num_WP*sizeof(double));
 		memset(house_infect, 0, num_households*sizeof(double));
 
-
-		rmt_BeginCPUSample(LocaleLoop, 0);
-		for (j=0; j<num_locale; j++) {
-			double tmp_comm_inf = 0.0;
-
-			rmt_BeginCPUSample(LocaleInfectiousLoop, RMTSF_Aggregate);
-
-			locale_infectious_step(j, num_infectious, infectious, Ic, intervene, t, tau, tauI, interIc, symptomatic, dt, kappa_vals, hosp_pop, icu_pop, lat_locale, lon_locale, locale_HH, HH, locale_list, omega, severe, &tmp_comm_inf, full_kappa, R0_scale, betac_scale);
-
-			commun_nom1[j] = tmp_comm_inf / fd_tot[j];
-//		printf("infec_person locale %i j %i num_infectious %i tmp %f actual %f %f \n", num_locale, j, num_infectious, tmp_comm_inf, commun_nom1[j], commun_nom1[j]/fd_tot[j]);
-			rmt_EndCPUSample(); // LocaleInfectiousLoop	
-		}
-		rmt_EndCPUSample(); // LocaleLoop
+		locale_infectious_loop(num_locale, population, j, num_households, num_infectious, infectious, Ic, intervene, t, tau, tauI, interIc, symptomatic, dt, kappa_vals, count_kappa_vals, hosp_pop, icu_pop, lat_locale, lon_locale, locale_HH, HH, locale_list, omega, severe, full_kappa, R0_scale, betac_scale, commun_nom1, fd_tot);
 
 		rmt_BeginCPUSample(InfectiousLoop, 0);
 /* Would be nice to have a omp par for here but something is currently not right when turning it on
