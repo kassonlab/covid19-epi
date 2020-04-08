@@ -10,7 +10,7 @@ LD := $(CC)
 OMP = -fopenmp
 OPT = -O3 -march=native -mtune=native
 #DEBUG = -O0 -g
-CPPFLAGS = -DUSE_LOCALE_DISTANCE -DRMT_ENABLED=0
+CPPFLAGS = -DUSE_LOCALE_DISTANCE -DRMT_ENABLED=0 -IRemotery/lib
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -lm
 
