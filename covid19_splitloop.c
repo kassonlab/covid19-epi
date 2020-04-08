@@ -987,9 +987,11 @@ int main (int argc, char *argv[]) {
 
 	Remotery* rmt;
 	rmtSettings* rmt_settings = rmt_Settings();
-	rmt_settings->reuse_open_port = RMT_TRUE;
-	if (rmt_port) {
-		rmt_settings->port = rmt_port;
+	if (rmt_settings) {
+		rmt_settings->reuse_open_port = RMT_TRUE;
+		if (rmt_port) {
+			rmt_settings->port = rmt_port;
+		}
 	}
 	rmt_CreateGlobalInstance(&rmt);
 
