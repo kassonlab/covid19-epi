@@ -1,5 +1,7 @@
 #include <stdio.h>
- 
+
+#include <stddef.h>
+#include <stdint.h> 
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -14,6 +16,8 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
+#include "Remotery.h"
+
 int typical_max_HH_sz = 7;
 
 int full_fd = 0, full_kappa = 0;
@@ -23,7 +27,7 @@ float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
 #define pi 3.14159265358979323846
 
 void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
-
+	rmt_BeginCPUSample(AgeDist, 0);
 	int i; // Counter
         int ret, age_sz;
 
@@ -60,13 +64,15 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 	fprintf(stats, "\n\n");
         fflush(stats);
        // exit(0);
-//
+
+	rmt_EndCPUSample(); // AgeDist
 }
 
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
 void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float land_pop_total_density) {
+	rmt_BeginCPUSample(HouseholdLatLong, 0);
 
 	/* Initialize helpers for population density */
 	float tot_pop_density=0;
@@ -306,9 +312,12 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
         free(lon_HH);
         free(city_HH);
         free(county_HH);
+
+	rmt_EndCPUSample(); // HouseholdLatLong
 }
 
 void city_lat_long(int *num_cities, float * lat_city, float * long_city, char ** cities, int * county, char ** county_names, int num_county) {
+	rmt_BeginCPUSample(CityLatLong, 0);
 
 	/* Get longitude and latitude of cities in Sweden from CSV */
 	FILE* fp = fopen("cities_all.csv", "r");  // Not sure about the validity of this file.  Could use a better source.
@@ -343,10 +352,13 @@ void city_lat_long(int *num_cities, float * lat_city, float * long_city, char **
 	}
 
 	fclose(fp);
+	
+	rmt_EndCPUSample(); // CityLatLong
 }
 
 
 void job_dist(int * job_status, int ** job_status_city, float * age, int * county, int * city, int population, int num_cities, int num_counties, int * county_size, FILE * stats) {
+	rmt_BeginCPUSample(JobDist, 0);
 
 	int i, j; 
 	
@@ -443,11 +455,11 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
         }
         free(city_dist_test);
 
-//	
-
+	rmt_EndCPUSample(); // JobDist
 }
 
 void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, int* class, FILE * stats, int * max_num_class) {
+	rmt_BeginCPUSample(WorkplaceDist, 0);
 
 	int pp_class = 19; //Assumption of 15 children per class.
 	int pp_preschool = 53; //Assumption of 200 children per school.
@@ -546,8 +558,7 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 			
 	}
 
-
-
+	rmt_EndCPUSample(); // JobDist
 }
 
 float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_vals, int hosp, int icu) {
@@ -578,6 +589,7 @@ float calc_kappa(float t, float tau, int symptomatic, float dt, float * kappa_va
 }
 
 void initialize_infections(int * initial_infections, float * tau, int * infected, int * severe, int * symptomatic, int * county, int * num_infect, int num_counties, float symptomatic_per, int population, float dt, float t, float * lat_locale, float * lon_locale, int * num_infect_county, int * num_infect_age, float * age, int **county_p, int *county_size, int *locale_HH, int *HH, float *tmp_lat, float *tmp_lon) {
+	rmt_BeginCPUSample(InitializeInfections, 0);
 
 	int person_infected=0, county_person_inf = 0;
 	int tmp_infect=0;
@@ -650,10 +662,13 @@ void initialize_infections(int * initial_infections, float * tau, int * infected
 	}
         //free(tmp_lat);
         //free(tmp_lon);
+
+	rmt_EndCPUSample(); // InitializeInfections
 }
 
 
 void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* num_icu, int* num_sus_HCW, int* num_infectious_HCW, int* num_hosp_HCW, int* num_icu_HCW, int* infected, int* infectious, int* sus_list, int* hosp_list, int * hosp_pop, int * icu_pop, int* icu_list, float* tau, int population, float t, int * num_sus_county, int * num_infectious_county, int * num_infected_county, int * num_hosp_county, int * num_icu_county, int * num_sus_age, int * num_infectious_age, int * num_infected_age, int * num_hosp_age, int * num_icu_age, float * age, int * county, int print_loc, float * lat_locale, float * lon_locale, FILE * lat_lon_out, int *locale_HH, int *HH, int * job_status, int * recovered, int * dead) {
+	rmt_BeginCPUSample(SegmentPopulation, 0);
 
         int i;
 
@@ -717,6 +732,7 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 /* Uncomment for information */
 //	printf("Time %i infections i %i num_sus %i infected[i] %i num_infectious %i num_hosp %i num_icu %i \n", t, i, *num_sus, infected[i], *num_infectious, *num_hosp, *num_icu);
 
+	rmt_EndCPUSample(); // SegmentPopulation
 }
 
 float calc_household_infect(float kappa, float omega, int HH_size, float alpha, int severe) {
@@ -748,6 +764,7 @@ double calc_community_infect(float kappa, float omega, int severe, double d) {
 
 
 void hosp_entry(float t, int num_infectious, int * infectious, float * age, int * icu_pop, int * hosp_pop, int * symptomatic, float * tau, int * workplace_tmp, int * workplace_num, int * county, float dt) {
+	rmt_BeginCPUSample(HospEntry, 0);
 
 	float hosp[]={0.001, 0.003, 0.012, 0.032, 0.049, 0.102, 0.166, 0.243, 0.273}; //# From Ferguson 2020
 	float icu[]={0.05, 0.05, 0.05, 0.05, 0.063, 0.122, 0.274, 0.432, 0.709} ; //# percent of hospitalized that need icu from Ferguson 2020.
@@ -771,10 +788,13 @@ void hosp_entry(float t, int num_infectious, int * infectious, float * age, int 
 			}
 		}
 	}
+
+	rmt_EndCPUSample(); // HospEntry
 }
 
 
 void hosp_release(float t, int num_hosp, int * hosp_list, float * tau, int * recovered, int * hosp_pop, int * num_recovered, int * recovered_hosp, int * recovered_icu, float dt, int * num_recovered_county, int * num_recovered_age, float * age, int * county, int * num_recovered_hosp_county, int * num_recovered_hosp_age, int * num_recovered_icu_county, int * num_recovered_icu_age, int * num_recovered_HCW, int * recovered_hosp_HCW, int * recovered_icu_HCW, int * job_status ) {
+	rmt_BeginCPUSample(HospRelease, 0);
 
 	int i; 
 	int infec_person;
@@ -810,9 +830,12 @@ void hosp_release(float t, int num_hosp, int * hosp_list, float * tau, int * rec
 			}
 		}
 	}
+
+	rmt_EndCPUSample(); // HospRelease
 }
 
 int death(float t, int num_infectious, int * infectious, float * tau, int * dead, int * icu_pop, int * hosp_pop, int * symptomatic, int num_dead, float * age, float dt, int * num_dead_county, int * num_dead_age, int * county, int * num_dead_HCW, int * job_status) {
+	rmt_BeginCPUSample(Death, 0);
 
 	float fatal_in_icu=0.5;
 	float fatal_symptomatic[]={0.0000161, 0.0000695, 0.000309, 0.000844, 0.00161, 0.00595, 0.0193, 0.0428, 0.078};
@@ -851,6 +874,8 @@ int death(float t, int num_infectious, int * infectious, float * tau, int * dead
 			}
 		}
 	}
+
+	rmt_EndCPUSample(); // Death
 	return(num_dead);
 }
 
@@ -866,7 +891,6 @@ use as: ./covid -pop 100000 -sim_time 100 % for a population of 100,000 and a si
 
 
 int main (int argc, char *argv[]) {
-
 	/* Parameters available to change with command line */
 	int population = 10000;  // Size of total population
 	int tot_time=200; // Simulation time. 
@@ -879,6 +903,7 @@ int main (int argc, char *argv[]) {
         int ret;
         int i, j;
         char *initial_infect_filename = NULL;
+	uint16_t rmt_port = 0;
 
         /* Timing variables */
         struct timespec T1, T2, t1, t2, t3, t4;
@@ -902,13 +927,24 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
     		else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
+		else if (!strcmp(argv[i],"rmt_port")) rmt_port = atoi(argv[++i]);
   	}
+
+	Remotery* rmt;
+	rmtSettings* rmt_settings = rmt_Settings();
+	rmt_settings->reuse_open_port = RMT_TRUE;
+	if (rmt_port) {
+		rmt_settings->port = rmt_port;
+	}
+	rmt_CreateGlobalInstance(&rmt);
 
 	/* print out population statistics to file */
 	FILE *stats = fopen("stats.log", "w");
 	/*Get current time and stats */
 	time_t date;
 	time(&date);
+
+	rmt_BeginCPUSample(Init, 0);
 
 	fprintf(stats, "Date: %s \n", ctime(&date));
 	fprintf(stats, "Population: %i \nSimulationTime: %i \ndt: %f \nInterventions: %i \nTau_onset: %f \n\n\n ", population, tot_time, dt, interventions, tauI_onset);	
@@ -1404,7 +1440,7 @@ school or workplace. */
 
 	/* Initialization complete... start simulation */
 
-
+	rmt_EndCPUSample(); // Init
 
 	/* Initialize constants */
 	float alpha=0.8 ; // From Ferguson Nature 2006
@@ -1533,6 +1569,8 @@ school or workplace. */
                 printf("Timestep %5.2f ", t);
                 fflush(stdout);
 
+		rmt_BeginCPUSample(Step, 0);
+
 		/* count origin of contacts */	
 		 num_contact_commun=0;
 		 num_contact_work=0;
@@ -1594,9 +1632,11 @@ school or workplace. */
 		memset(house_infect, 0, num_households*sizeof(double));
 
 
+		rmt_BeginCPUSample(LocaleLoop, 0);
 		for (j=0; j<num_locale; j++) {
 
 			double tmp_comm_inf=0;
+			rmt_BeginCPUSample(LocaleInfectiousLoop, RMTSF_Aggregate);
 #ifdef _OPENMP
 #pragma omp parallel for private(i) default(shared) reduction(+:tmp_comm_inf) 
 #endif
@@ -1622,11 +1662,14 @@ school or workplace. */
 					tmp_comm_inf+=tIc*calc_community_infect( kappa, omega, severe[infec_person], d);
 				}
 			}
+			rmt_EndCPUSample(); // LocaleInfectiousLoop
 		commun_nom1[j]=tmp_comm_inf/fd_tot[j];
 //		printf("infec_person locale %i j %i num_infectious %i tmp %f actual %f %f \n", num_locale, j, num_infectious, tmp_comm_inf, commun_nom1[j], commun_nom1[j]/fd_tot[j]);
 	
-		}	
+		}
+		rmt_EndCPUSample(); // LocaleLoop
 
+		rmt_BeginCPUSample(InfectiousLoop, 0);
 /* Would be nice to have a omp par for here but something is currently not right when turning it on
 #ifdef _OPENMP
 #pragma omp parallel for private(i) default(shared) 
@@ -1677,8 +1720,10 @@ school or workplace. */
 			house_infect[HH[infec_person]]+=tmp_house_inf;
 			}
 		}
+		rmt_EndCPUSample(); // InfectiousLoop
 
 
+		rmt_BeginCPUSample(SusceptibleLoop, 0);
 		//#### Only Susceptible people can get the virus and infected people spread it.
 		for (i=0; i<num_sus; i++) {
                         int sus_person; //Counter for susceptible person.
@@ -1776,6 +1821,7 @@ school or workplace. */
 
 //		printf("sus_person %i \n", sus_person);
 		}
+		rmt_EndCPUSample(); // SusceptibleLoop
 
 		// After 5 days of symptoms, people are randomly put into hospital based on age distributions. //
 		hosp_entry(t, num_infectious,  infectious,  age,  icu_pop,  hosp_pop,  symptomatic, tau, workplace_tmp, hosp_num, county, dt) ;
@@ -1790,7 +1836,7 @@ school or workplace. */
 		num_dead = death(t, num_icu,  icu_list,  tau,  dead,  icu_pop,  hosp_pop,  symptomatic, num_dead, age, dt, num_dead_county, num_dead_age, county, &num_dead_HCW, job_status) ;
 		num_dead = death(t, num_hosp,  hosp_list,  tau,  dead,  icu_pop,  hosp_pop,  symptomatic, num_dead, age, dt, num_dead_county, num_dead_age, county, &num_dead_HCW, job_status) ;
 
-
+		rmt_BeginCPUSample(RecoveryLoop, 0);
 		// Recovered after 11 days (6 days of symptoms) if not in hospital/ICU. // 
 		for (i=0; i<num_infectious; i++) {
                         int infec_person;
@@ -1806,27 +1852,31 @@ school or workplace. */
 				
 			}
 		}
-        ret = clock_gettime(CLOCK_MONOTONIC, &t2);
-        step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
-        printf("time %5.2f\n", step_time);
-        fflush(stdout);
-	fprintf(output_file, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
-	fflush(output_file);
+		rmt_EndCPUSample(); // RecoveryLoop
 
-	fprintf(output_HCW, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_healthcare %i \n", step_time, t, num_infect_HCW, num_infectious_HCW, num_hosp_HCW, num_icu_HCW, num_dead_HCW, num_recovered_HCW, num_recovered_hosp_HCW, num_recovered_icu_HCW, num_contact_work_HCW, num_contact_school_HCW, num_contact_house_HCW, num_contact_commun_HCW, num_HCW);
-	fflush(output_HCW);
-	
-	for (file_count=0; file_count<num_counties; file_count++) {
-		fprintf(county_files[file_count], "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_county[file_count], num_infectious_county[file_count], num_hosp_county[file_count], num_icu_county[file_count], num_dead_county[file_count], num_recovered_county[file_count], num_recovered_hosp_county[file_count], num_recovered_icu_county[file_count], num_contact_work_county[file_count], num_contact_school_county[file_count], num_contact_house_county[file_count], num_contact_commun_county[file_count], county_size[file_count]);
-		fflush(county_files[file_count]);
-	}
+		ret = clock_gettime(CLOCK_MONOTONIC, &t2);
+		step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
+		printf("time %5.2f\n", step_time);
+		fflush(stdout);
+		fprintf(output_file, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
+		fflush(output_file);
 
-	for (file_count=0; file_count<90; file_count+=5) {
-		fprintf(age_files[file_count/5], "Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_age[file_count/5], num_infectious_age[file_count/5], num_hosp_age[file_count/5], num_icu_age[file_count/5], num_dead_age[file_count/5], num_recovered_age[file_count/5], num_recovered_hosp_age[file_count/5], num_recovered_icu_age[file_count/5], num_contact_work_age[file_count/5], num_contact_school_age[file_count/5], num_contact_house_age[file_count/5], num_contact_commun_age[file_count/5], age_distrib[file_count/5]);
-		fflush(age_files[file_count/5]);
-	}
+		fprintf(output_HCW, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_healthcare %i \n", step_time, t, num_infect_HCW, num_infectious_HCW, num_hosp_HCW, num_icu_HCW, num_dead_HCW, num_recovered_HCW, num_recovered_hosp_HCW, num_recovered_icu_HCW, num_contact_work_HCW, num_contact_school_HCW, num_contact_house_HCW, num_contact_commun_HCW, num_HCW);
+		fflush(output_HCW);
+		
+		for (file_count=0; file_count<num_counties; file_count++) {
+			fprintf(county_files[file_count], "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_county[file_count], num_infectious_county[file_count], num_hosp_county[file_count], num_icu_county[file_count], num_dead_county[file_count], num_recovered_county[file_count], num_recovered_hosp_county[file_count], num_recovered_icu_county[file_count], num_contact_work_county[file_count], num_contact_school_county[file_count], num_contact_house_county[file_count], num_contact_commun_county[file_count], county_size[file_count]);
+			fflush(county_files[file_count]);
+		}
+
+		for (file_count=0; file_count<90; file_count+=5) {
+			fprintf(age_files[file_count/5], "Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_age[file_count/5], num_infectious_age[file_count/5], num_hosp_age[file_count/5], num_icu_age[file_count/5], num_dead_age[file_count/5], num_recovered_age[file_count/5], num_recovered_hosp_age[file_count/5], num_recovered_icu_age[file_count/5], num_contact_work_age[file_count/5], num_contact_school_age[file_count/5], num_contact_house_age[file_count/5], num_contact_commun_age[file_count/5], age_distrib[file_count/5]);
+			fflush(age_files[file_count/5]);
+		}
 
 		t=t+dt;
+
+		rmt_EndCPUSample(); // Step
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &T2);
         step_time = ((double)T2.tv_sec + (double)T2.tv_nsec/nsdiv) - ((double)T1.tv_sec + (double)T1.tv_nsec/nsdiv);
