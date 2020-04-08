@@ -879,6 +879,45 @@ int death(float t, int num_infectious, int * infectious, float * tau, int * dead
 	return(num_dead);
 }
 
+#if COV_GPU
+
+extern void locale_infectious_step(int j, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, double* out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale);
+
+#else
+
+void locale_infectious_step(int j, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, double* out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale) {
+	double tmp_comm_inf = 0.0;
+	int i;
+#ifdef _OPENMP
+#pragma omp parallel for private(i) default(shared) reduction(+:tmp_comm_inf) 
+#endif
+	for (i=0; i<num_infectious; i++) {
+		int infec_person; //Counter for infected person.
+		float kappa; // #Infectiousness
+		float tIc;
+		infec_person = infectious[i];
+		tIc = Ic;
+		if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
+			tIc = interIc[intervene[infec_person]];
+		}
+		kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
+	
+		if (hosp_pop[infec_person]==0) {
+			float d; //distance between people.
+			// Community transmission //
+#if !defined(USE_LOCALE_DISTANCE)
+			d = distance(lat_locale[j], lon_locale[j], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
+#else
+			d = locale_distance(locale_list[j], locale_list[locale_HH[HH[infec_person]]]);
+#endif
+			tmp_comm_inf += tIc*calc_community_infect( kappa, omega, severe[infec_person], d);
+		}
+	}
+
+	*out_tmp_comm_inf = tmp_comm_inf;
+}
+
+#endif
 
 /***** COVID-19 infectious spread model *****
 ****** (C) 2020 Jasmine Gardner, PhD    *****
@@ -1425,7 +1464,8 @@ school or workplace. */
 			fd_tot[j] += tmp_fd * npi;
 			if (i<num_precalc && j<num_precalc) {
 				fd_precalc[i][j]=tmp_fd;
-			}		}
+			}
+		}
                 fd_tot[i] += itmp_fd + npi - 1;
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -1634,38 +1674,15 @@ school or workplace. */
 
 		rmt_BeginCPUSample(LocaleLoop, 0);
 		for (j=0; j<num_locale; j++) {
+			double tmp_comm_inf = 0.0;
 
-			double tmp_comm_inf=0;
 			rmt_BeginCPUSample(LocaleInfectiousLoop, RMTSF_Aggregate);
-#ifdef _OPENMP
-#pragma omp parallel for private(i) default(shared) reduction(+:tmp_comm_inf) 
-#endif
-			for (i=0; i<num_infectious; i++) {
-				int infec_person; //Counter for infected person.
-				float kappa; // #Infectiousness
-				float tIc;
-				infec_person=infectious[i];
-				tIc = Ic;
-				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
-					tIc=interIc[intervene[infec_person]];
-				}
-				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
-			
-				if (hosp_pop[infec_person]==0) {
-					float d; //distance between people.
-					// Community transmission //
-#if !defined(USE_LOCALE_DISTANCE)
-					d=distance(lat_locale[j], lon_locale[j], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
-#else
-                                        d=locale_distance(locale_list[j], locale_list[locale_HH[HH[infec_person]]]);
-#endif
-					tmp_comm_inf+=tIc*calc_community_infect( kappa, omega, severe[infec_person], d);
-				}
-			}
-			rmt_EndCPUSample(); // LocaleInfectiousLoop
-		commun_nom1[j]=tmp_comm_inf/fd_tot[j];
+
+			locale_infectious_step(j, num_infectious, infectious, Ic, intervene, t, tau, tauI, interIc, symptomatic, dt, kappa_vals, hosp_pop, icu_pop, lat_locale, lon_locale, locale_HH, HH, locale_list, omega, severe, &tmp_comm_inf, full_kappa, R0_scale, betac_scale);
+
+			commun_nom1[j] = tmp_comm_inf / fd_tot[j];
 //		printf("infec_person locale %i j %i num_infectious %i tmp %f actual %f %f \n", num_locale, j, num_infectious, tmp_comm_inf, commun_nom1[j], commun_nom1[j]/fd_tot[j]);
-	
+			rmt_EndCPUSample(); // LocaleInfectiousLoop	
 		}
 		rmt_EndCPUSample(); // LocaleLoop
 
