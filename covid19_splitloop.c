@@ -1835,10 +1835,10 @@ school or workplace. */
 					}
 					/* Intervention 2 is household quarantine with current recommendations. Applicable for whole household.  */
 					if ( interventions == 2 && t>tauI_onset ) {
-						int i1;
-						for (i1=0; i1<population; i1++) {
-							if ( HH[sus_person] == HH[i1] && COV_rand()<complyI[4] ) {
-								intervene[i1]=4;
+						int i1, hh = HH[sus_person];
+						for (i1=0; i1<arrlen(per_HH_members[hh]); i1++) {
+							if ( COV_rand()<complyI[4] ) {
+								intervene[per_HH_members[hh][i1]]=4;
 							}
 						}
 			
