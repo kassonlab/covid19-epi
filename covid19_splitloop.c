@@ -71,7 +71,7 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
 
 
 /* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
-void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float land_pop_total_density) {
+void household_lat_long(int num_households, int * HH, float * lat_city, float * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, float * age, int * per_HH_size, int** per_HH_members, char ** county_names, float * county_pop, float tot_pop_actual, FILE* stats, int **county_p, int *num_locale, float *lat_locale, float *lon_locale, float *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, float land_pop_total_density) {
 	rmt_BeginCPUSample(HouseholdLatLong, 0);
 
 	/* Initialize helpers for population density */
@@ -165,6 +165,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                 county_size[county[HH_person]]++;
                 arrput(county_p[county[HH_person]], HH_person);
 		city_size[city[HH_person]]++;
+		arrput(per_HH_members[HH[HH_person]], HH_person);
 		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
@@ -211,6 +212,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                 arrput(county_p[county[HH_person]], HH_person);
 		city_size[city[HH_person]]++;
 		locale_count[placement]+=1;
+		arrput(per_HH_members[HH[HH_person]], HH_person);
 		per_HH_size[HH[HH_person]]++;
 		if (per_HH_size[HH[HH_person]]>max_HH_size) {
 			max_HH_size=per_HH_size[HH[HH_person]];
@@ -264,6 +266,7 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
                         arrput(county_p[county[HH_person]], HH_person);
 			city_size[city[HH_person]]++;
 			locale_count[placement]+=1;
+			arrput(per_HH_members[HH[HH_person]], HH_person);
                         per_HH_size[HH[HH_person]]++;
                         if (per_HH_size[HH[HH_person]]>max_HH_size) {
                                 max_HH_size=per_HH_size[HH[HH_person]];
@@ -1014,6 +1017,8 @@ int main (int argc, char *argv[]) {
 	HH = (int*)calloc(population,sizeof(int));
 	int * per_HH_size; // Size of each household.  Need for infectiousness calculations.
 	per_HH_size = (int*)calloc(num_households,sizeof(int));
+	int* per_HH_members;
+	per_HH_members = (int**)calloc(num_households, sizeof(int*));
 
 	/* Population information */
 	/* Specific to Sweden.  Averaging population based on total population of Sweden regardless of population size. */
@@ -1288,7 +1293,7 @@ school or workplace. */
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, land_pop_total_density) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, per_HH_members, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, land_pop_total_density) ;
 
 	free(city_county);
 
@@ -1910,6 +1915,12 @@ school or workplace. */
         free(house_infect);
 	free(HH);
 	free(per_HH_size);
+
+	for (i = 0; i < num_households; ++i) {
+		arrfree(per_HH_members[i]);
+	}
+	free(per_HH_members);
+
 	free(lat_city);
 	free(long_city);
 	free(city_size);
