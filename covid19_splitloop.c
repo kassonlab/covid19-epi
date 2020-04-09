@@ -1349,14 +1349,6 @@ school or workplace. */
         printf("Starting density kernel calculations\n");
         fflush(stdout);
 	
-	/* Save array for first 8000 locales with fd precalculated.  This accounts for 50% of the population. */
-	double ** fd_precalc;
-	int num_precalc = 20000;
-        fd_precalc = (double **)malloc(num_precalc * sizeof(double *));
-        for(i=0; i < num_precalc; i++) {
-            fd_precalc[i] = (double *) malloc(num_precalc * sizeof(double)); /* JMG: Could be turned into triangular matrix, fd[i][j]==fd[j][i] */
-        }
-	
         ret = clock_gettime(CLOCK_MONOTONIC, &t1);
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<num_locale; i++) {
@@ -1368,9 +1360,6 @@ school or workplace. */
                 for (hh = 0; hh < locale_to_HH_n[i]; hh++) {
                     npi += per_HH_size[locale_to_HH[i][hh]];
                 }
-		if (i<num_precalc) {
-			fd_precalc[i][i]=1;	
-		}
 #ifdef _OPENMP
 #pragma omp parallel for private(j) default(shared) reduction(+:itmp_fd)
 #endif
@@ -1396,9 +1385,7 @@ school or workplace. */
                         }
                         itmp_fd += tmp_fd * npj;
 			fd_tot[j] += tmp_fd * npi;
-			if (i<num_precalc && j<num_precalc) {
-				fd_precalc[i][j]=tmp_fd;
-			}		}
+		}
                 fd_tot[i] += itmp_fd + npi - 1;
 	}
         ret = clock_gettime(CLOCK_MONOTONIC, &t2);
