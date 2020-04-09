@@ -1017,7 +1017,7 @@ int main (int argc, char *argv[]) {
 	HH = (int*)calloc(population,sizeof(int));
 	int * per_HH_size; // Size of each household.  Need for infectiousness calculations.
 	per_HH_size = (int*)calloc(num_households,sizeof(int));
-	int* per_HH_members;
+	int** per_HH_members;
 	per_HH_members = (int**)calloc(num_households, sizeof(int*));
 
 	/* Population information */
