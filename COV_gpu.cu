@@ -209,6 +209,11 @@ static __global__ void locale_infectious_step_kernel(
 }
 
 void locale_infectious_step(LoopInvariantData const& lid, int population, int j, int num_households, int num_infectious, float Ic, float t, float dt, float omega, double& out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale) {
+    if (num_infectious == 0) {
+        out_tmp_comm_inf = 0.0;
+        return;
+    }
+    
     thrust::device_vector<double> d_tmp_comm_inf_arr(num_infectious, 0.0);
 
     // Run kernel
