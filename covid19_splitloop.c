@@ -16,6 +16,8 @@
 
 int typical_max_HH_sz = 7;
 
+int sort_household_members = 0;
+
 int full_fd = 0, full_kappa = 0;
 
 float betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
@@ -61,6 +63,15 @@ void age_dist (float * age, int population, FILE* stats, int * age_distrib) {
         fflush(stats);
        // exit(0);
 //
+}
+
+int cmp_int(void const* a_, void const* b_) {
+	int a = *(int*)a_;
+	int b = *(int*)b_;
+	if (a != b) {
+		return (a < b) ? -1 : 1;
+	}
+	return 0;
 }
 
 
@@ -270,6 +281,15 @@ void household_lat_long(int num_households, int * HH, float * lat_city, float * 
 
         printf("max_HH_size = %d\n", max_HH_size);
         fflush(stdout);
+
+	if (sort_household_members) {
+		for (size_t hh = 0; hh < num_households; ++hh) {
+			int* set = per_HH_members[hh];
+			if (set) {
+				qsort(set, arrlen(set), sizeof(int), cmp_int);
+			}
+		}
+	}
 
 
 // Uncomment to test household distribution.  Tested JMG 2020-03-22.
@@ -905,6 +925,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
     		else if (!strcmp(argv[i],"-use_seed")) seed = atol(argv[++i]);
+                else if (!strcmp(argv[i],"-sort_HH")) sort_household_members = 1;
     		else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
   	}
 
