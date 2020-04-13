@@ -470,9 +470,9 @@ void job_dist(int * job_status, int ** job_status_city, float * age, int * count
 
 }
 
-void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, int* class, FILE * stats, int * max_num_class) {
+void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, FILE * stats) {
 
-	int pp_class = 19; //Assumption of 15 children per class.
+	int pp_class = 19; //Assumption of 15 children per class. Not used yet
 	int pp_preschool = 53; //Assumption of 200 children per school.
 	int pp_school = 220; //Assumption of 200 children per school.
 	int pp_hospital = 120; //Assumption of 120 people per hospital.
@@ -483,10 +483,6 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 	memset(num_workplaces, 0, 6*num_cities*sizeof(int));
 	int num_workplaces2[6];
 	memset(num_workplaces2, 0, 6*sizeof(int));
-	int num_classes[6][num_cities];
-	memset(num_classes, 0, 6*num_cities*sizeof(int));
-	int num_classes2[6];
-	memset(num_classes2, 0, 6*sizeof(int));
 
         /* THIS WILL NOW BE BY CITY FOR SCHOOLS AND PRESCHOOLS. */
 	for (i=0; i < num_cities; i++) {
@@ -991,8 +987,6 @@ int main (int argc, char *argv[]) {
 	job_status = (int*)calloc(population,sizeof(int));
 	int * workplace; // Workplace of each person.
 	workplace = (int*)calloc(population,sizeof(int));
-	int * class; // Classroom for students 	
-	class = (int*)calloc(population,sizeof(int));
 
 	int max_num_WP=0; // max workplaces per job_status for allocating array.
 
@@ -1317,11 +1311,10 @@ school or workplace. */
 		}
 	}
 
-	int max_num_class=0;
 	int hosp_num[num_counties]; //Number of hospitals per county
 	memset(hosp_num, 0, num_counties);
 	/* Initialize workplace/school */	
-	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, class, stats, &max_num_class); 
+	workplace_dist(workplace, job_status, job_status_county, city, num_cities, county, num_counties, population, &max_num_WP , hosp_num, stats); 
 
 	free(city);
 
@@ -1331,25 +1324,14 @@ school or workplace. */
 	for (i=0; i < population; i++) {
 		workplace_size[job_status[i]][workplace[i]]++;
 	}
-	int class_size[6][max_num_class];
-	memset(class_size, 0, 6*max_num_class*sizeof(int));
-	for (i=0; i<population; i++) {
-		class_size[job_status[i]][class[i]]++;
-	}
 
 
 	for (j=1; j<6; j++) {
-		float avg_work_size=0, avg_class_size=0, num_WP=0, num_class=0;
+		float avg_work_size=0, num_WP=0;
 		for (i=0; i<max_num_WP; i++) {
 			if (workplace_size[j][i]>0) {
 				avg_work_size+=workplace_size[j][i];
 				num_WP++;
-			}
-		}
-		for (i=0; i<max_num_class; i++) {
-			if (j<4 && class_size[j][i]>0) {
-				avg_class_size+=class_size[j][i];
-				num_class++;
 			}
 		}
 		fprintf(stats, "Job_status %i avg_WP_size %f \n", j, avg_work_size/num_WP); 
@@ -1875,7 +1857,6 @@ school or workplace. */
 	free(county);
 	free(job_status);
 	free(workplace);
-	free(class);
 	free(infected);
 	free(severe);
 	free(tau);
