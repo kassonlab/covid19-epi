@@ -984,6 +984,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-full_fd")) full_fd = 1;
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
+    		else if (!strcmp(argv[i],"-use_seed")) seed = atol(argv[++i]);
     		else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
 		else if (!strcmp(argv[i],"rmt_port")) rmt_port = atoi(argv[++i]);
   	}

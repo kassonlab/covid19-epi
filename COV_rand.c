@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #if defined(USE_GETRANDOM)
 #include <linux/random.h>
@@ -8,6 +9,8 @@
 #endif
 
 #include "common.h"
+
+long seed = 555L;
 
 int use_fixed_seed = 0;
 
@@ -22,7 +25,8 @@ void COV_init_rand() {
     int ret;
 
     if (use_fixed_seed) {
-        srand48(555L);
+	printf("Using fixed seed %lu\n", seed);
+        srand48(seed);
     } else {
 #if defined(USE_GETRANDOM)
         ret = getrandom((void *)sv, sizeof(sv), 0);
@@ -32,7 +36,9 @@ void COV_init_rand() {
         seed48(sv);
 #else
         ret = clock_gettime(CLOCK_MONOTONIC, &t);
-        srand48(t.tv_sec * t.tv_nsec);
+	seed = t.tv_sec * t.tv_nsec;
+        srand48(seed);
+	printf("Using seed %lu\n", seed);
 #endif
     }
 }

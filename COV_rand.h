@@ -5,6 +5,8 @@
 
 extern int use_fixed_seed;
 
+extern long seed;
+
 void COV_init_rand();
 
 double COV_rand();
