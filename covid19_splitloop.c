@@ -1284,7 +1284,7 @@ school or workplace. */
 	/* Parse land_scan file to get population density.  */
         float *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
         //int num_locale = 0, max_locale = 0;
-        float tmp_lat, tmp_lon, pop_den, land_pop_total_density;
+        float tmp_lat, tmp_lon, pop_den, land_pop_total_density = 0;
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
 //	    if (pop_den < 10000000/population ) {
