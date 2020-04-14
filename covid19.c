@@ -1,5 +1,7 @@
 #include <stdio.h>
  
+#include <stddef.h>
+#include <stdint.h> 
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -864,6 +866,11 @@ int death(double t, int num_infectious, int * infectious, double * tau, int * de
 	return(num_dead);
 }
 
+#if COV_GPU
+
+void locale_infectious_loop(int num_locale, int population, int num_households, int num_infectious, int* infectious, double Ic, int* intervene, double t, double* tau, double* tauI, double* interIc, int* symptomatic, double dt, double* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, double* lat_locale, double* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, double omega, int* severe, int full_kappa, double R0_scale, double betac_scale, double* commun_nom1, double* fd_tot);
+
+#endif
 
 /***** COVID-19 infectious spread model *****
 ****** (C) 2020 Jasmine Gardner, PhD    *****
@@ -1572,6 +1579,11 @@ school or workplace. */
                 }
 		memset(house_infect, 0, num_households*sizeof(double));
 
+#if COV_GPU
+
+		locale_infectious_loop(num_locale, population, num_households, num_infectious, infectious, Ic, intervene, t, tau, tauI, interIc, symptomatic, dt, kappa_vals, count_kappa_vals, hosp_pop, icu_pop, lat_locale, lon_locale, locale_HH, HH, locale_list, omega, severe, full_kappa, R0_scale, betac_scale, commun_nom1, fd_tot);
+
+#else // COV_GPU
 
 #ifdef _OPENMP
 #pragma omp parallel for private(j, i) default(shared)
@@ -1602,6 +1614,8 @@ school or workplace. */
 			}
                         commun_nom1[j]=tmp_comm_inf/fd_tot[j];
 		}	
+
+#endif // COV_GPU
 
 		for (i=0; i<num_infectious; i++) {
 			int infec_person; //Counter for infected person.
