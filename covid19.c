@@ -609,12 +609,8 @@ void initialize_infections(int * initial_infections, double * tau, int * infecte
 	int tmp_infect=0;
 	double min_diff=1000;
 	double diff_lat_lon=10;
-        //double *tmp_lat, *tmp_lon;
         int i, j;
 
-        //tmp_lat = (double*)calloc(population,sizeof(double));
-        //tmp_lon = (double*)calloc(population,sizeof(double));
-	
 	for (i=0; i < num_counties; i++) {
 		tmp_infect=0;
 		while ((tmp_infect<initial_infections[i])) {
@@ -674,8 +670,6 @@ void initialize_infections(int * initial_infections, double * tau, int * infecte
 		}
 			
 	}
-        //free(tmp_lat);
-        //free(tmp_lon);
 }
 
 
@@ -1178,21 +1172,12 @@ school or workplace. */
 	age_dist(age, population, stats, age_distrib);
 	city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_county, county_name, num_counties) ;
 
-	/* Checking data */
-	for (i=0; i<num_cities; i++) {
-//		printf("cities %i %i %i lat %f lon %f \n", i, city_county[i], num_cities, lat_city[i], long_city[i]);
-	}
-
-
 	/* Parse land_scan file to get population density.  */
         double *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
         //int num_locale = 0, max_locale = 0;
         double tmp_lat, tmp_lon, pop_den, land_pop_total_density = 0;
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
 	while ((ret = fscanf(lat_long, "%lf%*c%lf%*c%lf", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
-//	    if (pop_den < 10000000/population ) {
-//		break;
-//	    } else {
             if (num_locale + 1 > max_locale) {
                 //max_locale += 10;
                  lat_locale = (double *)realloc(lat_locale, (max_locale+10) * sizeof(double));
@@ -1206,7 +1191,6 @@ school or workplace. */
             land_pop_total_density += pop_den;
             num_locale++;
 	}
-//	}
         fclose(lat_long);
 
         int original_num_locale = num_locale;
@@ -1260,7 +1244,6 @@ school or workplace. */
 //	double initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/21 ******/
 	double initialize_base[15]={3955, 4068, 5198, 3955, 3616, 4633, 4633, 4859, 5085, 3051, 1921, 2712, 1469, 1695, 452};
-//	double initialize_base[15]={100, 50, 20, 10, 10, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0};
         double *initialize = initialize_base;
 	double tmp_t;
 
