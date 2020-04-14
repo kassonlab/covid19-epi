@@ -19,7 +19,7 @@ struct locale *locale_list = NULL;
 #define y(radius, lat, lon) ((radius)*sin(deg2rad(90.0-(lat)))*sin(deg2rad((lon))))
 #define z(radius, lat) ((radius)*cos(deg2rad(90.0-(lat))))
 
-void add_locale(float lat, float lon, float pop_dens)
+void add_locale(double lat, double lon, double pop_dens)
 {
     if (num_locale + 1 > max_locale) {
         max_locale += 10;

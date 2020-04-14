@@ -8,12 +8,12 @@
 struct locale {
     int locale_idx; // Self index
     /* Latitude and longitude */
-    float lat, lon;
+    double lat, lon;
     double rlat, rlon; // In radians
     double rbeta;
     /* Spherical coordinates */
     double x, y, z;
-    float pop_density; // Population density of this locale
+    double pop_density; // Population density of this locale
     /* Things we might have a use for */
     /*
     struct county *; // Which county is this locale in
@@ -27,7 +27,7 @@ struct locale {
 extern int num_locale, max_locale;
 extern struct locale *locale_list;
 
-void add_locale(float lat, float lon, float pop_dens);
+void add_locale(double lat, double lon, double pop_dens);
 double locale_distance_Lambert(struct locale l1, struct locale l2);
 double locale_distance_GCD_1(struct locale l1, struct locale l2);
 
