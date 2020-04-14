@@ -1608,40 +1608,33 @@ school or workplace. */
 		for (i=0; i<num_infectious; i++) {
 			int infec_person; //Counter for infected person.
 			double kappa; // #Infectiousness
-			double tIw, tIh, tIc;
+			double tIw, tIh;
 			int age_group=0;
 			int tmp_job_stat=0;
 			double tmp_work_inf=0, tmp_house_inf=0;
 			infec_person=infectious[i];
 			tIh = Ih;
-			tIc=Ic;
 			tIw = Iw[job_status[infec_person]];
 			if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
 				tIw=interIw[intervene[infec_person]][job_status[infec_person]];
 				tIh=interIh[intervene[infec_person]];
-					tIc=interIc[intervene[infec_person]];
 			} 
 			kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
 			
-                        tmp_work_inf=0;
 			if (hosp_pop[infec_person]==0) {
-				if (tIw>0) {
-				       tmp_work_inf=calc_workplace_infect(job_status[infec_person], kappa, omega, workplace_size[job_status[infec_person]][workplace[infec_person]], severe[infec_person], tIw) ;
-				}
-				tmp_job_stat=job_status[infec_person];
-				tmp_house_inf=tIh*calc_household_infect(kappa, omega, arrlen(per_HH_members[HH[infec_person]]), alpha, severe[infec_person]); 
+                                tmp_job_stat=job_status[infec_person];
+				// Workplace/School transmission: People must be in same workplace and job type. // 
+                                tmp_work_inf=calc_workplace_infect(tmp_job_stat, kappa, omega, workplace_size[tmp_job_stat][workplace[infec_person]], severe[infec_person], tIw) ;
 			} else {
+				/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
 				tmp_job_stat=5;
 				tIw = Iw[tmp_job_stat];
 				tIh=0.25;
-				/* In hospital, only have interaction with hospital workers and half interaction with family (household). */
-				// Workplace/School transmission: People must be in same workplace and job type. // 
-				tmp_work_inf=calc_workplace_infect(5, kappa, omega, workplace_size[tmp_job_stat][workplace_tmp[infec_person]], severe[infec_person], tIw) ;
-				// Household transmission //
-				tmp_house_inf=tIh*calc_household_infect(kappa, omega, arrlen(per_HH_members[HH[infec_person]]), alpha, severe[infec_person]); 
+				tmp_work_inf=calc_workplace_infect(tmp_job_stat, kappa, omega, workplace_size[tmp_job_stat][workplace_tmp[infec_person]], severe[infec_person], tIw) ;
                         }
-
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
+                        // Household transmission //
+                        tmp_house_inf=tIh*calc_household_infect(kappa, omega, arrlen(per_HH_members[HH[infec_person]]), alpha, severe[infec_person]); 
 			house_infect[HH[infec_person]]+=tmp_house_inf;
 		}
 
@@ -1685,28 +1678,27 @@ school or workplace. */
 					symptomatic[sus_person]=1;
 				}
 
-				if (house_infect[HH[sus_person]]>0) {
+				if (tIh*house_infect[HH[sus_person]]>0) {
 					num_contact_house++;
 					if (job_status[sus_person]==5) {
 						num_contact_house_HCW++;
 					}
 					num_contact_house_county[county[sus_person]]++;
 					num_contact_house_age[(int)floor(age[sus_person]/5)]++;
-				} else if ( job_status[sus_person]<4 && work_infect[job_status[sus_person]][workplace[sus_person]] > 0) {
+				} else if (tIw*work_infect[job_status[sus_person]][workplace[sus_person]] > 0) {
+                                    if (job_status[sus_person]<4) {
 					num_contact_school++;
-					if (job_status[sus_person]==5) {
-						num_contact_school_HCW++;
-					}
 					num_contact_school_county[county[sus_person]]++;
 					num_contact_school_age[(int)floor(age[sus_person]/5)]++;
-				} else if ( work_infect[job_status[sus_person]][workplace[sus_person]] > 0) {
+                                    } else {
 					num_contact_work++;
 					if (job_status[sus_person]==5) {
 						num_contact_work_HCW++;
 					}
 					num_contact_work_county[county[sus_person]]++;
 					num_contact_work_age[(int)floor(age[sus_person]/5)]++;
-				} else {
+                                    }
+				} else if (tIc * zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]] > 0) {
 					num_contact_commun++;
 					if (job_status[sus_person]==5) {
 						num_contact_commun_HCW++;
