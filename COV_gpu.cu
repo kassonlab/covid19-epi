@@ -65,12 +65,12 @@ static __device__ double d_locale_distance_GCD_1(struct locale l1, struct locale
 #define deg2rad(deg) (deg * M_PI / 180)
 #define rad2deg(rad) (rad * 180 / M_PI)
 
-static __device__ double calc_community_infect(float kappa, float omega, int severe, double d, float betac_scale) {
+static __device__ double calc_community_infect(double kappa, double omega, int severe, double d, double betac_scale) {
 
 	/* need to work on this.  Perhaps we take a random distance for each two people based on population density, number of people in county, county area, etc. */
-	float zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
+	double zeta[]={0.1, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.75, 0.50, 0.25, 0.25, 0.25} ; //   # Travel related parameter for community transmission. Ferguson Nature 2006
 	double fd;
-	float betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
+	double betac=0.103 ; // Scaled from betac=0.075 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
 	fd=1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
 	return (betac_scale*betac*kappa*fd*(1+severe*(omega-1)));
@@ -105,10 +105,10 @@ static __device__ double d_distance(double lat1, double lon1, double lat2, doubl
     }
 }
 
-static __device__ float calc_kappa(float t, float tau, int symptomatic, float dt, float const* kappa_vals, int hosp, int icu, int full_kappa, float R0_scale) {
+static __device__ double calc_kappa(double t, double tau, int symptomatic, double dt, double const* kappa_vals, int hosp, int icu, int full_kappa, double R0_scale) {
 
-	float kappa;
-	float t1;
+	double kappa;
+	double t1;
 	int t2;
 	//###Determine kappa for infected person.  This is the infectiousness of the person based on time since infection started.  Latency period is 4.6 days.  Infection starts at 5.1 days and lasts for 6 days.  Sympotmatic people are twice as likely to infect others as asymptomatic.
 	// Kappa is a log normal function with mean of -0.72 and standard deviation of 1.8.  From Ferguson Nature 2005
@@ -135,15 +135,15 @@ static __device__ float calc_kappa(float t, float tau, int symptomatic, float dt
 struct LoopInvariantData {
     thrust::device_vector<int> infectious;
     thrust::device_vector<int> intervene;
-    thrust::device_vector<float> tau;
-    thrust::device_vector<float> tauI;
-    thrust::device_vector<float> interIc;
+    thrust::device_vector<double> tau;
+    thrust::device_vector<double> tauI;
+    thrust::device_vector<double> interIc;
     thrust::device_vector<int> symptomatic;
-    thrust::device_vector<float> kappa_vals;
+    thrust::device_vector<double> kappa_vals;
     thrust::device_vector<int> hosp_pop;
     thrust::device_vector<int> icu_pop;
-    thrust::device_vector<float> lat_locale;
-    thrust::device_vector<float> lon_locale;
+    thrust::device_vector<double> lat_locale;
+    thrust::device_vector<double> lon_locale;
     thrust::device_vector<int> locale_HH;
     thrust::device_vector<int> HH;
     thrust::device_vector<struct locale> locale_list;
@@ -154,25 +154,25 @@ struct LoopInvariantData {
 static __global__ void locale_infectious_step_kernel(
     int j,
     int num_infectious,
-    float Ic,
-    float t,
-    float dt,
-    float omega,
+    double Ic,
+    double t,
+    double dt,
+    double omega,
     int full_kappa,
-    float R0_scale,
-    float betac_scale,
+    double R0_scale,
+    double betac_scale,
 
     int const* infectious,
     int const* intervene,
-    float const* tau,
-    float const* tauI,
-    float const* interIc,
+    double const* tau,
+    double const* tauI,
+    double const* interIc,
     int const* symptomatic,
-    float const* kappa_vals,
+    double const* kappa_vals,
     int const* hosp_pop,
     int const* icu_pop,
-    float const* lat_locale,
-    float const* lon_locale,
+    double const* lat_locale,
+    double const* lon_locale,
     int const* locale_HH,
     int const* HH,
     struct locale const* locale_list,
@@ -184,8 +184,8 @@ static __global__ void locale_infectious_step_kernel(
     if (i < num_infectious) {
         double tmp_comm_inf = 0.0;
         int infec_person; //Counter for infected person.
-        float kappa; // #Infectiousness
-        float tIc;
+        double kappa; // #Infectiousness
+        double tIc;
         infec_person = infectious[i];
         tIc = Ic;
         if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
@@ -194,7 +194,7 @@ static __global__ void locale_infectious_step_kernel(
         kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person], full_kappa, R0_scale);
     
         if (hosp_pop[infec_person]==0) {
-            float d; //distance between people.
+            double d; //distance between people.
             // Community transmission //
 #if !defined(USE_LOCALE_DISTANCE)
             d = d_distance(lat_locale[j], lon_locale[j], lat_locale[locale_HH[HH[infec_person]]], lon_locale[locale_HH[HH[infec_person]]], 'K');
@@ -208,7 +208,7 @@ static __global__ void locale_infectious_step_kernel(
     }
 }
 
-void locale_infectious_step(LoopInvariantData const& lid, int population, int j, int num_households, int num_infectious, float Ic, float t, float dt, float omega, double& out_tmp_comm_inf, int full_kappa, float R0_scale, float betac_scale) {
+void locale_infectious_step(LoopInvariantData const& lid, int population, int j, int num_households, int num_infectious, double Ic, double t, double dt, double omega, double& out_tmp_comm_inf, int full_kappa, double R0_scale, double betac_scale) {
     if (num_infectious == 0) {
         out_tmp_comm_inf = 0.0;
         return;
@@ -251,7 +251,7 @@ void locale_infectious_step(LoopInvariantData const& lid, int population, int j,
     out_tmp_comm_inf = thrust::reduce(d_tmp_comm_inf_arr.begin(), d_tmp_comm_inf_arr.end(), 0.0, thrust::plus<double>());
 }
 
-extern "C" void locale_infectious_loop(int num_locale, int population, int j, int num_households, int num_infectious, int* infectious, float Ic, int* intervene, float t, float* tau, float* tauI, float* interIc, int* symptomatic, float dt, float* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, float* lat_locale, float* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, float omega, int* severe, int full_kappa, float R0_scale, float betac_scale, double* commun_nom1, double* fd_tot) {
+extern "C" void locale_infectious_loop(int num_locale, int population, int j, int num_households, int num_infectious, int* infectious, double Ic, int* intervene, double t, double* tau, double* tauI, double* interIc, int* symptomatic, double dt, double* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, double* lat_locale, double* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, double omega, int* severe, int full_kappa, double R0_scale, double betac_scale, double* commun_nom1, double* fd_tot) {
     rmt_BeginCPUSample(LocaleLoop, 0);
 
     size_t const num_I = 9;
