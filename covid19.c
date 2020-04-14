@@ -1323,40 +1323,41 @@ school or workplace. */
         fflush(stdout);
 	
         ret = clock_gettime(CLOCK_MONOTONIC, &t1);
+        int *npl = (int *)malloc(num_locale * sizeof(int));
+#ifdef _OPENMP
+#pragma omp parallel for private(i) default(shared)
+#endif
+        for (i = 0; i < num_locale; i++) {
+            int npi; /* number of persons in locale i */
+            npi = 0;
+            for (int hh = 0; hh < arrlen(locale_to_HH[i]); hh++) {
+                npi += arrlen(per_HH_members[locale_to_HH[i][hh]]);
+            }
+            npl[i] = npi;
+        }
+
 	/* Precalculate total density kernel function for each individual */
 	for (i=0; i<num_locale; i++) {
                 double itmp_fd;
-                int npi; /* number of persons in locale i */
-                int hh;
                 itmp_fd = 0;
-                npi = 0;
-                for (hh = 0; hh < arrlen(locale_to_HH[i]); hh++) {
-                    npi += arrlen(per_HH_members[locale_to_HH[i][hh]]);
-                }
 #ifdef _OPENMP
 #pragma omp parallel for private(j) default(shared) reduction(+:itmp_fd)
 #endif
 		for (j=i+1; j<num_locale; j++) {
                         double d;
                         double tmp_fd;
-                        int nn;
-                        int npj; /* number of persons in locale j */
-                        npj = 0;
-                        for (nn = 0; nn < arrlen(locale_to_HH[j]); nn++) {
-                            npj += arrlen(per_HH_members[locale_to_HH[j][nn]]);
-                        }
 #if !defined(USE_LOCALE_DISTANCE)
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
 #else
                         d = locale_distance(locale_list[i], locale_list[j]);
 #endif
-
                         tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-                        itmp_fd += tmp_fd * npj;
-			fd_tot[j] += tmp_fd * npi;
+                        itmp_fd += tmp_fd * npl[j];
+			fd_tot[j] += tmp_fd * npl[i];
 		}
-                fd_tot[i] += itmp_fd + npi - 1;
+                fd_tot[i] += itmp_fd + npl[i] - 1;
 	}
+        free(npl);
         ret = clock_gettime(CLOCK_MONOTONIC, &t2);
         tt = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
         printf("Done with density kernel calculations in %5.2f\n", tt);
