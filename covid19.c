@@ -1671,28 +1671,27 @@ school or workplace. */
 					symptomatic[sus_person]=1;
 				}
 
-				if (house_infect[HH[sus_person]]>0) {
+				if (tIh*house_infect[HH[sus_person]]>0) {
 					num_contact_house++;
 					if (job_status[sus_person]==5) {
 						num_contact_house_HCW++;
 					}
 					num_contact_house_county[county[sus_person]]++;
 					num_contact_house_age[(int)floor(age[sus_person]/5)]++;
-				} else if ( job_status[sus_person]<4 && work_infect[job_status[sus_person]][workplace[sus_person]] > 0) {
+				} else if (tIw*work_infect[job_status[sus_person]][workplace[sus_person]] > 0) {
+                                    if (job_status[sus_person]<4) {
 					num_contact_school++;
-					if (job_status[sus_person]==5) {
-						num_contact_school_HCW++;
-					}
 					num_contact_school_county[county[sus_person]]++;
 					num_contact_school_age[(int)floor(age[sus_person]/5)]++;
-				} else if ( work_infect[job_status[sus_person]][workplace[sus_person]] > 0) {
+                                    } else {
 					num_contact_work++;
 					if (job_status[sus_person]==5) {
 						num_contact_work_HCW++;
 					}
 					num_contact_work_county[county[sus_person]]++;
 					num_contact_work_age[(int)floor(age[sus_person]/5)]++;
-				} else {
+                                    }
+				} else if (tIc * zeta[age_group]*commun_nom1[locale_HH[HH[sus_person]]] > 0) {
 					num_contact_commun++;
 					if (job_status[sus_person]==5) {
 						num_contact_commun_HCW++;
