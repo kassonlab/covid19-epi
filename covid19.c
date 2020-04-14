@@ -81,7 +81,7 @@ int cmp_int(void const* a_, void const* b_) {
  * shortest distance to the center of that locality for purposes of
  * school and workplace choice.
  */
-void household_lat_long(int num_households, int * HH, double * lat_city, double * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, double * age, int * per_HH_size, int** per_HH_members, char ** county_names, double * county_pop, double tot_pop_actual, FILE* stats, int **county_p, int *num_locale, double *lat_locale, double *lon_locale, double *pop_density_init_num, int **locale_to_HH, int *locale_HH, double land_pop_total_density) {
+void household_lat_long(int num_households, int * HH, double * lat_city, double * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, double * age, int** per_HH_members, char ** county_names, double * county_pop, double tot_pop_actual, FILE* stats, int **county_p, int *num_locale, double *lat_locale, double *lon_locale, double *pop_density_init_num, int **locale_to_HH, int *locale_HH, double land_pop_total_density) {
 
 	/* Initialize helpers for population density */
 	double tot_pop_density=0;
@@ -174,10 +174,9 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
                 arrput(county_p[county[HH_person]], HH_person);
 		city_size[city[HH_person]]++;
                 arrput(per_HH_members[HH[HH_person]], HH_person);
-		per_HH_size[HH[HH_person]]++;
 		locale_count[HH_count]+=1;
-		if (per_HH_size[HH[HH_person]]>max_HH_size) {
-			max_HH_size=per_HH_size[HH[HH_person]];
+		if (arrlen(per_HH_members[HH[HH_person]]) > max_HH_size) {
+			max_HH_size=arrlen(per_HH_members[HH[HH_person]]);
 		}
 		HH_person++;
 		HH_count++;
@@ -220,9 +219,8 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 		city_size[city[HH_person]]++;
 		locale_count[placement]+=1;
                 arrput(per_HH_members[HH[HH_person]], HH_person);
-		per_HH_size[HH[HH_person]]++;
-		if (per_HH_size[HH[HH_person]]>max_HH_size) {
-			max_HH_size=per_HH_size[HH[HH_person]];
+		if (arrlen(per_HH_members[HH[HH_person]]) > max_HH_size) {
+			max_HH_size=arrlen(per_HH_members[HH[HH_person]]);
 		}
 		HH_person++;
 		HH_count++;
@@ -244,7 +242,7 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
                         only_once = 0;
 			tmp_county_HH=(int)(COV_rand() * locale_HH_count[placement]);
 			tmp_HH=county_list[placement][tmp_county_HH];
-                        while (per_HH_size[tmp_HH]+1 > typical_max_HH_sz) {
+                        while (arrlen(per_HH_members[tmp_HH])+1 > typical_max_HH_sz) {
                             tmp_county_HH++;
                             if (tmp_county_HH >= locale_HH_count[placement]) {
                                 if (only_once) {
@@ -273,9 +271,8 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 			city_size[city[HH_person]]++;
 			locale_count[placement]+=1;
                         arrput(per_HH_members[HH[HH_person]], HH_person);
-                        per_HH_size[HH[HH_person]]++;
-                        if (per_HH_size[HH[HH_person]]>max_HH_size) {
-                                max_HH_size=per_HH_size[HH[HH_person]];
+                        if (arrlen(per_HH_members[HH[HH_person]]) > max_HH_size) {
+                                max_HH_size=arrlen(per_HH_members[HH[HH_person]]);
                         }
 		}
 	}
@@ -299,7 +296,7 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
         int *HH_county_test;
         HH_county_test = (int *)calloc(21, sizeof(int));
 	for (i=0; i<num_households; i++) {
-		HH_dist_test[per_HH_size[i]]++;
+		HH_dist_test[arrlen(per_HH_members[i])]++;
                 HH_county_test[county_HH[i]]++;
 	}	
 	
@@ -934,8 +931,6 @@ int main (int argc, char *argv[]) {
 	int num_households = (int)(population/HH_size); // Number of households in population
 	int * HH;  // Households 
 	HH = (int*)calloc(population,sizeof(int));
-	int * per_HH_size; // Size of each household.  Need for infectiousness calculations.
-	per_HH_size = (int*)calloc(num_households,sizeof(int));
         int **per_HH_members;
         per_HH_members = (int**)calloc(num_households, sizeof(int*));
 
@@ -1198,7 +1193,7 @@ school or workplace. */
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, per_HH_members, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_HH, land_pop_total_density) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_members, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_HH, land_pop_total_density) ;
 
 	free(city_county);
 
@@ -1344,7 +1339,7 @@ school or workplace. */
                 itmp_fd = 0;
                 npi = 0;
                 for (hh = 0; hh < arrlen(locale_to_HH[i]); hh++) {
-                    npi += per_HH_size[locale_to_HH[i][hh]];
+                    npi += arrlen(per_HH_members[locale_to_HH[i][hh]]);
                 }
 #ifdef _OPENMP
 #pragma omp parallel for private(j) default(shared) reduction(+:itmp_fd)
@@ -1356,7 +1351,7 @@ school or workplace. */
                         int npj; /* number of persons in locale j */
                         npj = 0;
                         for (nn = 0; nn < arrlen(locale_to_HH[j]); nn++) {
-                            npj += per_HH_size[locale_to_HH[j][nn]];
+                            npj += arrlen(per_HH_members[locale_to_HH[j][nn]]);
                         }
 #if !defined(USE_LOCALE_DISTANCE)
 			d=distance(lat_locale[i], lon_locale[i], lat_locale[j], lon_locale[j], 'K');
@@ -1632,7 +1627,7 @@ school or workplace. */
 				       tmp_work_inf=calc_workplace_infect(job_status[infec_person], kappa, omega, workplace_size[job_status[infec_person]][workplace[infec_person]], severe[infec_person], tIw) ;
 				}
 				tmp_job_stat=job_status[infec_person];
-				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
+				tmp_house_inf=tIh*calc_household_infect(kappa, omega, arrlen(per_HH_members[HH[infec_person]]), alpha, severe[infec_person]); 
 			} else {
 				tmp_job_stat=5;
 				tIw = Iw[tmp_job_stat];
@@ -1641,7 +1636,7 @@ school or workplace. */
 				// Workplace/School transmission: People must be in same workplace and job type. // 
 				tmp_work_inf=calc_workplace_infect(5, kappa, omega, workplace_size[tmp_job_stat][workplace_tmp[infec_person]], severe[infec_person], tIw) ;
 				// Household transmission //
-				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
+				tmp_house_inf=tIh*calc_household_infect(kappa, omega, arrlen(per_HH_members[HH[infec_person]]), alpha, severe[infec_person]); 
                         }
 
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
@@ -1807,7 +1802,6 @@ school or workplace. */
             free(work_infect[i]);
         }
 	free(HH);
-	free(per_HH_size);
         for (i = 0; i < num_households; ++i) {
             arrfree(per_HH_members[i]);
         }
