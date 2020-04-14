@@ -81,7 +81,7 @@ int cmp_int(void const* a_, void const* b_) {
  * shortest distance to the center of that locality for purposes of
  * school and workplace choice.
  */
-void household_lat_long(int num_households, int * HH, double * lat_city, double * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, double * age, int * per_HH_size, int** per_HH_members, char ** county_names, double * county_pop, double tot_pop_actual, FILE* stats, int **county_p, int *num_locale, double *lat_locale, double *lon_locale, double *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, double land_pop_total_density) {
+void household_lat_long(int num_households, int * HH, double * lat_city, double * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, double * age, int * per_HH_size, int** per_HH_members, char ** county_names, double * county_pop, double tot_pop_actual, FILE* stats, int **county_p, int *num_locale, double *lat_locale, double *lon_locale, double *pop_density_init_num, int **locale_to_HH, int *locale_HH, double land_pop_total_density) {
 
 	/* Initialize helpers for population density */
 	double tot_pop_density=0;
@@ -161,7 +161,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 		arrput(county_list[HH_count], HH_count);
                 locale_HH[HH_count] = HH_count;
                 arrput(locale_to_HH[HH_count], HH_count);
-                locale_to_HH_n[HH_count]++;
 		locale_HH_count[HH_count]+=1;
 
                 /* Allocate an adult to the household */
@@ -210,7 +209,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 		arrput(county_list[placement], HH_count);
                 locale_HH[HH_count] = placement;
                 arrput(locale_to_HH[placement], HH_count);
-                locale_to_HH_n[placement]++;
 		locale_HH_count[placement]+=1;
 
 		/* Set up head of household. */
@@ -1195,14 +1193,12 @@ school or workplace. */
 
         int original_num_locale = num_locale;
         int **locale_to_HH;
-        int *locale_to_HH_n;
         int *locale_HH;
         locale_to_HH = (int **)calloc(num_locale, sizeof(int *));
-        locale_to_HH_n = (int *)calloc(num_locale, sizeof(int));
         locale_HH = (int *)calloc(num_households, sizeof(int));
 
 	/* Initialize households */
-	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, per_HH_members, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_to_HH_n, locale_HH, land_pop_total_density) ;
+	household_lat_long( num_households,  HH,  lat_city, long_city, num_cities, city, county, city_county, city_size, county_size, population, age, per_HH_size, per_HH_members, county_name, pop_county, tot_pop, stats, county_p, &num_locale, lat_locale, lon_locale, pop_density_init_num, locale_to_HH, locale_HH, land_pop_total_density) ;
 
 	free(city_county);
 
@@ -1347,7 +1343,7 @@ school or workplace. */
                 int hh;
                 itmp_fd = 0;
                 npi = 0;
-                for (hh = 0; hh < locale_to_HH_n[i]; hh++) {
+                for (hh = 0; hh < arrlen(locale_to_HH[i]); hh++) {
                     npi += per_HH_size[locale_to_HH[i][hh]];
                 }
 #ifdef _OPENMP
@@ -1359,7 +1355,7 @@ school or workplace. */
                         int nn;
                         int npj; /* number of persons in locale j */
                         npj = 0;
-                        for (nn = 0; nn < locale_to_HH_n[j]; nn++) {
+                        for (nn = 0; nn < arrlen(locale_to_HH[j]); nn++) {
                             npj += per_HH_size[locale_to_HH[j][nn]];
                         }
 #if !defined(USE_LOCALE_DISTANCE)
