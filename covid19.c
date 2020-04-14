@@ -1304,8 +1304,10 @@ school or workplace. */
 	free(city);
 
 	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
-	int workplace_size[6][max_num_WP];
-	memset(workplace_size, 0, 6*max_num_WP*sizeof(int));
+	int* workplace_size[6];
+        for (size_t i = 0; i < 6; ++i) {
+            workplace_size[i] = (int*)calloc(max_num_WP, sizeof(double));
+        }
 	for (i=0; i < population; i++) {
 		workplace_size[job_status[i]][workplace[i]]++;
 	}
@@ -1439,7 +1441,10 @@ school or workplace. */
 	}
 	
 	double *commun_nom1 = (double*)malloc(num_locale * sizeof(double));
-	double work_infect[6][max_num_WP];
+	double* work_infect[6];
+        for (size_t i = 0; i < 6; ++i) {
+            work_infect[i] = (double*)malloc(max_num_WP * sizeof(double));
+        }
 	double *house_infect = (double *)malloc(num_households * sizeof(double));
 
 	
@@ -1568,7 +1573,9 @@ school or workplace. */
 
 
 		memset(commun_nom1, 0, num_locale*sizeof(double));
-		memset(work_infect, 0, 6*max_num_WP*sizeof(double));
+		for (i = 0; i < 6; ++i) {
+                    memset(work_infect[i], 0, max_num_WP*sizeof(double));
+                }
 		memset(house_infect, 0, num_households*sizeof(double));
 
 
@@ -1797,12 +1804,18 @@ school or workplace. */
 
         free(commun_nom1);
         free(house_infect);
+        for (i = 0; i < 6; ++i) {
+            free(work_infect[i]);
+        }
 	free(HH);
 	free(per_HH_size);
         for (i = 0; i < num_households; ++i) {
             arrfree(per_HH_members[i]);
         }
         free(per_HH_members);
+        for (i = 0; i < 6; ++i) {
+            free(workplace_size[i]);
+        }
 	free(lat_city);
 	free(long_city);
 	free(city_size);
