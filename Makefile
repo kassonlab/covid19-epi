@@ -1,4 +1,4 @@
-SOURCES := covid19_splitloop.c COV_rand.c prop_distribution.c distance.c locale.c
+SOURCES := covid19.c COV_rand.c prop_distribution.c distance.c locale.c
 
 OBJECTS := $(SOURCES:%.c=%.o)
 
@@ -12,6 +12,7 @@ OPT = -O3 -march=native -mtune=native
 #DEBUG = -O0 -g
 CPPFLAGS = -DUSE_LOCALE_DISTANCE -DRMT_ENABLED=0 -IRemotery/lib
 CFLAGS = $(OPT) $(DEBUG) $(OMP)
+LDFLAGS = $(OPT) $(DEBUG) $(OMP)
 LIBS := -lm
 
 all: $(PROGRAM)

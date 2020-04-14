@@ -8,13 +8,13 @@ find_package(Threads REQUIRED)
 
 set(COMMON_SOURCES COV_rand.c COV_rand.h common.h distance.c distance.h locale.c locale.h prop_distribution.c prop_distribution.h)
 
-add_executable(covid19 covid19_splitloop.c ${COMMON_SOURCES})
-add_executable(covid19-gpu covid19_splitloop.c ${COMMON_SOURCES} COV_gpu.cu)
+add_executable(covid19 covid19.c ${COMMON_SOURCES})
+add_executable(covid19-gpu covid19.c ${COMMON_SOURCES} COV_gpu.cu)
 
 target_compile_options(covid19 PRIVATE "-march=native" "-mtune=native")
 
-target_compile_definitions(covid19 PRIVATE USE_LOCALE_DISTANCE RMT_ENABLED=0)
-target_compile_definitions(covid19-gpu PRIVATE COV_GPU USE_LOCALE_DISTANCE RMT_ENABLED=0)
+target_compile_definitions(covid19 PRIVATE COV_GPU=0 USE_LOCALE_DISTANCE RMT_ENABLED=0)
+target_compile_definitions(covid19-gpu PRIVATE COV_GPU=1 USE_LOCALE_DISTANCE RMT_ENABLED=0)
 
 target_link_libraries(covid19 PRIVATE OpenMP::OpenMP_C Threads::Threads)
 target_link_libraries(covid19-gpu PRIVATE OpenMP::OpenMP_C Threads::Threads)
