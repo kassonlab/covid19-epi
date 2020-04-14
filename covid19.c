@@ -354,7 +354,7 @@ void city_lat_long(int *num_cities, double * lat_city, double * long_city, char 
         int i, j;
 
 	for (i=0; i < 2000; i++) {
-		int got = fscanf(fp, "%[^,\n]%*c%[^,\n]%*c%[^,\n]%*c%f%*c%f\n", tmp1, tmp, tmp2, &tmp_lat, &tmp_lon);
+		int got = fscanf(fp, "%[^,\n]%*c%[^,\n]%*c%[^,\n]%*c%lf%*c%lf\n", tmp1, tmp, tmp2, &tmp_lat, &tmp_lon);
   		if (got != 5) break; // wrong number of tokens - maybe end of file
 			
 		/* Save city name, longitude, latitude, and increase number of cities. Looking at unique municipalities.*/
@@ -1280,7 +1280,7 @@ school or workplace. */
         //int num_locale = 0, max_locale = 0;
         double tmp_lat, tmp_lon, pop_den, land_pop_total_density = 0;
 	FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.   
-	while ((ret = fscanf(lat_long, "%f%*c%f%*c%f", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
+	while ((ret = fscanf(lat_long, "%lf%*c%lf%*c%lf", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
 //	    if (pop_den < 10000000/population ) {
 //		break;
 //	    } else {
@@ -1359,7 +1359,7 @@ school or workplace. */
             initialize = (double *)calloc(15, sizeof(double));
             FILE *iif = fopen(initial_infect_filename, "r");
             for (i = 0; i < 15; i++) {
-                fscanf(iif, "%f", &initialize[i]);
+                fscanf(iif, "%lf", &initialize[i]);
             }
             fclose(iif);
         }
