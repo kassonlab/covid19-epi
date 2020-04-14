@@ -20,7 +20,7 @@ int typical_max_HH_sz = 7;
 
 int sort_household_members = 0;
 
-int full_fd = 0, full_kappa = 0;
+int full_kappa = 0;
 
 double betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
 
@@ -915,7 +915,6 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-betah")) betah_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-betaw")) betaw_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-R0")) R0_scale=atof(argv[++i]);
-    		else if (!strcmp(argv[i],"-full_fd")) full_fd = 1;
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
     		else if (!strcmp(argv[i],"-use_seed")) seed = atol(argv[++i]);
@@ -1327,13 +1326,6 @@ school or workplace. */
         fclose(stats);
 	
 
-	double fd_calc[22000];
-	/*Precalculate density kernel */
-	for (i=0; i<22000; i++) {
-		fd_calc[i]=1/(1+pow((((double)i/10.)/4), 3)); //kernel density function as parameterized for GB.	
-	}	
-
-
         printf("Starting density kernel calculations\n");
         fflush(stdout);
 	
@@ -1366,11 +1358,7 @@ school or workplace. */
                         d = locale_distance(locale_list[i], locale_list[j]);
 #endif
 
-                        if (full_fd) {
-                            tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
-                        } else {
-                            tmp_fd = fd_calc[(int)(d*10)]; //kernel density function as parameterized for GB.
-                        }
+                        tmp_fd = 1/(1+pow((d/4), 3)); //kernel density function as parameterized for GB.
                         itmp_fd += tmp_fd * npj;
 			fd_tot[j] += tmp_fd * npi;
 		}
