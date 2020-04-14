@@ -49,7 +49,7 @@ void age_dist (double * age, int population, FILE* stats, int * age_distrib) {
         free(age_dst);
 
 
-// Uncomment to test age distribution.  Tested JMG 2020-03-20.
+        /* Print age distribution */
 	int age_dist_test[9]={0};
 	for (i=0; i<population; i++) {
 		age_dist_test[(int)floor(age[i]/10)]++;
@@ -61,8 +61,6 @@ void age_dist (double * age, int population, FILE* stats, int * age_distrib) {
 	}
 	fprintf(stats, "\n\n");
         fflush(stats);
-       // exit(0);
-//
 }
 
 int cmp_int(void const* a_, void const* b_) {
@@ -76,7 +74,13 @@ int cmp_int(void const* a_, void const* b_) {
 
 
 
-/* Puts households in certain locations based on population density distribution.  Only really correct for full population but works for smaller populations.  Biases towards smaller households for smaller populations.  Each household is also fed into a locality based on the shortest distance to the center of that locality for purposes of school and workplace choice. */
+/* Puts households in certain locations based on population density
+ * distribution.  Only really correct for full population but works for
+ * smaller populations.  Biases towards smaller households for smaller
+ * populations.  Each household is also fed into a locality based on the
+ * shortest distance to the center of that locality for purposes of
+ * school and workplace choice.
+ */
 void household_lat_long(int num_households, int * HH, double * lat_city, double * long_city, int num_cities, int * city, int * county, int * city_county, int * city_size, int * county_size, int population, double * age, int * per_HH_size, int** per_HH_members, char ** county_names, double * county_pop, double tot_pop_actual, FILE* stats, int **county_p, int *num_locale, double *lat_locale, double *lon_locale, double *pop_density_init_num, int **locale_to_HH, int *locale_to_HH_n, int *locale_HH, double land_pop_total_density) {
 
 	/* Initialize helpers for population density */
@@ -263,7 +267,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
                             tmp_HH=county_list[placement][tmp_county_HH];
                         }
 			HH[HH_person]=tmp_HH;
-		//	printf("HH %i %i %i %i %f %i \n", HH[HH_person], placement, locale_HH_count[placement], HH_person, pop_density_init_num[placement], locale_count[placement]);
 			fflush(stdout);
 			city[HH_person]=city_HH[HH[HH_person]];	
 			county[HH_person]=county_HH[HH[HH_person]];	
@@ -292,7 +295,7 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 	}
 
 
-// Uncomment to test household distribution.  Tested JMG 2020-03-22.
+        /* Print household distribution */
 	int *HH_dist_test;
         HH_dist_test = (int *)calloc(max_HH_size+1, sizeof(int));
         int *HH_county_test;
@@ -427,7 +430,7 @@ void job_dist(int * job_status, int ** job_status_city, double * age, int * coun
 	}
 
 
-// Uncomment to test job distribution.  Tested JMG 2020-03-20. 
+        /* Print job distribution */
 	int job_dist_test[6]={0};
 	int *unemployed;
         unemployed = (int *)calloc(num_counties, sizeof(int));
@@ -465,9 +468,6 @@ void job_dist(int * job_status, int ** job_status_city, double * age, int * coun
             free(city_dist_test[i]);
         }
         free(city_dist_test);
-
-//	
-
 }
 
 void workplace_dist(int * workplace, int * job_status, int ** job_status_county, int * city, int num_cities, int * county, int num_counties, int population, int * max_num_WP , int * hosp_num, FILE * stats) {
@@ -541,7 +541,7 @@ void workplace_dist(int * workplace, int * job_status, int ** job_status_county,
 	}
 
 	for (i=0; i < population; i++) {
-		//Try to minimize necessary memory by making job_numbers independent with job_status. //
+		/* Try to minimize necessary memory by making job_numbers independent with job_status. */
 		int prior_workplaces=0;
 		if (job_status[i] < 3 && num_workplaces[job_status[i]][city[i]] > 0) {
                         for (j=0; j < city[i]; j++) {
@@ -574,8 +574,15 @@ double calc_kappa(double t, double tau, int symptomatic, double dt, double * kap
 	double kappa;
 	double t1;
 	int t2;
-	//###Determine kappa for infected person.  This is the infectiousness of the person based on time since infection started.  Latency period is 4.6 days.  Infection starts at 5.1 days and lasts for 6 days.  Sympotmatic people are twice as likely to infect others as asymptomatic.
-	// Kappa is a log normal function with mean of -0.72 and standard deviation of 1.8.  From Ferguson Nature 2005
+
+        /* Determine kappa for infected person.  This is the
+         * infectiousness of the person based on time since infection
+         * started.  Latency period is 4.6 days.  Infection starts at
+         * 5.1 days and lasts for 6 days.  Sympotmatic people are twice
+         * as likely to infect others as asymptomatic.  Kappa is a log
+         * normal function with mean of -0.72 and standard deviation of
+         * 1.8.  From Ferguson Nature 2005
+         */
 	if (t-tau <= 4.6) {
 		kappa=0.;
 	} else if (t-tau>11.1 && hosp==0 && icu==0) {
@@ -732,10 +739,6 @@ void segment_population(int* num_sus, int* num_infectious, int* num_hosp, int* n
 		
 	}
 	fprintf(lat_lon_out, "\n\n");	
-
-/* Uncomment for information */
-//	printf("Time %i infections i %i num_sus %i infected[i] %i num_infectious %i num_hosp %i num_icu %i \n", t, i, *num_sus, infected[i], *num_infectious, *num_hosp, *num_icu);
-
 }
 
 double calc_household_infect(double kappa, double omega, int HH_size, double alpha, int severe) {
@@ -743,7 +746,6 @@ double calc_household_infect(double kappa, double omega, int HH_size, double alp
 	double betah=0.55; // Scaled from betah=0.4 in influenza pandemic with R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
 	return(betah_scale*betah*kappa*(1+(double)severe*(omega-1))/(pow((double)HH_size,alpha))); 
-
 }
 
 double calc_workplace_infect(int job_status, double kappa, double omega, int workplace_size, int severe, double Iw) {
@@ -1398,9 +1400,6 @@ school or workplace. */
         }
         free(locale_to_HH);
 
-	/* Initialization complete... start simulation */
-
-
 
 	/* Initialize constants */
 	double alpha=0.8 ; // From Ferguson Nature 2006
@@ -1618,14 +1617,8 @@ school or workplace. */
 				}
 			}
                         commun_nom1[j]=tmp_comm_inf/fd_tot[j];
-//		printf("infec_person locale %i j %i num_infectious %i tmp %f actual %f %f \n", num_locale, j, num_infectious, tmp_comm_inf, commun_nom1[j], commun_nom1[j]/fd_tot[j]);
 		}	
 
-/* Would be nice to have a omp par for here but something is currently not right when turning it on
-#ifdef _OPENMP
-#pragma omp parallel for private(i) default(shared) 
-#endif
-*/
 		for (i=0; i<num_infectious; i++) {
 			int infec_person; //Counter for infected person.
 			double kappa; // #Infectiousness
@@ -1661,15 +1654,9 @@ school or workplace. */
 				// Household transmission //
 				tmp_house_inf=tIh*calc_household_infect(kappa, omega, per_HH_size[HH[infec_person]], alpha, severe[infec_person]); 
                         }
-/* Would be nice to have a omp par for here but something is currently not right when turning it on
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-*/
-			{
+
 			work_infect[tmp_job_stat][workplace[infec_person]]+=tmp_work_inf;
 			house_infect[HH[infec_person]]+=tmp_house_inf;
-			}
 		}
 
 
@@ -1763,12 +1750,9 @@ school or workplace. */
 								intervene[per_HH_members[hh][i1]]=4;
 							}
 						}
-			
 					}
 				}
 			}	
-
-//		printf("sus_person %i \n", sus_person);
 		}
 
 		// After 5 days of symptoms, people are randomly put into hospital based on age distributions. //
