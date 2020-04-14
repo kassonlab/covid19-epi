@@ -1003,7 +1003,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-use_seed")) seed = atol(argv[++i]);
                 else if (!strcmp(argv[i],"-sort_HH")) sort_household_members = 1;
     		else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
-		else if (!strcmp(argv[i],"rmt_port")) rmt_port = atoi(argv[++i]);
+		else if (!strcmp(argv[i],"-rmt_port")) rmt_port = atoi(argv[++i]);
   	}
 
 	Remotery* rmt;
@@ -1412,8 +1412,10 @@ school or workplace. */
 	free(city);
 
 	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
-	int workplace_size[6][max_num_WP];
-	memset(workplace_size, 0, 6*max_num_WP*sizeof(int));
+	int* workplace_size[6];
+	for (size_t i = 0; i < 6; ++i) {
+		workplace_size[i] = (int*)calloc(max_num_WP, sizeof(double));
+	}
 	for (i=0; i < population; i++) {
 		workplace_size[job_status[i]][workplace[i]]++;
 	}
@@ -1550,7 +1552,10 @@ school or workplace. */
 	}
 	
 	double *commun_nom1 = (double*)malloc(num_locale * sizeof(double));
-	double work_infect[6][max_num_WP];
+	double* work_infect[6];
+	for (size_t i = 0; i < 6; ++i) {
+		work_infect[i] = (double*)malloc(max_num_WP * sizeof(double));
+	}
 	double *house_infect = (double *)malloc(num_households * sizeof(double));
 
 	
@@ -1681,7 +1686,9 @@ school or workplace. */
 
 
 		memset(commun_nom1, 0, num_locale*sizeof(double));
-		memset(work_infect, 0, 6*max_num_WP*sizeof(double));
+		for (i = 0; i < 6; ++i) {
+			memset(work_infect[i], 0, max_num_WP*sizeof(double));
+		}
 		memset(house_infect, 0, num_households*sizeof(double));
 
 		locale_infectious_loop(num_locale, population, j, num_households, num_infectious, infectious, Ic, intervene, t, tau, tauI, interIc, symptomatic, dt, kappa_vals, count_kappa_vals, hosp_pop, icu_pop, lat_locale, lon_locale, locale_HH, HH, locale_list, omega, severe, full_kappa, R0_scale, betac_scale, commun_nom1, fd_tot);
@@ -1903,6 +1910,9 @@ school or workplace. */
 
         free(commun_nom1);
         free(house_infect);
+	for (i = 0; i < 6; ++i) {
+		free(work_infect[i]);
+	}
 	free(HH);
 	free(per_HH_size);
 
@@ -1910,6 +1920,10 @@ school or workplace. */
 		arrfree(per_HH_members[i]);
 	}
 	free(per_HH_members);
+
+	for (i = 0; i < 6; ++i) {
+		free(workplace_size[i]);
+	}
 
 	free(lat_city);
 	free(long_city);
