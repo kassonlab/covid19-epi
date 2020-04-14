@@ -1241,17 +1241,17 @@ school or workplace. */
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	double initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139}; 
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
-//	double initialize[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
+//	int initialize_base[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
 	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/21 ******/
-	double initialize_base[15]={3955, 4068, 5198, 3955, 3616, 4633, 4633, 4859, 5085, 3051, 1921, 2712, 1469, 1695, 452};
-        double *initialize = initialize_base;
+	int initialize_base[15]={3955, 4068, 5198, 3955, 3616, 4633, 4633, 4859, 5085, 3051, 1921, 2712, 1469, 1695, 452};
+        int *initialize = initialize_base;
 	double tmp_t;
 
         if (initial_infect_filename != NULL) {
-            initialize = (double *)calloc(15, sizeof(double));
+            initialize = (int *)calloc(15, sizeof(int));
             FILE *iif = fopen(initial_infect_filename, "r");
             for (i = 0; i < 15; i++) {
-                fscanf(iif, "%lf", &initialize[i]);
+                fscanf(iif, "%d", &initialize[i]);
             }
             fclose(iif);
         }
@@ -1263,13 +1263,16 @@ school or workplace. */
 		int l=-tmp_t;
 		for ( j=0; j<21; j++ ) {
 			initial_infections[j]=initial_per[j]*initialize[l];
-			fprintf(stats, "time %f county %i initial_infections %i fraction_of_infections %f total_intialized %f \n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
+			fprintf(stats, "time %f county %i initial_infections %i fraction_of_infections %f total_intialized %i\n", tmp_t, j, initial_infections[j], initial_per[j], initialize[l]);
 		}
 		fprintf(stats, "\n\n");
                 fflush(stats);
                 /* Randomly assign initial infections */
                 initialize_infections( initial_infections,  tau,  infected,  severe,  symptomatic,  county,  &num_infect,  num_counties,  symptomatic_per,  population, dt, tmp_t, lat_locale, lon_locale, num_infect_county, num_infect_age, age, county_p, county_size, locale_HH, HH, tmp_lat_v, tmp_lon_v) ;
 	}
+        if (initial_infect_filename != NULL) {
+            free(initialize);
+        }
         free(tmp_lat_v);
         free(tmp_lon_v);
         fflush(stats);
