@@ -12,6 +12,11 @@ add_executable(covid19 covid19.c ${COMMON_SOURCES})
 add_executable(covid19-gpu covid19.c ${COMMON_SOURCES} COV_gpu.cu)
 
 target_compile_options(covid19 PRIVATE "-march=native" "-mtune=native")
+target_compile_options(covid19-gpu PRIVATE
+    "$<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-march=native>"
+    "$<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-mtune=native>"
+    "$<$<COMPILE_LANGUAGE:CUDA>:--compiler-options=-march=native>"
+    "$<$<COMPILE_LANGUAGE:CUDA>:--compiler-options=-mtune=native>")
 
 target_compile_definitions(covid19 PRIVATE COV_GPU=0 USE_LOCALE_DISTANCE RMT_ENABLED=0)
 target_compile_definitions(covid19-gpu PRIVATE COV_GPU=1 USE_LOCALE_DISTANCE RMT_ENABLED=0)
