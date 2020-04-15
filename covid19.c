@@ -87,8 +87,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 	double tot_pop_density=0;
 
 	/* Initialize helpers for household distribution */
-	double* lat_HH = malloc(num_households * sizeof(double));
-	double* lon_HH = malloc(num_households * sizeof(double));
 	int* city_HH = malloc(num_households * sizeof(int));
 	int* county_HH = malloc(num_households * sizeof(int));
 	int county_num;	
@@ -154,8 +152,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 		tmp_county_density[county_num]+=pop_density_init_num[HH_count]; 
 
 		/* Set up household */
-		lat_HH[HH_count]=tmp_lat;
-		lon_HH[HH_count]=tmp_lon;
 		city_HH[HH_count]=city_num;
 		county_HH[HH_count]=county_num;
 		arrput(county_list[HH_count], HH_count);
@@ -201,8 +197,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 		if (locale_HH_count[placement]*2.2 > pop_density_init_num[placement]) {
 				placement++; /* continue with next locale */
 		}	
-		lat_HH[HH_count]=lat_HH[placement];	
-		lon_HH[HH_count]=lon_HH[placement];
 		city_HH[HH_count]=city_HH[placement];
 		county_HH[HH_count]=county_HH[placement];
 		arrput(county_list[placement], HH_count);
@@ -323,8 +317,6 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 	free(locale_count);
 	free(locale_HH_count);
 
-        free(lat_HH);
-        free(lon_HH);
         free(city_HH);
         free(county_HH);
 }
