@@ -1741,25 +1741,27 @@ school or workplace. */
 				
 			}
 		}
-        ret = clock_gettime(CLOCK_MONOTONIC, &t2);
-        step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
-        printf("time %5.2f\n", step_time);
-        fflush(stdout);
-	fprintf(output_file, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
-	fflush(output_file);
 
-	fprintf(output_HCW, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_healthcare %i \n", step_time, t, num_infect_HCW, num_infectious_HCW, num_hosp_HCW, num_icu_HCW, num_dead_HCW, num_recovered_HCW, num_recovered_hosp_HCW, num_recovered_icu_HCW, num_contact_work_HCW, num_contact_school_HCW, num_contact_house_HCW, num_contact_commun_HCW, num_HCW);
-	fflush(output_HCW);
-	
-	for (file_count=0; file_count<num_counties; file_count++) {
-		fprintf(county_files[file_count], "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_county[file_count], num_infectious_county[file_count], num_hosp_county[file_count], num_icu_county[file_count], num_dead_county[file_count], num_recovered_county[file_count], num_recovered_hosp_county[file_count], num_recovered_icu_county[file_count], num_contact_work_county[file_count], num_contact_school_county[file_count], num_contact_house_county[file_count], num_contact_commun_county[file_count], county_size[file_count]);
-		fflush(county_files[file_count]);
-	}
+                ret = clock_gettime(CLOCK_MONOTONIC, &t2);
+                step_time = ((double)t2.tv_sec + (double)t2.tv_nsec/nsdiv) - ((double)t1.tv_sec + (double)t1.tv_nsec/nsdiv);
+                printf("time %5.2f\n", step_time);
+                fflush(stdout);
 
-	for (file_count=0; file_count<90; file_count+=5) {
-		fprintf(age_files[file_count/5], "Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_age[file_count/5], num_infectious_age[file_count/5], num_hosp_age[file_count/5], num_icu_age[file_count/5], num_dead_age[file_count/5], num_recovered_age[file_count/5], num_recovered_hosp_age[file_count/5], num_recovered_icu_age[file_count/5], num_contact_work_age[file_count/5], num_contact_school_age[file_count/5], num_contact_house_age[file_count/5], num_contact_commun_age[file_count/5], age_distrib[file_count/5]);
-		fflush(age_files[file_count/5]);
-	}
+                fprintf(output_file, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i \n", step_time, t, num_infect, num_infectious, num_hosp, num_icu, num_dead, num_recovered, recovered_hosp, recovered_icu, num_contact_work, num_contact_school, num_contact_house, num_contact_commun);
+                fflush(output_file);
+
+                fprintf(output_HCW, "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_healthcare %i \n", step_time, t, num_infect_HCW, num_infectious_HCW, num_hosp_HCW, num_icu_HCW, num_dead_HCW, num_recovered_HCW, num_recovered_hosp_HCW, num_recovered_icu_HCW, num_contact_work_HCW, num_contact_school_HCW, num_contact_house_HCW, num_contact_commun_HCW, num_HCW);
+                fflush(output_HCW);
+                
+                for (file_count=0; file_count<num_counties; file_count++) {
+                        fprintf(county_files[file_count], "Walltime/timestep %6.2f Time %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_county[file_count], num_infectious_county[file_count], num_hosp_county[file_count], num_icu_county[file_count], num_dead_county[file_count], num_recovered_county[file_count], num_recovered_hosp_county[file_count], num_recovered_icu_county[file_count], num_contact_work_county[file_count], num_contact_school_county[file_count], num_contact_house_county[file_count], num_contact_commun_county[file_count], county_size[file_count]);
+                        fflush(county_files[file_count]);
+                }
+
+                for (file_count=0; file_count<90; file_count+=5) {
+                        fprintf(age_files[file_count/5], "Walltime/timestep %6.2f Timestep %6.2f num_infected %i num_infectious %i num_in_hosp %i num_in_icu %i num_dead %i recovered_tot %i recovered_from_hosp %i recovered_from_icu %i contact_work %i contact_school %i contact_home %i contact_community %i total_individuals %i \n", step_time, t, num_infect_age[file_count/5], num_infectious_age[file_count/5], num_hosp_age[file_count/5], num_icu_age[file_count/5], num_dead_age[file_count/5], num_recovered_age[file_count/5], num_recovered_hosp_age[file_count/5], num_recovered_icu_age[file_count/5], num_contact_work_age[file_count/5], num_contact_school_age[file_count/5], num_contact_house_age[file_count/5], num_contact_commun_age[file_count/5], age_distrib[file_count/5]);
+                        fflush(age_files[file_count/5]);
+                }
 
 		t=t+dt;
 	}
@@ -1805,7 +1807,6 @@ school or workplace. */
 	free(recovered);
 	free(dead);
 	free(workplace_tmp);
-
 
 	for (i=0; i<num_counties; i++) {
 		fclose(county_files[i]);
