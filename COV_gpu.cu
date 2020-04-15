@@ -7,6 +7,9 @@
 #include <thrust/host_vector.h>
 #include "locale.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 /* Earth flattening and radius according to GRS80 taken from https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980 */
 #define FLATTENING 0.003352810681183637418
@@ -153,6 +156,7 @@ struct LoopInvariantData {
     thrust::device_vector<int> HH;
     thrust::device_vector<struct locale> locale_list;
     thrust::device_vector<int> severe;
+    thrust::device_vector<double> kappa_cache;
 };
 
 
@@ -182,6 +186,7 @@ static __global__ void locale_infectious_step_kernel(
     int const* HH,
     struct locale const* locale_list,
     int const* severe,
+    double const* kappa_cache,
 
     double* tmp_comm_inf_arr)
 {
@@ -196,7 +201,7 @@ static __global__ void locale_infectious_step_kernel(
         if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
             tIc = interIc[intervene[infec_person]];
         }
-        kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person], full_kappa, R0_scale);
+        kappa = kappa_cache[i];
     
         if (hosp_pop[infec_person]==0) {
             double d; //distance between people.
@@ -250,6 +255,7 @@ void locale_infectious_step(LoopInvariantData const& lid, int population, int j,
         lid.HH.data().get(),
         lid.locale_list.data().get(),
         lid.severe.data().get(),
+        lid.kappa_cache.data().get(),
 
         d_tmp_comm_inf_arr.data().get());
 
@@ -277,6 +283,19 @@ extern "C" void locale_infectious_loop(int num_locale, int population, int num_h
     lid.HH.assign(HH, HH + population);
     lid.locale_list.assign(locale_list, locale_list + num_locale);
     lid.severe.assign(severe, severe + population);
+    
+    thrust::host_vector<double> kappa_cache(num_infectious);
+    size_t i;
+
+#ifdef _OPENMP
+#pragma omp parallel for private(i) default(shared)
+#endif
+    for (i = 0; i < num_infectious; ++i) {
+        int infec_person = infectious[i];
+        kappa_cache[i] = calc_kappa(t, tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person], full_kappa, R0_scale);
+    }
+    
+    lid.kappa_cache = kappa_cache;
 
 	for (int j=0; j<num_locale; j++) {
 		double tmp_comm_inf = 0.0;
