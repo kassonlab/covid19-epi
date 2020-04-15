@@ -7,10 +7,6 @@
 #include <thrust/host_vector.h>
 #include "locale.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 /* Earth flattening and radius according to GRS80 taken from https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980 */
 #define FLATTENING 0.003352810681183637418
 #define Earth_Radius_GRS80 6378.137
@@ -287,9 +283,6 @@ extern "C" void locale_infectious_loop(int num_locale, int population, int num_h
     thrust::host_vector<double> kappa_cache(num_infectious);
     size_t i;
 
-#ifdef _OPENMP
-#pragma omp parallel for private(i) default(shared)
-#endif
     for (i = 0; i < num_infectious; ++i) {
         int infec_person = infectious[i];
         kappa_cache[i] = calc_kappa(t, tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person], full_kappa, R0_scale);
