@@ -1485,6 +1485,10 @@ school or workplace. */
         printf("Starting simulation\n");
         fflush(stdout);
 
+        /* Precalculated kappa for infected, recalculated each timestep */
+        double *infect_kappa = NULL;
+        int sz_infect_kappa = 0;
+
         ret = clock_gettime(CLOCK_MONOTONIC, &T1);
 	for (time_step=0; time_step<(tot_time/dt); time_step++) {
                 ret = clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -1553,6 +1557,15 @@ school or workplace. */
                 }
 		memset(house_infect, 0, num_households*sizeof(double));
 
+                if (num_infectious > sz_infect_kappa) {
+                    sz_infect_kappa = num_infectious;
+                    infect_kappa = (double *)realloc(infect_kappa, sz_infect_kappa * sizeof(double));
+                }
+                for(i = 0; i < num_infectious; i++) {
+                    int infec_person;
+                    infec_person=infectious[i];
+                    infect_kappa[i] = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
+                }
 
 #ifdef _OPENMP
 #pragma omp parallel for private(j, i) default(shared)
@@ -1568,7 +1581,7 @@ school or workplace. */
 				if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
 					tIc=interIc[intervene[infec_person]];
 				}
-				kappa = calc_kappa( t,  tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person]);
+				kappa = infect_kappa[i];
 
 				if (hosp_pop[infec_person]==0) {
 					double d; //distance between people.
@@ -1770,6 +1783,8 @@ school or workplace. */
         fprintf(output_file, "Total time %8.3f\n", step_time);
         printf("Total simulation time %8.3f\n", step_time);
 
+
+        free(infect_kappa);
 
         free(commun_nom1);
         free(house_infect);
