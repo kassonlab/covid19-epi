@@ -102,48 +102,13 @@ static __device__ double d_distance(double lat1, double lon1, double lat2, doubl
     }
 }
 
-static __device__ double calc_kappa(double t, double tau, int symptomatic, double dt, double const* kappa_vals, int hosp, int icu, int full_kappa, double R0_scale) {
-
-	double kappa;
-	double t1;
-    int t2;
-    
-        /* Determine kappa for infected person.  This is the
-         * infectiousness of the person based on time since infection
-         * started.  Latency period is 4.6 days.  Infection starts at
-         * 5.1 days and lasts for 6 days.  Sympotmatic people are twice
-         * as likely to infect others as asymptomatic.  Kappa is a log
-         * normal function with mean of -0.72 and standard deviation of
-         * 1.8.  From Ferguson Nature 2005
-         */
-	if (t-tau <= 4.6) {
-		kappa=0.;
-	} else if (t-tau>11.1 && hosp==0 && icu==0) {
-		kappa=0.; //# Recovered or dead
-	} else {
-		/* First 2 lines calculates kappa on the fly, second two get precalculated kappa from array. */
-                if (full_kappa) {
-                    t1=(log(t-tau-4.6)+0.72)/1.8;
-                    kappa=exp(-0.5*pow(t1,2))/((t-tau-4.6)*1.8*sqrt(2*M_PI));
-                } else {
-                    t2=(t-tau)/dt;
-                    kappa=kappa_vals[t2];
-                }
-	}
-	if (symptomatic==0) {
-		kappa=kappa*0.5;
-	}
-	return(kappa*R0_scale);
-}
-
 struct LoopInvariantData {
     thrust::device_vector<int> infectious;
+    thrust::device_vector<double> infect_kappa;
     thrust::device_vector<int> intervene;
     thrust::device_vector<double> tau;
     thrust::device_vector<double> tauI;
     thrust::device_vector<double> interIc;
-    thrust::device_vector<int> symptomatic;
-    thrust::device_vector<double> kappa_vals;
     thrust::device_vector<int> hosp_pop;
     thrust::device_vector<int> icu_pop;
     thrust::device_vector<double> lat_locale;
@@ -152,7 +117,6 @@ struct LoopInvariantData {
     thrust::device_vector<int> HH;
     thrust::device_vector<struct locale> locale_list;
     thrust::device_vector<int> severe;
-    thrust::device_vector<double> kappa_cache;
 };
 
 
@@ -163,17 +127,14 @@ static __global__ void locale_infectious_step_kernel(
     double t,
     double dt,
     double omega,
-    int full_kappa,
-    double R0_scale,
     double betac_scale,
 
     int const* infectious,
+    double const* infect_kappa,
     int const* intervene,
     double const* tau,
     double const* tauI,
     double const* interIc,
-    int const* symptomatic,
-    double const* kappa_vals,
     int const* hosp_pop,
     int const* icu_pop,
     double const* lat_locale,
@@ -182,7 +143,6 @@ static __global__ void locale_infectious_step_kernel(
     int const* HH,
     struct locale const* locale_list,
     int const* severe,
-    double const* kappa_cache,
 
     double* tmp_comm_inf_arr)
 {
@@ -197,7 +157,7 @@ static __global__ void locale_infectious_step_kernel(
         if ( intervene[infec_person] > 0 && t>tau[infec_person]+tauI[intervene[infec_person]]) {
             tIc = interIc[intervene[infec_person]];
         }
-        kappa = kappa_cache[i];
+        kappa = infect_kappa[i];
     
         if (hosp_pop[infec_person]==0) {
             double d; //distance between people.
@@ -214,7 +174,7 @@ static __global__ void locale_infectious_step_kernel(
     }
 }
 
-void locale_infectious_step(LoopInvariantData const& lid, int population, int j, int num_households, int num_infectious, double Ic, double t, double dt, double omega, double& out_tmp_comm_inf, int full_kappa, double R0_scale, double betac_scale) {
+void locale_infectious_step(LoopInvariantData const& lid, int population, int j, int num_households, int num_infectious, double Ic, double t, double dt, double omega, double& out_tmp_comm_inf, double betac_scale) {
     if (num_infectious == 0) {
         out_tmp_comm_inf = 0.0;
         return;
@@ -232,17 +192,14 @@ void locale_infectious_step(LoopInvariantData const& lid, int population, int j,
         t,
         dt,
         omega,
-        full_kappa,
-        R0_scale,
         betac_scale,
         
         lid.infectious.data().get(),
+        lid.infect_kappa.data().get(),
         lid.intervene.data().get(),
         lid.tau.data().get(),
         lid.tauI.data().get(),
         lid.interIc.data().get(),
-        lid.symptomatic.data().get(),
-        lid.kappa_vals.data().get(),
         lid.hosp_pop.data().get(),
         lid.icu_pop.data().get(),
         lid.lat_locale.data().get(),
@@ -251,26 +208,24 @@ void locale_infectious_step(LoopInvariantData const& lid, int population, int j,
         lid.HH.data().get(),
         lid.locale_list.data().get(),
         lid.severe.data().get(),
-        lid.kappa_cache.data().get(),
 
         d_tmp_comm_inf_arr.data().get());
 
     out_tmp_comm_inf = thrust::reduce(d_tmp_comm_inf_arr.begin(), d_tmp_comm_inf_arr.end(), 0.0, thrust::plus<double>());
 }
 
-extern "C" void locale_infectious_loop(int num_locale, int population, int num_households, int num_infectious, int* infectious, double Ic, int* intervene, double t, double* tau, double* tauI, double* interIc, int* symptomatic, double dt, double* kappa_vals, int count_kappa_vals, int* hosp_pop, int* icu_pop, double* lat_locale, double* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, double omega, int* severe, int full_kappa, double R0_scale, double betac_scale, double* commun_nom1, double* fd_tot) {
+extern "C" void locale_infectious_loop(int num_locale, int population, int num_households, int num_infectious, int* infectious, double const* infect_kappa, double Ic, int* intervene, double t, double* tau, double* tauI, double* interIc, double dt, int* hosp_pop, int* icu_pop, double* lat_locale, double* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, double omega, int* severe, double betac_scale, double* commun_nom1, double* fd_tot) {
 
     size_t const num_I = 9;
 
     // Allocate device and host arrays
     LoopInvariantData lid;
     lid.infectious.assign(infectious, infectious + num_infectious);
+    lid.infect_kappa.assign(infect_kappa, infect_kappa + num_infectious);
     lid.intervene.assign(intervene, intervene + population);
     lid.tau.assign(tau, tau + population);
     lid.tauI.assign(tauI, tauI + num_I);
     lid.interIc.assign(interIc, interIc + num_I);
-    lid.symptomatic.assign(symptomatic, symptomatic + population);
-    lid.kappa_vals.assign(kappa_vals, kappa_vals + count_kappa_vals);
     lid.hosp_pop.assign(hosp_pop, hosp_pop + population);
     lid.icu_pop.assign(icu_pop, icu_pop + population);
     lid.lat_locale.assign(lat_locale, lat_locale + num_locale);
@@ -279,21 +234,11 @@ extern "C" void locale_infectious_loop(int num_locale, int population, int num_h
     lid.HH.assign(HH, HH + population);
     lid.locale_list.assign(locale_list, locale_list + num_locale);
     lid.severe.assign(severe, severe + population);
-    
-    thrust::host_vector<double> kappa_cache(num_infectious);
-    size_t i;
-
-    for (i = 0; i < num_infectious; ++i) {
-        int infec_person = infectious[i];
-        kappa_cache[i] = calc_kappa(t, tau[infec_person], symptomatic[infec_person], dt, kappa_vals, hosp_pop[infec_person], icu_pop[infec_person], full_kappa, R0_scale);
-    }
-    
-    lid.kappa_cache = kappa_cache;
 
 	for (int j=0; j<num_locale; j++) {
 		double tmp_comm_inf = 0.0;
 
-		locale_infectious_step(lid, population, j, num_households, num_infectious, Ic, t, dt, omega, tmp_comm_inf, full_kappa, R0_scale, betac_scale);
+		locale_infectious_step(lid, population, j, num_households, num_infectious, Ic, t, dt, omega, tmp_comm_inf, betac_scale);
 
 		commun_nom1[j] = tmp_comm_inf / fd_tot[j];
 	}
