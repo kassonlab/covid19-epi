@@ -892,6 +892,8 @@ int main (int argc, char *argv[]) {
         struct timespec T1, T2, t1, t2, t3, t4;
         double tt, step_time, nsdiv = 1000*1000*1000;
 
+	double symptomatic_per=0.67; // percent of people who are symptomatic.
+
 	/* Parse command-line arguments */
   	for (i=1;i<argc;i++) {
     		if (!strcmp(argv[i],"-pop")) population=atoi(argv[++i]);
@@ -908,9 +910,13 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-R0")) R0_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
-    		else if (!strcmp(argv[i],"-use_seed")) seed = atol(argv[++i]);
+    		else if (!strcmp(argv[i],"-use_seed")) {
+                    seed = atol(argv[++i]);
+                    use_fixed_seed = 1;
+                }
                 else if (!strcmp(argv[i],"-sort_HH")) sort_household_members = 1;
     		else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
+    		else if (!strcmp(argv[i],"-symptomatic_percent")) symptomatic_per = atof(argv[++i]);
   	}
 
 	/* print out population statistics to file */
@@ -977,7 +983,6 @@ int main (int argc, char *argv[]) {
 	int max_num_WP=0; // max workplaces per job_status for allocating array.
 
 	/* Parameters for infections */
-	double symptomatic_per=0.67; // percent of people who are symptomatic.
 	int * infected; // 1 if person i has been infected, 0 otherwise
 	infected = (int*)calloc(population,sizeof(int));
 	int * severe; // 1 if person i has severe infection, 0 otherwise
