@@ -35,7 +35,10 @@ endif()
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
-set(COMMON_SOURCES COV_rand.c COV_rand.h common.h distance.c distance.h locale.c locale.h prop_distribution.c prop_distribution.h household_lat_long.c household_lat_long.h)
+set(COMMON_SOURCES COV_rand.c COV_rand.h common.h distance.c distance.h locale.c locale.h prop_distribution.c prop_distribution.h
+  household_lat_long.c household_lat_long.h city_lat_long.c city_lat_long.h age_dist.c age_dist.h job_dist.c job_dist.h workplace_dist.c workplace_dist.h
+  calc_kappa.c calc_kappa.h initialize_infections.c initialize_infections.h segment_population.c segment_population.h calc_infect.c calc_infect.h hospital.c hospital.h
+  death.c death.h)
 
 add_executable(covid19 covid19.c ${COMMON_SOURCES})
 target_compile_options(covid19 PRIVATE ${ARCH_FLAGS} ${TUNE_FLAGS})

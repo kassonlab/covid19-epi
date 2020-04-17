@@ -16,8 +16,6 @@
 
 #include "stb_ds.h"
 
-int extern sort_household_members, typical_max_HH_sz;
-
 int cmp_int(void const* a_, void const* b_) {
 	int a = *(int*)a_;
 	int b = *(int*)b_;
