@@ -21,6 +21,11 @@ int sort_household_members = 0;
 
 int full_kappa = 0;
 
+/* Modified factors to account for difference between population in Southeast Asia from Ferguson Model and Swedish population. This adjustment maintains 1/3 transmission in community, 1/3 transmission in household, and 1/3 transmission in workplace. 
+	Overall population is 8.4X smaller in Sweden, attributed as a 8.4X increase in community transmission factor.
+	Household size is approximately 2X smaller in Sweden, 2 vs. 4, attributed as a 2X increase in household transmission factor.
+	R0 Scaling factor used to set approximate doubling time.  R0_scale=2.2 attributes to a doubling time of approximately 3 days while R0_scale=1.8 attributes to a doubling time of approximately 5 days.  
+*/ 
 double betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
 
 #define pi 3.14159265358979323846
@@ -867,22 +872,30 @@ void locale_infectious_loop(int num_locale, int population, int num_households, 
 ****** (C) 2020 Jasmine Gardner, PhD    *****
 This program calculates the spread of COVID-19 across Sweden.
 
-Use:
-compile as : gcc -o covid covid19.c -lm
-use as: ./covid -pop 100000 -sim_time 100 % for a population of 100,000 and a simulation time of 100 days.
+Use as 
+./covid19 -pop $pop -sim_time $days -dt $time_steps -inter $intervention -tauI $tau_onset -R0 $R0_scaling -initial_infect_file $filename -symptomatic_percent $per_symptomatic 
+Where:
+$pop is the population size to be simulated.  Populations smaller than 100,000 and larger than 10,098,554 are not supported.  The full population and default value is 10,098,554.
+$days is the total simulation time in days.  Default value is 200 days. 
+$time_step is the time step in fraction of days. Default value is 1 day time steps.
+$intervention is the intervention number from 0 to 5 as described in Gardner et al (2020).  DOI 10.1101/2020.04.11.20062133  Default is unmitigated spread (intervention=0).
+$tau_onset is the onset of the intervention in days. Default is 0, intervention starts at beginning of simulation. 
+$R0_scaling is the scaling factor to added to the infection transmission rate.  R0_scaling=2.2 adjusts to a 3 day doubling time and R0_scaling=1.8 adjusts to a 5 day scaling time.  Other values are not fully vetted and doubling time would need to be determined by the user.  
+$filename is a file pointing to the initial infections per day with one value per line for 15 days prior to simulation start in reverse chronological order.  
+$per_symptomatic is the fraction of symptomatic inidividuals in float format.  Default is 0.67.
 ******/
 
 
 int main (int argc, char *argv[]) {
 
 	/* Parameters available to change with command line */
-	int population = 10000;  // Size of total population
+	int population = 10098554;  // Size of total population
 	int tot_time=200; // Simulation time.
 	int initial_infections[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //Initial infections per county.
 	double percent_infect=0.001 ; // Default 1% of population initially infected.
 	double dt=1.00; // Time step.
 	int interventions=0; // Value of interventions.
-	double tauI_onset=1; //time after start of simulation that interventions for whole community take place.
+	double tauI_onset=0; //time after start of simulation that interventions for whole community take place.
 	int print_lat_lon=0; // Choose whether to print latitude and longitude data of infected individuals for each time step.
         int ret;
         int i, j;
@@ -1080,7 +1093,7 @@ int main (int argc, char *argv[]) {
 
 
 	/* current recommendations are intervention 1, 3, and 8. */
-	/**** Introduce Interventions: must include documentation for values *****/
+	/**** Introduce Interventions.  These are not representative of interventions as described at command_line arguments.  Interventions are broken down by age group participation when necessary.  *****/
 	/* No interventions. */
 	interIc[0]=1.0;
 	double interIw0[6]={0, 1, 1, 1, 1, Ihosp};
@@ -1233,13 +1246,10 @@ school or workplace. */
 	// Percent per county taken from C19.se infections as of 2020/3/25.
 	// Initial infections calculated from population admitted to intensive care per day from 2020/3/14 to 2020/3/24.
 	double initial_per[21]={0.4234, 0.0404, 0.0336, 0.0843, 0.0257, 0.0079, 0.0071, 0.0020, 0.00475, 0.0973, 0.0261, 0.1088, 0.0178, 0.0230, 0.0115, 0.0158, 0.0127, 0.0075, 0.0233, 0.0131, 0.0139};
-	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/26 ******/
-//	int initialize_base[15]={1667, 4231, 4181, 4407, 3051, 1808, 2599, 1469, 1695, 339, 678, 791, 678, 339, 113};
-	/***** THIS IS THE REAL INITIALIZATION ARRAY, based on ICU numbers, day 0 is 3/21 ******/
+	/***** INITIALIZATION ARRAY, based on ICU numbers ending on 31 March 2020, day 0 is 3/21 ******/
 	int initialize_base[15]={3955, 4068, 5198, 3955, 3616, 4633, 4633, 4859, 5085, 3051, 1921, 2712, 1469, 1695, 452};
         int *initialize = initialize_base;
 	double tmp_t;
-
         if (initial_infect_filename != NULL) {
             initialize = (int *)calloc(15, sizeof(int));
             FILE *iif = fopen(initial_infect_filename, "r");
