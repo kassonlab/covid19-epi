@@ -216,7 +216,7 @@ void locale_infectious_step(LoopInvariantData const& lid, int population, int j,
 
 extern "C" void locale_infectious_loop(int num_locale, int population, int num_households, int num_infectious, int* infectious, double const* infect_kappa, double Ic, int* intervene, double t, double* tau, double* tauI, double* interIc, double dt, int* hosp_pop, int* icu_pop, double* lat_locale, double* lon_locale, int* locale_HH, int* HH, struct locale* locale_list, double omega, int* severe, double betac_scale, double* commun_nom1, double* fd_tot) {
 
-    size_t const num_I = 9;
+    size_t const num_I = 10;
 
     // Allocate device and host arrays
     LoopInvariantData lid;

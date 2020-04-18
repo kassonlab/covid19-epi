@@ -1078,7 +1078,7 @@ int main (int argc, char *argv[]) {
 	double community_nom=0; // For adding community infection.
 	int file_count;
 
-	int num_I=9;
+	int num_I=10;
 	double Ic=1.0; //Intervention constant for community transmission.
 	double (*Iw); //Intervention constant for workplace transmission.
 	double Ih=1; //Intervention constant for household transmission.
@@ -1170,8 +1170,17 @@ school or workplace. */
 	tauI[8]=0;
 	personinter[8]=0;
 
+	/* Intervention 9: Social distancing of entire population. Reduction of 50% workplace interactions. Decrease of 75% of community contacts, household contacts increase 25%. Schools remain open. 80% comply*/
+
+	interIc[9]=0.25;
+	double interIw9[6]={0, 1, 1, 0, 0.50, Ihosp};
+	interIh[9]=1.25;
+	complyI[9]=0.8;
+	tauI[9]=0;
+	personinter[9]=0;
+
 	/* Make interIw array.*/
-	double *interIw[9]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8};
+	double *interIw[num_I]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9};
 
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
@@ -1566,6 +1575,14 @@ school or workplace. */
 					intervene[i]=6;
 				}
 			}
+		} else if (interventions == 6 && t >= tauI_onset && t <= tauI_onset+dt) {
+			Iw=interIw[9];
+                        /* Intervention 6 is social distancing, 50% work from home, and schools open.  */
+			for ( i=0; i<population; i++ ) {
+				if ( COV_rand()< complyI[9] ) {
+					intervene[i]=9;
+				}
+			}
 		}
 
 		/* Segment population into infectious, susceptible, hospitalized, and icu */
@@ -1741,6 +1758,7 @@ school or workplace. */
 					} else {
 						intervene[sus_person]=3;
 					}
+
 					/* Intervention 2 is household quarantine with current recommendations. Applicable for whole household.  */
 					if ( interventions == 2 && t>tauI_onset ) {
 						int i1, hh = HH[sus_person];
