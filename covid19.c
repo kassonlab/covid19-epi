@@ -1180,7 +1180,7 @@ school or workplace. */
 	personinter[9]=0;
 
 	/* Make interIw array.*/
-	double *interIw[num_I]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9};
+	double *interIw[10]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9};
 
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
