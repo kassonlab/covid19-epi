@@ -59,8 +59,8 @@ static __device__ double d_locale_distance_GCD_1(struct locale l1, struct locale
     return acos(d)*Earth_Radius_Mean;
 }
 
-#define deg2rad(deg) (deg * M_PI / 180)
-#define rad2deg(rad) (rad * 180 / M_PI)
+#define deg2rad(deg) ((deg) * M_PI / 180)
+#define rad2deg(rad) ((rad) * 180 / M_PI)
 
 static __device__ double calc_community_infect(double kappa, double omega, int severe, double d, double betac_scale) {
 
