@@ -1321,7 +1321,7 @@ school or workplace. */
 	/* Get size of each workplace as an array.  Cannot allocate array until max_num_WP is known. */
 	int* workplace_size[6];
         for (size_t i = 0; i < 6; ++i) {
-            workplace_size[i] = (int*)calloc(max_num_WP, sizeof(double));
+            workplace_size[i] = (int*)calloc(max_num_WP, sizeof(int));
         }
 	for (i=0; i < population; i++) {
 		workplace_size[job_status[i]][workplace[i]]++;
@@ -1329,14 +1329,14 @@ school or workplace. */
 
 
 	for (j=1; j<6; j++) {
-		double avg_work_size=0, num_WP=0;
+		int avg_work_size=0, num_WP=0;
 		for (i=0; i<max_num_WP; i++) {
 			if (workplace_size[j][i]>0) {
 				avg_work_size+=workplace_size[j][i];
 				num_WP++;
 			}
 		}
-		fprintf(stats, "Job_status %i avg_WP_size %f \n", j, avg_work_size/num_WP);
+		fprintf(stats, "Job_status %i avg_WP_size %f \n", j, (double)avg_work_size/num_WP);
 	}
         fclose(stats);
 
