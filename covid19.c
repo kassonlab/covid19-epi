@@ -1078,7 +1078,7 @@ int main (int argc, char *argv[]) {
 	double community_nom=0; // For adding community infection.
 	int file_count;
 
-	int num_I=10;
+	int num_I=11;
 	double Ic=1.0; //Intervention constant for community transmission.
 	double (*Iw); //Intervention constant for workplace transmission.
 	double Ih=1; //Intervention constant for household transmission.
@@ -1179,8 +1179,17 @@ school or workplace. */
 	tauI[9]=0;
 	personinter[9]=0;
 
+	/* Intervention 10: Social distancing of entire population as presented from Google mobility data as of 2020 April 11. Reduction of 24% workplace interactions. Decrease of 41% of community contacts. Schools remain open. 100% comply*/
+
+	interIc[10]=0.59;
+	double interIw10[6]={0, 1, 1, 0, 0.76, Ihosp};
+	interIh[10]=1.00;
+	complyI[10]=1.0;
+	tauI[10]=0;
+	personinter[10]=1;
+
 	/* Make interIw array.*/
-	double *interIw[10]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9};
+	double *interIw[11]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9, interIw10};
 
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
@@ -1582,6 +1591,14 @@ school or workplace. */
 				if ( COV_rand()< complyI[9] ) {
 					intervene[i]=9;
 				}
+			}
+		} else if (interventions == 7 && t >= tauI_onset && t <= tauI_onset+dt) {
+                        /* Intervention 7 is social distancing with numbers from Google mobility, 24% work from home, 41% reduction in community interaction, and schools open.  */
+			Ic=interIc[10];
+			Ih=interIh[10];
+			Iw=interIw[10];
+			if (age[i]>=15 && age[i]<22) {
+				intervene[i]=0;
 			}
 		}
 
