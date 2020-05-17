@@ -27,6 +27,7 @@ int full_kappa = 0;
 	R0 Scaling factor used to set approximate doubling time.  R0_scale=2.2 attributes to a doubling time of approximately 3 days while R0_scale=1.8 attributes to a doubling time of approximately 5 days.  
 */ 
 double betac_scale = 8.4, betah_scale = 2.0, betaw_scale = 1.0, R0_scale=2.2;
+double population_fraction = 0;  /* Fraction for adjustable interventions. */
 
 #define pi 3.14159265358979323846
 
@@ -921,6 +922,7 @@ int main (int argc, char *argv[]) {
     		else if (!strcmp(argv[i],"-betah")) betah_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-betaw")) betaw_scale=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-R0")) R0_scale=atof(argv[++i]);
+        else if (!strcmp(argv[i],"-pop_fract")) population_fraction=atof(argv[++i]);
     		else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
     		else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
     		else if (!strcmp(argv[i],"-use_seed")) {
@@ -1078,7 +1080,7 @@ int main (int argc, char *argv[]) {
 	double community_nom=0; // For adding community infection.
 	int file_count;
 
-	int num_I=11;
+	#define num_I 14
 	double Ic=1.0; //Intervention constant for community transmission.
 	double (*Iw); //Intervention constant for workplace transmission.
 	double Ih=1; //Intervention constant for household transmission.
@@ -1090,7 +1092,7 @@ int main (int argc, char *argv[]) {
 	double Ihosp=0.25;  // Accounts for increased cleanliness and infection control at hospital.
 	int * intervene; // 1 if person is currently undergoing interventions, 0 otherwise.
 	intervene = (int*)calloc(population,sizeof(int));
-
+	int randomized = 0; //for interventions that keep track of randomization
 
 	/* current recommendations are intervention 1, 3, and 8. */
 	/**** Introduce Interventions.  These are not representative of interventions as described at command_line arguments.  Interventions are broken down by age group participation when necessary.  *****/
@@ -1187,9 +1189,36 @@ school or workplace. */
 	complyI[10]=1.0;
 	tauI[10]=0;
 	personinter[10]=1;
+  
+  /* Intervention type 11(B): Mild distancing. Workplace 100%, community 75%,
+   Household 100%.  100% comply */
+  interIc[11] = 0.75;
+  double interIw11[6] = {0, 1, 1, 0, 1, Ihosp};
+  interIh[11] = 1.00;
+  complyI[11] = 1.0;
+  tauI[11] = 0;
+  personinter[11] = 1;  // unused?
+  
+  /* Intervention type 12(C): Work from home. Workplace 0%, community 75%,
+   Household 150%. 100% comply */
+  interIc[12] = 0.75;
+  double interIw12[6] = {0, 0, 0, 0, 0, Ihosp};
+  interIh[12] = 1.50;
+  complyI[12] = 1.0;
+  tauI[12] = 0;
+  personinter[12] = 1;  // unused?
 
+  /* Intervention type 13(D): Self-isolate without sickness. Workplace 0%, community 25%,
+   Household 200%. 100% comply */
+  interIc[13] = 0.25;
+  double interIw13[6] = {0, 0, 0, 0, 0, Ihosp};
+  interIh[13] = 2.00;
+  complyI[13] = 1.0;
+  tauI[13] = 0;
+  personinter[13] = 1;  // unused?
+  
 	/* Make interIw array.*/
-	double *interIw[11]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9, interIw10};
+	double *interIw[num_I]={interIw0, interIw1, interIw2, interIw3, interIw4, interIw5, interIw6, interIw7, interIw8, interIw9, interIw10, interIw11, interIw12, interIw13};
 
 	/**** Set random number generator seed. ****/
 	COV_init_rand();
@@ -1600,8 +1629,54 @@ school or workplace. */
 			if (age[i]>=15 && age[i]<22) {
 				intervene[i]=0;
 			}
+  } else if (interventions == 8 && t >= tauI_onset && t <= tauI_onset+dt && randomized != 8) {
+    /* Intervention 8 is scalable A/C switching:   */
+    /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
+    /* Only randomize once. */
+    randomized = 8;
+    int ctr = 0;
+    for ( i = 0; i < population; i++ ) {
+      if ( COV_rand() < population_fraction ) {
+        intervene[i] = 12;
+        ctr++;
+      }
+    }
+    printf("Modified %d people\n", ctr);
+  } else if (interventions == 9 && t >= tauI_onset && t <= tauI_onset+dt && randomized != 9) {
+    /* Intervention 9 is scalable A/D switching:   */
+    /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
+    randomized = 9;
+    for ( i = 0; i < population; i++ ) {
+      if ( COV_rand() < population_fraction ) {
+        intervene[i] = 13;
+      }
+    }
+  } else if (interventions == 10 && t >= tauI_onset && t <= tauI_onset+dt && randomized != 10) {
+    /* Intervention 10 is scalable B/C switching:   */
+    /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
+    randomized = 10;
+    Ic=interIc[11];
+    Ih=interIh[11];
+    Iw=interIw[11];
+    for ( i = 0; i < population; i++ ) {
+      if ( COV_rand() < population_fraction ) {
+        intervene[i] = 12;
+      }
+    }
+  } else if (interventions == 11 && t >= tauI_onset && t <= tauI_onset+dt && randomized != 11) {
+    /* Intervention 11 is scalable B/D switching:   */
+    /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
+    randomized = 11;
+    Ic=interIc[11];
+    Ih=interIh[11];
+    Iw=interIw[11];
+    for ( i = 0; i < population; i++ ) {
+      if ( COV_rand() < population_fraction ) {
+        intervene[i] = 13;
+      }
+    }
 		}
-
+    
 		/* Segment population into infectious, susceptible, hospitalized, and icu */
 		segment_population( &num_sus,  &num_infectious,  &num_hosp,  &num_icu,  &num_sus_HCW,  &num_infectious_HCW,  &num_hosp_HCW,  &num_icu_HCW, infected,  infectious,  sus_list,  hosp_list,  hosp_pop,  icu_pop,  icu_list,  tau,  population,  t,  num_sus_county,  num_infectious_county,  num_infect_county,  num_hosp_county,  num_icu_county,  num_sus_age,  num_infectious_age,  num_infect_age,  num_hosp_age,  num_icu_age,  age,  county, print_lat_lon,  lat_locale,  lon_locale,  lat_lon_out, locale_HH, HH, job_status, recovered, dead);
 
