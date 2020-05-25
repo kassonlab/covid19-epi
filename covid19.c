@@ -28,6 +28,10 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
+/* supported population range */
+#define POP_MIN 100000
+#define POP_MAX 10098554
+
 int typical_max_HH_sz = 7;
 
 int sort_household_members = 0;
@@ -962,6 +966,14 @@ int main (int argc, char *argv[]) {
             else if (!strcmp(argv[i],"-initial_infect_file")) initial_infect_filename = argv[++i];
             else if (!strcmp(argv[i],"-symptomatic_percent")) symptomatic_per = atof(argv[++i]);
       }
+
+    /* check for supported population range */
+    if ((population < POP_MIN) || population > POP_MAX)
+    {
+        fprintf(stderr, "Population %d not in supported range of %d to %d. Exiting.\n",
+                population, POP_MIN, POP_MAX);
+        exit(0);
+    }
 
     /* print out population statistics to file */
     FILE *stats = fopen("stats.log", "w");
