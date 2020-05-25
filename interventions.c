@@ -1,11 +1,10 @@
+#define Ihosp 0.25  // Accounts for infection control at hospital.
 
 void setup_intervention_types(double *interIc, const double *Iw, double *interIh,
                               double *complyI, double *tauI, int *personinter,
                               const double *interIw[])
 {
     /* Setup intervention types. Application of interventions occurs later. */
-
-    const double Ihosp=0.25;  // Accounts for infection control at hospital.
 
     /* current recommendations are intervention types 1, 3, and 8. */
     /**** Introduce Intervention types.

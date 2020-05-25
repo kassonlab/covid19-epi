@@ -1,3 +1,15 @@
+/* COVID-19 infectious spread model
+ * Original code 2020 by Jasmine Gardner.
+ * Subsequent modifications by development team.
+ * Hosted at https://github.com/kassonlab/covid19-epi
+ * Original publication DOI 10.1101/2020.04.11.20062133
+ *
+ * This is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1
+ * of the License, or (at your option) any later version.
+ */
+
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h> 
@@ -330,9 +342,9 @@ void household_lat_long(int num_households, int * HH, double * lat_city, double 
 }
 
 void city_lat_long(int *num_cities, double * lat_city, double * long_city, char ** cities, int * county, char ** county_names, int num_county) {
-
     /* Get longitude and latitude of cities in Sweden from CSV */
-    FILE* fp = fopen("cities_all.csv", "r");  // Not sure about the validity of this file.  Could use a better source.
+    const char *cityfile = "cities_all.csv";
+    FILE* fp = fopen(cityfile, "r");  // Not sure about the validity of this file.  Could use a better source.
 
     /* Counters for parsing file. */
     char tmp[199]; // municipality name
@@ -341,6 +353,12 @@ void city_lat_long(int *num_cities, double * lat_city, double * long_city, char 
     double tmp_lat; // tmp latitude
     double tmp_lon; // tmp longitude
         int i, j;
+
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Error opening file %s.  Exiting.\n", cityfile);
+        exit(0);
+    }
 
     for (i=0; i < 2000; i++) {
         int got = fscanf(fp, "%[^,\n]%*c%[^,\n]%*c%[^,\n]%*c%lf%*c%lf\n", tmp1, tmp, tmp2, &tmp_lat, &tmp_lon);
@@ -870,22 +888,22 @@ void locale_infectious_loop(int num_locale, int population, int num_households, 
 
 #endif
 
-/***** COVID-19 infectious spread model *****
-****** (C) 2020 Jasmine Gardner, PhD    *****
-This program calculates the spread of COVID-19 across Sweden.
-
-Use as 
-./covid19 -pop $pop -sim_time $days -dt $time_steps -inter $intervention -tauI $tau_onset -R0 $R0_scaling -initial_infect_file $filename -symptomatic_percent $per_symptomatic 
-Where:
-$pop is the population size to be simulated.  Populations smaller than 100,000 and larger than 10,098,554 are not supported.  The full population and default value is 10,098,554.
-$days is the total simulation time in days.  Default value is 200 days. 
-$time_step is the time step in fraction of days. Default value is 1 day time steps.
-$intervention is the intervention number from 0 to 5 as described in Gardner et al (2020).  DOI 10.1101/2020.04.11.20062133  Default is unmitigated spread (intervention=0).
-$tau_onset is the onset of the intervention in days. Default is 0, intervention starts at beginning of simulation. 
-$R0_scaling is the scaling factor to added to the infection transmission rate.  R0_scaling=2.2 adjusts to a 3 day doubling time and R0_scaling=1.8 adjusts to a 5 day scaling time.  Other values are not fully vetted and doubling time would need to be determined by the user.  
-$filename is a file pointing to the initial infections per day with one value per line for 15 days prior to simulation start in reverse chronological order.  
-$per_symptomatic is the fraction of symptomatic inidividuals in float format.  Default is 0.67.
-******/
+const char *desc[] = 
+{
+    "This program calculates the spread of COVID-19 across Sweden.",
+    "Originally published in DOI:10.1101/2020.04.11.20062133",
+    "Usage as follows:",
+    "./covid19 -pop $pop -sim_time $days -dt $time_steps -inter $intervention -tauI $tau_onset -R0 $R0_scaling -initial_infect_file $filename -symptomatic_percent $per_symptomatic",
+    "Where all arguments are optional and described below:",
+    "$pop is the population size to be simulated.  Populations smaller than 100,000 and larger than 10,098,554 are not supported.  The full population and default value is 10,098,554.",
+    "$days is the total simulation time in days.  Default value is 200 days.",
+    "$time_step is the time step in fraction of days. Default value is 1 day time steps.",
+    "$intervention is the intervention number to apply.  Default is unmitigated spread (intervention=0).",
+    "$tau_onset is the onset of the intervention in days. Default is 0, intervention starts at beginning of simulation.",
+    "$R0_scaling is the scaling factor to added to the infection transmission rate.  R0_scaling=2.2 adjusts to a 3 day doubling time and R0_scaling=1.8 adjusts to a 5 day scaling time.  Other values are not fully vetted and doubling time would need to be determined by the user.",
+    "$filename is a file pointing to the initial infections per day with one value per line for 15 days prior to simulation start in reverse chronological order.",
+    "$per_symptomatic is the fraction of symptomatic individuals in float format.  Default is 0.67.",
+};
 
 
 int main (int argc, char *argv[]) {
@@ -909,6 +927,16 @@ int main (int argc, char *argv[]) {
 
     double symptomatic_per=0.67; // percent of people who are symptomatic.
 
+    /* Print optional help */
+    if (argc == 1)
+    {
+        for (i=0; i < sizeof(desc) / sizeof(char *); i++)
+        {
+            fprintf(stderr, "%s\n", desc[i]);
+        }
+        fprintf(stderr, "Running with default arguments\n");
+    }
+
     /* Parse command-line arguments */
       for (i=1;i<argc;i++) {
             if (!strcmp(argv[i],"-pop")) population=atoi(argv[++i]);
@@ -923,7 +951,7 @@ int main (int argc, char *argv[]) {
             else if (!strcmp(argv[i],"-betah")) betah_scale=atof(argv[++i]);
             else if (!strcmp(argv[i],"-betaw")) betaw_scale=atof(argv[++i]);
             else if (!strcmp(argv[i],"-R0")) R0_scale=atof(argv[++i]);
-        else if (!strcmp(argv[i],"-pop_fract")) population_fraction=atof(argv[++i]);
+            else if (!strcmp(argv[i],"-pop_fract")) population_fraction=atof(argv[++i]);
             else if (!strcmp(argv[i],"-full_kappa")) full_kappa = 1;
             else if (!strcmp(argv[i],"-use_fixed_seed")) use_fixed_seed = 1;
             else if (!strcmp(argv[i],"-use_seed")) {
@@ -1106,10 +1134,16 @@ int main (int argc, char *argv[]) {
     city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_county, county_name, num_counties) ;
 
     /* Parse land_scan file to get population density.  */
-        double *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
-        //int num_locale = 0, max_locale = 0;
-        double tmp_lat, tmp_lon, pop_den, land_pop_total_density = 0;
-    FILE* lat_long = fopen("land_pop_sorted.txt", "r"); // Sorted land population in descending order.  Important when we don't have complete population.
+    double *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
+    //int num_locale = 0, max_locale = 0;
+    double tmp_lat, tmp_lon, pop_den, land_pop_total_density = 0;
+    const char *popfile = "land_pop_sorted.txt";
+    FILE* lat_long = fopen(popfile, "r"); // Sorted land population in descending order.  Important when we don't have complete population.
+    if (lat_long == NULL)
+    {
+        fprintf(stderr, "Error opening file %s.  Exiting\n", popfile);
+        exit(0);
+    }
     while ((ret = fscanf(lat_long, "%lf%*c%lf%*c%lf", &tmp_lon, &tmp_lat, &pop_den)) == 3) {
             if (num_locale + 1 > max_locale) {
                 //max_locale += 10;
