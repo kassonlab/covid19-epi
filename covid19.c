@@ -1146,8 +1146,9 @@ int main (int argc, char *argv[]) {
     city_lat_long(&num_cities,  lat_city,  long_city, city_names, city_county, county_name, num_counties) ;
 
     /* Parse land_scan file to get population density.  */
-    double *lat_locale = NULL, *lon_locale = NULL, *pop_density_init_num = NULL;
-    //int num_locale = 0, max_locale = 0;
+    double *lat_locale = (double *)calloc(max_locale+10, sizeof(double));
+    double *lon_locale = (double *)calloc(max_locale+10, sizeof(double));
+    double *pop_density_init_num = (double *)calloc(max_locale+10, sizeof(double));
     double tmp_lat, tmp_lon, pop_den, land_pop_total_density = 0;
     const char *popfile = "land_pop_sorted.txt";
     FILE* lat_long = fopen(popfile, "r"); // Sorted land population in descending order.  Important when we don't have complete population.
