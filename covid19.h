@@ -1,11 +1,12 @@
 /* Defines and structure definitions */
 
-#if ! defined(__COVID19_H__)
+#if !defined(__COVID19_H__)
 #define __COVID19_H__
 
 /* Things to add further on */
+
 /*
-struct person {
+   struct person {
     int person_idx; // Self index
     double age; // age of person
     int HH; // which household does the person live in
@@ -19,14 +20,15 @@ struct person {
     int infectious;
     int symptomatic;
     double long, lat;
-};
+   };
 
-struct household {
+   struct household {
     int HH_idx; // Self index
     int HH_sz; // size of household
     int city;
     int county;
-    int locale; // Which locale is this household in, should perhaps be pointer directly to the right locale
+    int locale; // Which locale is this household in, should perhaps be pointer
+       directly to the right locale
     int *persons;
     int nr_persons;
     int *infected;
@@ -34,9 +36,9 @@ struct household {
     int *infectious;
     int nr_infectious;
     double long, lat; // Probably not needed any longer
-};
+   };
 
-struct city  {
+   struct city  {
     int city_idx; // Self index
     int county;
     int *persons;
@@ -50,9 +52,9 @@ struct city  {
     int *WP;
     int nr_WP;
     double long, lat;
-};
+   };
 
-struct county {
+   struct county {
     int county_idx; // Keep a self index just in case we need it
     int *persons; // who lives in this county
     int nr_persons;
@@ -66,9 +68,9 @@ struct county {
     int nr_WP;
     int *cities; // which cities
     int nr_cities;
-};
+   };
 
-struct infected {
+   struct infected {
     int infected_idx;
     int *persons;
     int nr_persons;
@@ -80,7 +82,7 @@ struct infected {
     int nr_cities;
     int *counties;
     int nr_counties;
-};
-*/
+   };
+ */
 
 #endif /* __COVID19_H__ */
