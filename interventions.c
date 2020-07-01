@@ -1,5 +1,15 @@
 #define Ihosp 0.25 // Accounts for infection control at hospital.
 
+enum {
+  interNone, interSweMandate,
+  interCaseHouseIsolation, interSchoolClosure,
+  interNonEssentialClosure, interClosureAndDistancing,
+  interVolWFH, interVolSelfIsolation,
+  interVolWFHDistancing, interVolSelfIsolDistancing,
+  interWFH50PlusDistancing, interGoogleMobilityPlusDistancing,
+  interNR
+};
+
 void setup_intervention_types(double       *interIc,
                               const double *Iw,
                               double       *interIh,

@@ -2228,11 +2228,11 @@ int main(int argc, char *argv[]) {
   }
 
   /* Introduce overall community interventions. */
-  if (interventions == 0) {
+  if (interventions == interNone) {
     Ic = interIc[interventions];
     Ih = interIh[interventions];
     Iw = interIw[interventions];
-  } else if (interventions > 0)  {
+  } else if (interventions > interNone)  {
     for (i = 0; i < population; i++) {
       /* high school and university closures */
       if ((age[i] >= 15) && (age[i] < 22)) {
@@ -2296,18 +2296,18 @@ int main(int argc, char *argv[]) {
       num_infectious_age[i]     = 0;
     }
 
-    if ((interventions == 3) && (t >= tauI_onset) && (t <= tauI_onset + dt)) {
+    if ((interventions == interSchoolClosure) && (t >= tauI_onset) && (t <= tauI_onset + dt)) {
       for (i = 0; i < population; i++) {
         if ((age[i] > 1) && (age[i] < 15)) {
           intervene[i] = 2;
         }
       }
-    } else if ((interventions == 4) && (t >= tauI_onset) &&
+    } else if ((interventions == interNonEssentialClosure) && (t >= tauI_onset) &&
                (t <= tauI_onset + dt)) {
       Ic = interIc[7];
       Ih = interIh[7];
       Iw = interIw[7];
-    } else if ((interventions == 5) && (t >= tauI_onset) &&
+    } else if ((interventions == interClosureAndDistancing) && (t >= tauI_onset) &&
                (t <= tauI_onset + dt)) {
       /* if not complying, have same interactions as type 7 */
       Ic = interIc[7];
@@ -2319,20 +2319,20 @@ int main(int argc, char *argv[]) {
           intervene[i] = 6;
         }
       }
-    } else if ((interventions == 6) && (t >= tauI_onset) &&
+    } else if ((interventions == interWFH50PlusDistancing) && (t >= tauI_onset) &&
                (t <= tauI_onset + dt)) {
       Iw = interIw[9];
 
-      /* Intervention 6 is social distancing, 50% work from home, and schools
+      /* Intervention is social distancing, 50% work from home, and schools
         open.  */
       for (i = 0; i < population; i++) {
         if (COV_rand() < complyI[9]) {
           intervene[i] = 9;
         }
       }
-    } else if ((interventions == 7) && (t >= tauI_onset) &&
+    } else if ((interventions == interGoogleMobilityPlusDistancing) && (t >= tauI_onset) &&
                (t <= tauI_onset + dt)) {
-      /* Intervention 7 is social distancing with numbers from Google mobility,
+      /* Intervention is social distancing with numbers from Google mobility,
         24% work from home, 41% reduction in community interaction, and schools
         open.  */
       Ic = interIc[10];
@@ -2342,12 +2342,12 @@ int main(int argc, char *argv[]) {
       if ((age[i] >= 15) && (age[i] < 22)) {
         intervene[i] = 0;
       }
-    } else if ((interventions == 8) && (t >= tauI_onset) &&
-               (t <= tauI_onset + dt) && (randomized != 8)) {
-      /* Intervention 8 is scalable A/C switching:   */
+    } else if ((interventions == interVolWFH) && (t >= tauI_onset) &&
+               (t <= tauI_onset + dt) && (randomized != interVolWFH)) {
+      /* Intervention 6 is scalable A/C switching:   */
       /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
       /* Only randomize once. */
-      randomized = 8;
+      randomized = interVolWFH;
       int ctr = 0;
 
       for (i = 0; i < population; i++) {
@@ -2357,22 +2357,22 @@ int main(int argc, char *argv[]) {
         }
       }
       printf("Modified %d people\n", ctr);
-    } else if ((interventions == 9) && (t >= tauI_onset) &&
-               (t <= tauI_onset + dt) && (randomized != 9)) {
-      /* Intervention 9 is scalable A/D switching:   */
+    } else if ((interventions == interVolSelfIsolation) && (t >= tauI_onset) &&
+               (t <= tauI_onset + dt) && (randomized != interVolSelfIsolation)) {
+      /* Intervention 7 is scalable A/D switching:   */
       /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
-      randomized = 9;
+      randomized = interVolSelfIsolation;
 
       for (i = 0; i < population; i++) {
         if (COV_rand() < population_fraction) {
           intervene[i] = 13;
         }
       }
-    } else if ((interventions == 10) && (t >= tauI_onset) &&
-               (t <= tauI_onset + dt) && (randomized != 10)) {
-      /* Intervention 10 is scalable B/C switching:   */
+    } else if ((interventions == interVolWFHDistancing) && (t >= tauI_onset) &&
+               (t <= tauI_onset + dt) && (randomized != interVolWFHDistancing)) {
+      /* Intervention 8 is scalable B/C switching:   */
       /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
-      randomized = 10;
+      randomized = interVolWFHDistancing;
       Ic         = interIc[11];
       Ih         = interIh[11];
       Iw         = interIw[11];
@@ -2382,11 +2382,11 @@ int main(int argc, char *argv[]) {
           intervene[i] = 12;
         }
       }
-    } else if ((interventions == 11) && (t >= tauI_onset) &&
-               (t <= tauI_onset + dt) && (randomized != 11)) {
-      /* Intervention 11 is scalable B/D switching:   */
+    } else if ((interventions == interVolSelfIsolDistancing) && (t >= tauI_onset) &&
+               (t <= tauI_onset + dt) && (randomized != interVolSelfIsolDistancing)) {
+      /* Intervention 9 is scalable B/D switching:   */
       /* Don't modify baseline Ic, Ih, IW.  Those are then "type A" */
-      randomized = 11;
+      randomized = interVolSelfIsolDistancing;
       Ic         = interIc[11];
       Ih         = interIh[11];
       Iw         = interIw[11];
@@ -2698,8 +2698,8 @@ int main(int argc, char *argv[]) {
 
         /* Determine if following interventions only for interventions that
           effect individuals.*/
-        if ((interventions > 0) && (COV_rand() < complyI[3])) {
-          if ((interventions == 2) && (intervene[sus_person] == 4)) {
+        if ((interventions > interNone) && (COV_rand() < complyI[3])) {
+          if ((interventions == interCaseHouseIsolation) && (intervene[sus_person] == 4)) {
             intervene[sus_person] = 5;
           } else {
             intervene[sus_person] = 3;
@@ -2707,7 +2707,7 @@ int main(int argc, char *argv[]) {
 
           /* Intervention 2 is household quarantine with current
             recommendations. Applicable for whole household.  */
-          if ((interventions == 2) && (t > tauI_onset)) {
+          if ((interventions == interCaseHouseIsolation) && (t > tauI_onset)) {
             int i1, hh = HH[sus_person];
 
             for (i1 = 0; i1 < arrlen(per_HH_members[hh]); i1++) {
