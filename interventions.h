@@ -1,6 +1,17 @@
 #if !defined(__INTERVENTIONS_H__)
 #define __INTERVENTIONS_H__
 
+enum {
+  interNone, interSweMandate,
+  interCaseHouseIsolation, interSchoolClosure,
+  interNonEssentialClosure, interClosureAndDistancing,
+  interVolWFH, interVolSelfIsolation,
+  interVolWFHDistancing, interVolSelfIsolDistancing,
+  interWFH50PlusDistancing, interGoogleMobilityPlusDistancing,
+  interNR
+};
+
+
 /* Intervention type definitions */
 void setup_intervention_types(double       *interIc,
                               const double *Iw,
