@@ -24,6 +24,7 @@
 
 #include "common.h"
 #include "interventions.h"
+#include "infections.h"
 
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
@@ -828,6 +829,7 @@ void segment_population(int    *num_sus,
                         int    *num_hosp_HCW,
                         int    *num_icu_HCW,
                         int    *infected,
+			int    *immune,
                         int    *infectious,
                         int    *sus_list,
                         int    *hosp_list,
@@ -1665,26 +1667,28 @@ int main(int argc, char *argv[]) {
   FILE *output_HCW  = fopen("healthcare_workers.log", "w");
   FILE *lat_lon_out = fopen("lat_lon.dat", "w");
 
-  place_initial_infections(char   *initial_infect_filename,
-                           double *tau,
-                           int    *infected,
-                           int    *severe,
-                           int    *symptomatic,
-                           int    *county,
-                           int    *num_infect,
-                           int     num_counties,
-                           double  symptomatic_per,
-                           int     population,
-                           double  dt,
-                           double *lat_locale,
-                           double *lon_locale,
-                           int    *num_infect_county,
-                           int    *num_infect_age,
-                           double *age,
-                           int   **county_p,
-                           int    *county_size,
-                           int    *locale_HH,
-                           int    *HH);
+  place_initial_infections(initial_infect_filename,
+		           stats,
+			   initial_infections,
+                           tau,
+                           infected,
+                           severe,
+                           symptomatic,
+                           county,
+                           &num_infect,
+                           num_counties,
+                           symptomatic_per,
+                           population,
+                           dt,
+                           lat_locale,
+                           lon_locale,
+                           num_infect_county,
+                           num_infect_age,
+                           age,
+                           county_p,
+                           county_size,
+                           locale_HH,
+                           HH);
 
   for (size_t i = 0; i < num_counties; ++i) {
     arrfree(county_p[i]);
@@ -1836,6 +1840,7 @@ int main(int argc, char *argv[]) {
   /* precalculate kappa */
   int count_kappa_vals = ceil(30 / dt);
   double  kappa_t      = 0;
+  double  tmp_t        = 0;
   double *kappa_vals;
   double  tau1 = 0;
   kappa_vals = (double *)calloc(count_kappa_vals, sizeof(double));
@@ -1911,7 +1916,8 @@ int main(int argc, char *argv[]) {
                      &num_hosp_HCW,
                      &num_icu_HCW,
                      infected,
-                     infectious,
+                     immune,
+  		     infectious,
                      sus_list,
                      hosp_list,
                      hosp_pop,
@@ -2234,7 +2240,8 @@ int main(int argc, char *argv[]) {
                        &num_hosp_HCW,
                        &num_icu_HCW,
                        infected,
-                       infectious,
+                       immune,
+    		       infectious,
                        sus_list,
                        hosp_list,
                        hosp_pop,

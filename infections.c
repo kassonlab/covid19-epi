@@ -8,6 +8,12 @@
  * of the License, or (at your option) any later version.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "COV_rand.h"
+
 // Percent per county taken from C19.se infections as of 2020/3/25.
 // Initial infections calculated from population admitted to intensive care
 // per day from 2020/3/14 to 2020/3/24.
@@ -47,7 +53,9 @@ static void initialize_infections(int    *initial_infections,
                                   double *tmp_lon);
 
 void place_initial_infections(char   *initial_infect_filename,
-                              double *tau,
+                              FILE    *stats,
+		              int    *initial_infections,
+			      double *tau,
                               int    *infected,
                               int    *severe,
                               int    *symptomatic,
@@ -69,8 +77,9 @@ void place_initial_infections(char   *initial_infect_filename,
   // Place and initialize infections
   // Infections are randomly placed based on number of initial infections
   // Includes infections from t=-11 to t=-1.
-  int   *initialize = initialize_base;
+  int   *initialize = (int *)initialize_base;
   double tmp_t;
+  int    i, j;
 
   if (initial_infect_filename != NULL) {
     initialize = (int *)calloc(15, sizeof(int));
@@ -108,7 +117,7 @@ void place_initial_infections(char   *initial_infect_filename,
                           severe,
                           symptomatic,
                           county,
-                          &num_infect,
+                          num_infect,
                           num_counties,
                           symptomatic_per,
                           population,
