@@ -2171,8 +2171,10 @@ int main(int argc, char *argv[]) {
       Ih = interIh[10];
       Iw = interIw[10];
 
-      if ((age[i] >= 15) && (age[i] < 22)) {
-        intervene[i] = 0;
+      for (i = 0; i < population; i++) {
+        if ((age[i] >= 15) && (age[i] < 22)) {
+          intervene[i] = 0;
+        }
       }
     } else if ((interventions == interVolWFH) && (t >= tauI_onset) &&
                (t <= tauI_onset + dt) && (randomized != interVolWFH)) {
