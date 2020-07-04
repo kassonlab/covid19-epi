@@ -2,10 +2,12 @@
 #if !defined(__INFECTIONS_H__)
 #define __INFECTIONS_H__
 void place_initial_infections(char   *initial_infect_filename,
+                              char   *initial_immune_filename,
                               FILE   *stats,
-			      int    *initial_infections,
-	                      double *tau,
+                              int    *initial_infections,
+	                            double *tau,
                               int    *infected,
+                              int    *immune,
                               int    *severe,
                               int    *symptomatic,
                               int    *county,

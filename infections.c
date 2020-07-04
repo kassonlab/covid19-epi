@@ -8,6 +8,7 @@
  * of the License, or (at your option) any later version.
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -52,11 +53,33 @@ static void initialize_infections(int    *initial_infections,
                                   double *tmp_lat,
                                   double *tmp_lon);
 
+static int read_file_ints(char *fname, int* res) {
+  /* reads ints from a file, allocates memory, returns # read */
+  int ctr, tmp;
+  FILE *infile = fopen(fname, "r");
+  if (infile == NULL) {
+    fprintf(stderr, "Error opening file %s\n", fname);
+    exit(-1);
+  }
+  for (ctr=0; fscanf(infile, "%d", &tmp) > 0; ctr++) {
+    ;
+  }
+  rewind(infile);
+  res = (int *)calloc(ctr, sizeof(int));
+  for (int i=0; i < ctr; i++){
+    fscanf(infile, "%d", &(res[i]));
+  }
+  fclose(infile);
+  return ctr;
+}
+
 void place_initial_infections(char   *initial_infect_filename,
-                              FILE    *stats,
-		              int    *initial_infections,
-			      double *tau,
+                              char   *initial_immune_filename,
+                              FILE   *stats,
+                              int    *initial_infections,
+                              double *tau,
                               int    *infected,
+                              int    *immune,
                               int    *severe,
                               int    *symptomatic,
                               int    *county,
@@ -78,27 +101,38 @@ void place_initial_infections(char   *initial_infect_filename,
   // Infections are randomly placed based on number of initial infections
   // Includes infections from t=-11 to t=-1.
   int   *initialize = (int *)initialize_base;
+  int   *init_immune = NULL;
   double tmp_t;
   int    i, j;
+  double *tmp_lat_v = (double *)calloc(population, sizeof(double));
+  double *tmp_lon_v = (double *)calloc(population, sizeof(double));
+  int infect_len = 15;
+  int immune_len = 15;
 
   if (initial_infect_filename != NULL) {
-    initialize = (int *)calloc(15, sizeof(int));
-    FILE *iif = fopen(initial_infect_filename, "r");
-    for (i = 0; i < 15; i++) {
-      fscanf(iif, "%d", &initialize[i]);
-    }
-    fclose(iif);
+    infect_len = read_file_ints(initial_infect_filename, initialize);
+    assert((infect_len == 15) || (infect_len == 15*21));
+    /* initial infections should either be provided by time or by time & county. */
+  }
+  if (initial_immune_filename != NULL) {
+    immune_len = read_file_ints(initial_immune_filename, init_immune);
+    assert((immune_len == 21));
+    /* initial immune pop should equal to number of counties. */
   }
   fprintf(stats, "Initial Infections by county \n");
   fflush(stats);
-  double *tmp_lat_v = (double *)calloc(population, sizeof(double));
-  double *tmp_lon_v = (double *)calloc(population, sizeof(double));
 
   for (tmp_t = -14; tmp_t <= 0; tmp_t++) {
     int l = -tmp_t;
-  
+ 
     for (j = 0; j < 21; j++) {
-      initial_infections[j] = initial_per_county[j] * initialize[l];
+      if (infect_len == 15) {
+        /* Initial infections provided as total per time. Distribute by county. */
+        initial_infections[j] = initial_per_county[j] * initialize[l];
+      } else {
+        /* Initial infections provided as total per county per time. */
+        initial_infections[j] = initialize[l*21 + j];
+      }
       fprintf(stats,
               "time %f county %i initial_infections %i fraction_of_infections %f total_intialized %i\n",
               tmp_t,
@@ -135,9 +169,30 @@ void place_initial_infections(char   *initial_infect_filename,
                           tmp_lat_v,
                           tmp_lon_v);
   }
+  /* initialization of immune is much simpler.
+   * Algorithm: pick a random person in county. If infected, draw again.
+   */
+  for (i = 0; i < num_counties; i++) {
+    if (init_immune[i] > county_size[i]) {
+      fprintf(stderr, "Warning: init immune %d larger than county size %d\n",
+              init_immune[i], county_size[i]);
+      init_immune[i] = county_size[i];
+    }
+    for (j = 0; j < init_immune[i]; j++) {
+      int tmp_immune = (int)(COV_rand() * county_size[i]);
+      while (infected[county_p[i][tmp_immune]] > 0) {
+        /* retry as long as person is infected */
+        tmp_immune = (int)(COV_rand() * county_size[i]);
+      }
+      immune[county_p[i][tmp_immune]] = 1;
+    }
+  }
 
   if (initial_infect_filename != NULL) {
     free(initialize);
+  }
+  if (initial_immune_filename != NULL) {
+    free(init_immune);
   }
   free(tmp_lat_v);
   free(tmp_lon_v);

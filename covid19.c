@@ -1268,6 +1268,7 @@ int main(int argc, char *argv[]) {
   int    ret;
   int    i, j;
   char  *initial_infect_filename = NULL;
+  char  *initial_immune_filename = NULL;
 
   /* Timing variables */
   struct timespec T1, T2, t1, t2, t3, t4;
@@ -1668,10 +1669,12 @@ int main(int argc, char *argv[]) {
   FILE *lat_lon_out = fopen("lat_lon.dat", "w");
 
   place_initial_infections(initial_infect_filename,
+                           initial_immune_filename,
 		           stats,
-			   initial_infections,
+                           initial_infections,
                            tau,
                            infected,
+                           immune,
                            severe,
                            symptomatic,
                            county,
