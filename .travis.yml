@@ -1,0 +1,11 @@
+# Recipe for build and integration testing on Travis-CI
+
+dist: bionic
+language: c
+compiler: gcc
+
+script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
