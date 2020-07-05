@@ -172,27 +172,27 @@ void place_initial_infections(char   *initial_infect_filename,
   /* initialization of immune is much simpler.
    * Algorithm: pick a random person in county. If infected, draw again.
    */
-  for (i = 0; i < num_counties; i++) {
-    if (init_immune[i] > county_size[i]) {
-      fprintf(stderr, "Warning: init immune %d larger than county size %d\n",
-              init_immune[i], county_size[i]);
-      init_immune[i] = county_size[i];
-    }
-    for (j = 0; j < init_immune[i]; j++) {
-      int tmp_immune = (int)(COV_rand() * county_size[i]);
-      while (infected[county_p[i][tmp_immune]] > 0) {
-        /* retry as long as person is infected */
-        tmp_immune = (int)(COV_rand() * county_size[i]);
+  if (init_immune != NULL) {
+    for (i = 0; i < num_counties; i++) {
+      if (init_immune[i] > county_size[i]) {
+        fprintf(stderr, "Warning: init immune %d larger than county size %d\n",
+                init_immune[i], county_size[i]);
+        init_immune[i] = county_size[i];
       }
-      immune[county_p[i][tmp_immune]] = 1;
+      for (j = 0; j < init_immune[i]; j++) {
+        int tmp_immune = (int)(COV_rand() * county_size[i]);
+        while (infected[county_p[i][tmp_immune]] > 0) {
+          /* retry as long as person is infected */
+          tmp_immune = (int)(COV_rand() * county_size[i]);
+        }
+        immune[county_p[i][tmp_immune]] = 1;
+      }
     }
+    free(init_immune);
   }
 
   if (initial_infect_filename != NULL) {
     free(initialize);
-  }
-  if (initial_immune_filename != NULL) {
-    free(init_immune);
   }
   free(tmp_lat_v);
   free(tmp_lon_v);
