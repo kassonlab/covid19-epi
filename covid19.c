@@ -1538,7 +1538,7 @@ int main(int argc, char *argv[]) {
 
   /* Setup intervention types */
   setup_intervention_types(interIc,
-                           Iw,
+                           &Iw,
                            interIh,
                            complyI,
                            tauI,

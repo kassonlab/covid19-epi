@@ -100,7 +100,7 @@ void place_initial_infections(char   *initial_infect_filename,
   // Place and initialize infections
   // Infections are randomly placed based on number of initial infections
   // Includes infections from t=-11 to t=-1.
-  int   *initialize = (int *)initialize_base;
+  int   *initialize = NULL;
   int   *init_immune = NULL;
   double tmp_t;
   int    i, j;
@@ -113,6 +113,8 @@ void place_initial_infections(char   *initial_infect_filename,
     infect_len = read_file_ints(initial_infect_filename, initialize);
     assert((infect_len == 15) || (infect_len == 15*21));
     /* initial infections should either be provided by time or by time & county. */
+  } else {
+    initialize = (int *)initialize_base;
   }
   if (initial_immune_filename != NULL) {
     immune_len = read_file_ints(initial_immune_filename, init_immune);

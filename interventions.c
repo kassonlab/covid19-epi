@@ -2,13 +2,13 @@
 
 #include "interventions.h"
 
-void setup_intervention_types(double       *interIc,
-                              const double *Iw,
-                              double       *interIh,
-                              double       *complyI,
-                              double       *tauI,
-                              int          *personinter,
-                              const double *interIw[])
+void setup_intervention_types(double        *interIc,
+                              const double **Iwp,
+                              double        *interIh,
+                              double        *complyI,
+                              double        *tauI,
+                              int           *personinter,
+                              const double  *interIw[])
 {
   /* Setup intervention types. Application of interventions occurs later. */
 
@@ -24,7 +24,7 @@ void setup_intervention_types(double       *interIc,
   interIc[0] = 1.0;
   static const double interIw0[6] = { 0, 1, 1, 1, 1, Ihosp };
   interIw[0]     = interIw0;
-  Iw             = interIw0;
+  *Iwp            = interIw0;
   interIh[0]     = 1.00;
   complyI[0]     = 1.0;
   tauI[0]        = 0;
