@@ -39,11 +39,28 @@ int sort_household_members = 0;
 
 int full_kappa = 0;
 
-/* Modified factors to account for difference between population in Southeast
-   Asia from Ferguson Model and Swedish population. This adjustment maintains
-   1/3 transmission in community, 1/3 transmission in household, and 1/3
-   transmission in workplace.
-    Overall population is 8.4X smaller in Sweden, attributed as a 8.4X increase
+/* Beta scaling factors balance the number of potentially infectious contacts
+   that each infected individual has between household, workplace, and community.
+   A uniform prior would state that 1/3 of the contacts are made in each of these
+   contexts.  This is also the assumption used in doi:10.25561/77482.  Base values
+   for beta parameters were obtained by Ferguson and colleagues based on SE Asia.
+   To scale these parameters, beta scaling factors are applied to maintain the
+   balance of contacts.  Work by Mossong et al., 2008 (doi:10.1371/journal.pmed.0050074)
+   shows that the balance of contacts between home, workplace, and community is
+   a) relatively similar to the uniform prior and b) most importantly, does 
+   not significantly vary across 8 European countries despite population changing
+   by a factor of >10 and average household size changing from ~2 to >2.8.
+   These direct epidemiological data thus support the beta scaling approach used here.
+   The concept applied is that each infected individual will have N contacts in a day;
+   each of these contacts has a probability of infection calculated using the
+   equations for household, workplace, and community transmission.  Because those equations
+   are summed over all individual-individual pairs sharing household, workplace,
+   or community, the beta scaling factors are required for normalization of the contact
+   probabilities.  The R0_scaling parameter is then the one fitted parameter,
+   procedure discussed and data given in the supplement to doi.org:10.1093/cid/ciaa864,
+   that covers infectious probability of those contacts.
+
+   Overall population is 8.4X smaller in Sweden, attributed as a 8.4X increase
        in community transmission factor.
     Household size is approximately 2X smaller in Sweden, 2 vs. 4, attributed as
        a 2X increase in household transmission factor.
