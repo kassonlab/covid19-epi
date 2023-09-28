@@ -18,6 +18,11 @@
 #include <string.h>
 #include <time.h>
 
+
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_rng.h>
+
+
 #ifdef _OPENMP
 # include <omp.h>
 #endif /* ifdef _OPENMP */
@@ -69,10 +74,42 @@ int full_kappa = 0;
        attributes to a doubling time of approximately 5 days.
  */
 double betac_scale         = 8.4, betah_scale = 2.0, betaw_scale = 1.0,
-       R0_scale            = 2.2;
+       R0_scale            = 1.8;
 double population_fraction = 0; /* Fraction for adjustable interventions. */
 
 #define pi 3.14159265358979323846
+
+/* Adding in a method for considering demographic data */
+void dem_data(double *dem, int population, FILE *dem_info, int *dem_distrib){
+  int i; // counter
+  int ret, dem_sz;
+  
+  int dem_start[] = {0, 1, 2, 3, 4 , 5};
+  double dem_dist[] = {0.05, 0.1, 0.3, 0.45, 0.8, 0.9} //PUT NUMBERS HERE WHICH CORRESPOND WITH THE DISTRIBUTION OF THESE CATEGORIES THIS NEEDS TO BE A CDF TYPE OF SITUATION
+  double *dem_dst;
+
+  dem_sz = (int)(sizeof(dem_dist) / sizeof(dem_dist[0]));
+  ret = generate_inc_distr_vec(&dem_dst, dem_dist, dem_sz, "demographic");
+
+  if (ret) {
+    fprintf(stderr, "Bailing out on demographic initialization\n");
+    exit(1);
+  }
+
+  for (i = 0; i < population; i++) {
+    // Generate a random number between 0 and 1
+    double rand_num = (double)rand() / RAND_MAX;
+
+    int category = 0;
+      while (category < dem_sz && rand_num > dem_dist[category]){
+        category++;
+      }
+
+      dem[i] = dem_start[category]
+
+  free(dem_dst);
+}
+    
 
 void age_dist(double *age, int population, FILE *stats, int *age_distrib) {
   int i; // Counter
@@ -185,6 +222,7 @@ void household_lat_long(int     num_households,
   int HH_person   = 0; // Counter
   int max_HH_size = 0;
 
+
   /* Initially set all households to -1 */
   for (i = 0; i < population; i++)
   {
@@ -258,6 +296,10 @@ void household_lat_long(int     num_households,
     locale_HH[HH_count] = HH_count;
     arrput(locale_to_HH[HH_count], HH_count);
     locale_HH_count[HH_count] += 1;
+
+    /* rooms_HH[HH_count] = number of rooms */
+
+
 
     /* Allocate an adult to the household */
     while (age[HH_person] < 20)
@@ -407,7 +449,7 @@ void household_lat_long(int     num_households,
   printf("max_HH_size = %d\n", max_HH_size);
   fflush(stdout);
 
-  if (sort_household_members)
+  if (sort_household_members)             /*sort_household_members only set to 0/1*/
   {
     for (size_t hh = 0; hh < num_households; ++hh)
     {
@@ -955,19 +997,24 @@ void segment_population(int    *num_sus,
 
 double calc_household_infect(double kappa,
                              double omega,
+                             double rho,
                              int    HH_size,
                              double alpha,
                              int    severe) {
   double betah = 0.55; // Scaled from betah=0.4 in influenza pandemic with
                        // R0=1.6, COVID-19 R0=2.2 (Ferguson 2020)
 
-  return betah_scale * betah * kappa *
-         (1 + (double)severe * (omega - 1)) / (pow((double)HH_size, alpha));
+  /* potentially redefine beta as a function of overcrowding */
+
+
+  return betah_scale * betah * kappa * rho *
+         (1 + 0 * (omega - 1)) / (pow((double)HH_size, alpha));
 }
 
 double calc_workplace_infect(int    job_status,
                              double kappa,
                              double omega,
+                             double rho,
                              int    workplace_size,
                              int    severe,
                              double Iw) {
@@ -981,12 +1028,12 @@ double calc_workplace_infect(int    job_status,
                                                          // severe illness.
                                                          // Ferguson Nature 2006
 
-  return betaw_scale * Iw * betap[job_status] * kappa *
+  return betaw_scale * Iw * betap[job_status] * kappa * rho * 
          (1 + (double)severe *
           (omega * psi[job_status] - 1)) / ((double)workplace_size);
 }
 
-double calc_community_infect(double kappa, double omega, int severe, double d) {
+double calc_community_infect(double kappa, double omega, double rho, int severe, double d) {
   /* need to work on this.  Perhaps we take a random distance for each two
     people based on population density, number of people in county, county area,
     etc. */
@@ -1001,7 +1048,7 @@ double calc_community_infect(double kappa, double omega, int severe, double d) {
 
   fd = 1 / (1 + pow((d / 4), 3)); // kernel density function as parameterized
                                   // for GB.
-  return betac_scale * betac * kappa * fd * (1 + severe * (omega - 1));
+  return betac_scale * betac * kappa * fd * rho * (1 + 0 * (omega - 1));
 }
 
 void hosp_entry(double  t,
@@ -1212,6 +1259,7 @@ void locale_infectious_loop(int            num_locale,
                             int           *HH,
                             struct locale *locale_list,
                             double         omega,
+                            double         rho,
                             int           *severe,
                             double         betac_scale,
                             double        *commun_nom1,
@@ -1853,9 +1901,35 @@ int main(int argc, char *argv[]) {
 
   /* Initialize constants */
   double alpha = 0.8; // From Ferguson Nature 2006
-  double omega = 2;   // From Ferguson Nature 2006
+  
+
+
+  /* CHANGING OMEGA */
+  double omega = 1;   // From Ferguson Nature 2006
+
+
   // #Leaving out rho from Ferguson 2006.  This is a measure of how infectious
   // person is.  For now, we will assume all people are the same.
+  
+  /* CHANGING RHO */
+
+  const gsl_rng_type* T;
+  gsl_rng* rng;
+  gsl_rng_env_setup();
+  T = gsl_rng_default;
+  rng = gsl_rng_alloc(T);
+
+  double rho_mean = 1.0;
+  double std_dev = 4.0;
+   
+
+  double variance = std_dev * std_dev;
+  double shape = (rho_mean * rho_mean) / variance;
+  double scale_parameter = variance / rho_mean;
+
+  double rho = gsl_ran_gamma(rng, shape, scale_parameter);
+  gsl_rng_free(rng);
+
 
   /* precalculate kappa */
   int count_kappa_vals = ceil(30 / dt);
@@ -2344,6 +2418,7 @@ int main(int argc, char *argv[]) {
                            HH,
                            locale_list,
                            omega,
+                           rho,
                            severe,
                            betac_scale,
                            commun_nom1,
@@ -2385,7 +2460,7 @@ int main(int argc, char *argv[]) {
                             locale_list[locale_HH[HH[infec_person]]]);
 # endif /* if !defined(USE_LOCALE_DISTANCE) */
           tmp_comm_inf += tIc *
-                          calc_community_infect(kappa, omega,
+                          calc_community_infect(kappa, omega, rho,
                                                 severe[infec_person], d);
         }
       }
@@ -2425,7 +2500,8 @@ int main(int argc, char *argv[]) {
         // job type. //
         tmp_work_inf = calc_workplace_infect(tmp_job_stat,
                                              kappa,
-                                             omega,
+                                             omega, 
+                                             rho,
                                              workplace_size[tmp_job_stat][
                                                workplace[infec_person]],
                                              severe[infec_person],
@@ -2439,6 +2515,7 @@ int main(int argc, char *argv[]) {
         tmp_work_inf = calc_workplace_infect(tmp_job_stat,
                                              kappa,
                                              omega,
+                                             rho,
                                              workplace_size[tmp_job_stat][
                                                workplace_tmp[infec_person]],
                                              severe[infec_person],
@@ -2449,6 +2526,7 @@ int main(int argc, char *argv[]) {
       // Household transmission //
       tmp_house_inf                   = tIh * calc_household_infect(kappa,
                                                                     omega,
+                                                                    rho,
                                                                     arrlen(
                                                                       per_HH_members
                                                                       [HH[
@@ -2462,6 +2540,12 @@ int main(int argc, char *argv[]) {
 
     // #### Only Susceptible people can get the virus and infected people spread
     // it.
+    //
+    double inf_compil_home = 0;
+    double inf_compil_work = 0;
+    double inf_compil_school = 0;
+    double inf_compil_commun = 0;
+
     for (i = 0; i < num_sus; i++) {
       int sus_person;     // Counter for susceptible person.
       int age_group;
@@ -2474,6 +2558,7 @@ int main(int argc, char *argv[]) {
       int contact_house  = 0;
       int contact_school = 0;
 
+    
       tIh = Ih;
       tIc = Ic;
       tIw = Iw[job_status[sus_person]];
@@ -2492,9 +2577,16 @@ int main(int argc, char *argv[]) {
                                     // community transmission. Ferguson Nature
                                     // 2006
       infect  = tIh * house_infect[HH[sus_person]];
+      inf_compil_home += tIh * house_infect[HH[sus_person]];
+      // printf("Household infect %8.3f\n",infect); 
       infect += tIw *
                 work_infect[job_status[sus_person]][workplace[sus_person]];
+      inf_compil_work += tIw *
+                work_infect[job_status[sus_person]][workplace[sus_person]];
+      //printf("With work infect %8.3f\n", infect);
       infect += tIc * zeta[age_group] * commun_nom1[locale_HH[HH[sus_person]]];
+      inf_compil_commun += tIc * zeta[age_group] * commun_nom1[locale_HH[HH[sus_person]]];
+      //printf("And also community infect %8.3f\n", infect);
 
       // ### Probability of being infected ####
       infect_prob = (1 - exp(-infect * dt));
@@ -2575,6 +2667,14 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    printf("Household infect %8.3f\n",inf_compil_home); 
+    printf("Work infect %8.3f\n",inf_compil_work); 
+    printf("Community infect %8.3f\n",inf_compil_commun); 
+    
+
+    // free(inf_compil_home);
+    //free(inf_compil_work);
+    //free(inf_compil_commun);
     // After 5 days of symptoms, people are randomly put into hospital based on
     // age distributions. //
     hosp_entry(t,
